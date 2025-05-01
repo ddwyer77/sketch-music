@@ -1,0 +1,118 @@
+"use client";
+
+import Image from 'next/image';
+import { Campaign } from '../app/dashboard/page';
+
+type CampaignCardProps = {
+  campaign: Campaign;
+  onEdit: () => void;
+};
+
+export default function CampaignCard({ campaign, onEdit }: CampaignCardProps) {
+  // Calculate progress percentage
+  const progressPercent = campaign.budget > 0 
+    ? Math.min(Math.round((campaign.budgetUsed / campaign.budget) * 100), 100)
+    : 0;
+  
+  // Calculate views based on budget used and rate per million
+  const estimatedViews = campaign.ratePerMillion > 0
+    ? campaign.budgetUsed / campaign.ratePerMillion * 1000000
+    : 0;
+  
+  // Format number with commas
+  const formatNumber = (num: number): string => {
+    return num.toLocaleString('en-US');
+  };
+  
+  // Format date
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow">
+      <div className="flex flex-col h-full">
+        {/* Campaign Image or Placeholder */}
+        <div className="h-36 bg-gray-200 relative">
+          {campaign.imageUrl ? (
+            <img 
+              src={campaign.imageUrl} 
+              alt={campaign.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-primary/10">
+              <div className="text-primary font-bold text-xl">{campaign.name.charAt(0)}</div>
+            </div>
+          )}
+          
+          <button
+            onClick={onEdit}
+            className="absolute top-2 right-2 p-1 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+          </button>
+        </div>
+        
+        <div className="p-5 flex-1 flex flex-col">
+          {/* Campaign Name */}
+          <h3 className="font-bold text-lg mb-2 text-gray-800">{campaign.name}</h3>
+          
+          {/* Campaign Stats */}
+          <div className="space-y-4 mb-4 flex-1">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              <div>
+                <p className="text-gray-500">Budget</p>
+                <p className="font-medium">${campaign.budget.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Used</p>
+                <p className="font-medium">${campaign.budgetUsed.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Rate per 1M</p>
+                <p className="font-medium">${campaign.ratePerMillion.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Est. Views</p>
+                <p className="font-medium">{formatNumber(estimatedViews)}</p>
+              </div>
+            </div>
+            
+            {/* Video count */}
+            <div className="text-sm">
+              <p className="text-gray-500">Videos</p>
+              <p className="font-medium">{campaign.videoUrls.length}</p>
+            </div>
+            
+            {/* Created date */}
+            <div className="text-sm">
+              <p className="text-gray-500">Created</p>
+              <p className="font-medium">{formatDate(campaign.createdAt)}</p>
+            </div>
+          </div>
+          
+          {/* Progress Bar */}
+          <div className="mt-auto">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-sm font-medium text-gray-500">Progress</span>
+              <span className="text-sm font-medium text-primary">{progressPercent}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div 
+                className="bg-primary h-2.5 rounded-full" 
+                style={{ width: `${progressPercent}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+} 
