@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import CampaignModal from '../../components/CampaignModal';
 import CampaignCard from '../../components/CampaignCard';
+import { useCampaigns } from '../../hooks/useCampaigns';
 
 export type Campaign = {
   id: string;
@@ -17,21 +18,16 @@ export type Campaign = {
 
 export default function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   
-  // Load campaigns from localStorage on mount
-  useEffect(() => {
-    const storedCampaigns = localStorage.getItem('campaigns');
-    if (storedCampaigns) {
-      setCampaigns(JSON.parse(storedCampaigns));
-    }
-  }, []);
-  
-  // Save campaigns to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem('campaigns', JSON.stringify(campaigns));
-  }, [campaigns]);
+  const { 
+    campaigns, 
+    loading, 
+    error, 
+    addCampaign, 
+    updateCampaign, 
+    deleteCampaign 
+  } = useCampaigns();
   
   const openModal = (campaign?: Campaign) => {
     if (campaign) {
@@ -47,18 +43,42 @@ export default function Dashboard() {
     setEditingCampaign(null);
   };
   
-  const handleSaveCampaign = (campaign: Campaign) => {
+  const handleSaveCampaign = async (campaign: Campaign) => {
     if (editingCampaign) {
       // Update existing campaign
-      setCampaigns(campaigns.map(c => 
-        c.id === campaign.id ? campaign : c
-      ));
+      await updateCampaign(campaign.id, campaign);
     } else {
       // Add new campaign
-      setCampaigns([...campaigns, campaign]);
+      await addCampaign(campaign);
     }
     closeModal();
   };
+  
+  const handleDeleteCampaign = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this campaign?')) {
+      await deleteCampaign(id);
+    }
+  };
+  
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto py-10 text-center">
+        <p className="text-gray-500">Loading campaigns...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto py-10">
+        <div className="bg-red-50 p-4 rounded-md border border-red-200 text-center">
+          <h2 className="text-red-800 font-medium mb-2">Error</h2>
+          <p className="text-red-600">{error}</p>
+          <p className="mt-4 text-gray-600">Using data from local storage as fallback.</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="max-w-7xl mx-auto">
@@ -78,7 +98,7 @@ export default function Dashboard() {
           <p className="text-gray-500 mb-6">Start creating your first campaign to track your marketing efforts</p>
           <button
             onClick={() => openModal()}
-            className="bg-primary hover:bg-primary/90 px-6 py-3 rounded-md font-medium transition-colors"
+            className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-md font-medium transition-colors"
           >
             Create Your First Campaign
           </button>
@@ -89,7 +109,8 @@ export default function Dashboard() {
             <CampaignCard 
               key={campaign.id} 
               campaign={campaign} 
-              onEdit={() => openModal(campaign)} 
+              onEdit={() => openModal(campaign)}
+              onDelete={() => handleDeleteCampaign(campaign.id)}
             />
           ))}
         </div>
