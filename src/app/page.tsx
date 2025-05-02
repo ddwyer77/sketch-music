@@ -21,7 +21,7 @@ export default function Home() {
               The All-in-One Tool for <span className="text-primary">Virality</span>
             </h1>
             <p className="text-xl text-gray-600">
-              ViralClip turns passionate creators into a viral engine for brands—paying only for real views, real engagement, and real impact.
+              Sketch Music turns passionate creators into a viral engine for brands—paying only for real views, real engagement, and real impact.
             </p>
             <div className="flex flex-wrap gap-4 pt-4">
               <Link 
@@ -42,11 +42,22 @@ export default function Home() {
           {/* Right Column - Videos */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="rounded-2xl overflow-hidden bg-black aspect-[9/16] relative shadow-xl">
-              {/* Video placeholder 1 */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+              <iframe 
+                className="absolute inset-0 w-full h-full"
+                src="https://www.youtube.com/embed/_P8e1umu3xc?autoplay=1&mute=1&loop=1&playlist=_P8e1umu3xc"
+                title="YouTube video player"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
             </div>
             <div className="rounded-2xl overflow-hidden bg-black aspect-[9/16] relative shadow-xl mt-12">
-              {/* Video placeholder 2 */}
+              <iframe 
+                className="absolute inset-0 w-full h-full"
+                src="https://youtube.com/embed/bR6-I3AGCsk?autoplay=1&mute=1&loop=1&playlist=bR6-I3AGCsk"
+                title="YouTube video player"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
             </div>
           </div>

@@ -79,7 +79,7 @@ export default function Sidebar() {
         <div className="h-10 w-10 lg:h-12 lg:w-auto rounded-full bg-primary text-white flex items-center justify-center font-bold text-xl">
           VC
         </div>
-        <span className="ml-3 text-xl font-bold hidden lg:block text-primary">ViralClip</span>
+        <span className="ml-3 text-xl font-bold hidden lg:block text-primary">Sketch Music</span>
       </div>
       
       {/* Nav Items */}
