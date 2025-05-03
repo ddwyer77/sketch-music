@@ -10,14 +10,9 @@ type CampaignCardProps = {
 };
 
 export default function CampaignCard({ campaign, onEdit, onDelete }: CampaignCardProps) {
-  // Calculate progress percentage
-  const progressPercent = campaign.budget > 0 
+  // Calculate progress percentage based on budget
+  const budgetProgressPercent = campaign.budget > 0 
     ? Math.min(Math.round((campaign.budgetUsed / campaign.budget) * 100), 100)
-    : 0;
-  
-  // Calculate views based on budget used and rate per million
-  const estimatedViews = campaign.ratePerMillion > 0
-    ? campaign.budgetUsed / campaign.ratePerMillion * 1000000
     : 0;
   
   // Format number with commas
@@ -33,6 +28,20 @@ export default function CampaignCard({ campaign, onEdit, onDelete }: CampaignCar
       day: 'numeric',
     });
   };
+
+  // Use actual views if available, otherwise calculate estimate
+  const views = campaign.views || 0;
+  const comments = campaign.comments || 0;
+  const shares = campaign.shares || 0;
+
+  // Calculate budget used based on actual views
+  // Formula: (views / 1,000,000) * ratePerMillion
+  const viewsBasedBudget = (views / 1000000) * campaign.ratePerMillion;
+  
+  // For last updated time
+  const lastUpdated = campaign.lastUpdated 
+    ? formatDate(campaign.lastUpdated)
+    : 'Not yet updated';
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow">
@@ -84,15 +93,27 @@ export default function CampaignCard({ campaign, onEdit, onDelete }: CampaignCar
               </div>
               <div>
                 <p className="text-gray-500">Used</p>
-                <p className="font-medium">${campaign.budgetUsed.toFixed(2)}</p>
+                <p className="font-medium">${viewsBasedBudget.toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-gray-500">Rate per 1M</p>
                 <p className="font-medium">${campaign.ratePerMillion.toFixed(2)}</p>
               </div>
+            </div>
+            
+            {/* TikTok Metrics */}
+            <div className="grid grid-cols-3 gap-x-2 text-sm mt-2">
               <div>
-                <p className="text-gray-500">Est. Views</p>
-                <p className="font-medium">{formatNumber(estimatedViews)}</p>
+                <p className="text-gray-500">Views</p>
+                <p className="font-medium">{formatNumber(views)}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Shares</p>
+                <p className="font-medium">{formatNumber(shares)}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Comments</p>
+                <p className="font-medium">{formatNumber(comments)}</p>
               </div>
             </div>
             
@@ -102,23 +123,31 @@ export default function CampaignCard({ campaign, onEdit, onDelete }: CampaignCar
               <p className="font-medium">{campaign.videoUrls.length}</p>
             </div>
             
-            {/* Created date */}
-            <div className="text-sm">
-              <p className="text-gray-500">Created</p>
-              <p className="font-medium">{formatDate(campaign.createdAt)}</p>
+            {/* Created and updated dates */}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              <div>
+                <p className="text-gray-500">Created</p>
+                <p className="font-medium">{formatDate(campaign.createdAt)}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Last Updated</p>
+                <p className="font-medium">{lastUpdated}</p>
+              </div>
             </div>
           </div>
           
-          {/* Progress Bar */}
+          {/* Progress Bar - based on views toward 1M */}
           <div className="mt-auto">
             <div className="flex justify-between items-center mb-1">
-              <span className="text-sm font-medium text-gray-500">Progress</span>
-              <span className="text-sm font-medium text-primary">{progressPercent}%</span>
+              <span className="text-sm font-medium text-gray-500">Progress to 1M Views</span>
+              <span className="text-sm font-medium text-primary">
+                {Math.min(Math.round((views / 1000000) * 100), 100)}%
+              </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5">
               <div 
                 className="bg-primary h-2.5 rounded-full" 
-                style={{ width: `${progressPercent}%` }}
+                style={{ width: `${Math.min(Math.round((views / 1000000) * 100), 100)}%` }}
               ></div>
             </div>
           </div>

@@ -15,10 +15,6 @@ const firebaseConfig = {
 console.log('Initializing Firebase...');
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore with specific database ID
-// Replace "your-database-id" with the name you give your new database
 const db = getFirestore(app, "default");
-
-console.log('Firebase initialized with project:', firebaseConfig.projectId);
 
 export { db }; 

@@ -7,9 +7,10 @@ type CampaignModalProps = {
   onClose: () => void;
   onSave: (campaign: Campaign) => void;
   initialData: Campaign | null;
+  isLoading?: boolean;
 };
 
-export default function CampaignModal({ onClose, onSave, initialData }: CampaignModalProps) {
+export default function CampaignModal({ onClose, onSave, initialData, isLoading = false }: CampaignModalProps) {
   const [formData, setFormData] = useState<Omit<Campaign, 'id' | 'createdAt'>>({
     name: '',
     budget: 0,
@@ -276,19 +277,31 @@ export default function CampaignModal({ onClose, onSave, initialData }: Campaign
             {errors.videoUrls && <p className="mt-1 text-sm text-red-500">{errors.videoUrls}</p>}
           </div>
           
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end space-x-4 border-t border-gray-200 pt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+              disabled={isLoading}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+              className="px-4 py-2 bg-primary hover:bg-primary/90 rounded-md text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              disabled={isLoading}
             >
-              {initialData ? 'Update Campaign' : 'Create Campaign'}
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving...
+                </>
+              ) : (
+                'Save Campaign'
+              )}
             </button>
           </div>
         </form>
