@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import CampaignModal from '../../components/CampaignModal';
 import CampaignCard from '../../components/CampaignCard';
-import { useCampaigns } from '../../hooks/useCampaigns';
+import { db } from '../../lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 export type Campaign = {
   id: string;
@@ -16,18 +17,42 @@ export type Campaign = {
   createdAt: string;
 };
 
+// Function to get all documents from a Firestore collection
+const getAllDocuments = async () => {
+  try {
+    const campaignsCollection = collection(db, 'campaigns');
+    const querySnapshot = await getDocs(campaignsCollection);
+    const documents: Campaign[] = [];
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data() as Omit<Campaign, 'id'>;
+      documents.push({
+        id: doc.id,
+        ...data
+      });
+    });
+    
+    console.log('Retrieved documents:', documents);
+    return documents;
+  } catch (error) {
+    console.error('Error getting documents:', error);
+    return [];
+  }
+};
+
 export default function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   
-  const { 
-    campaigns, 
-    loading, 
-    error, 
-    addCampaign, 
-    updateCampaign, 
-    deleteCampaign 
-  } = useCampaigns();
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      const documents = await getAllDocuments();
+      setCampaigns(documents);
+    };
+    
+    fetchCampaigns();
+  }, []);
   
   const openModal = (campaign?: Campaign) => {
     if (campaign) {
@@ -44,42 +69,17 @@ export default function Dashboard() {
   };
   
   const handleSaveCampaign = async (campaign: Campaign) => {
-    if (editingCampaign) {
-      // Update existing campaign
-      await updateCampaign(campaign.id, campaign);
-    } else {
-      // Add new campaign
-      await addCampaign(campaign);
-    }
+// todo
     closeModal();
   };
   
   const handleDeleteCampaign = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this campaign?')) {
-      await deleteCampaign(id);
+    //  todo
     }
   };
   
-  if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto py-10 text-center">
-        <p className="text-gray-500">Loading campaigns...</p>
-      </div>
-    );
-  }
 
-  if (error) {
-    return (
-      <div className="max-w-7xl mx-auto py-10">
-        <div className="bg-red-50 p-4 rounded-md border border-red-200 text-center">
-          <h2 className="text-red-800 font-medium mb-2">Error</h2>
-          <p className="text-red-600">{error}</p>
-          <p className="mt-4 text-gray-600">Using data from local storage as fallback.</p>
-        </div>
-      </div>
-    );
-  }
-  
   return (
     <div className="max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-8">
@@ -105,7 +105,7 @@ export default function Dashboard() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {campaigns.map(campaign => (
+          {campaigns.map((campaign) => (
             <CampaignCard 
               key={campaign.id} 
               campaign={campaign} 
