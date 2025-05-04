@@ -306,14 +306,14 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
                 <button
                   type="button"
                   onClick={() => setShowBulkImport(!showBulkImport)}
-                  className="text-primary hover:text-primary/90 text-sm font-medium"
+                  className="text-primary hover:text-primary/90 text-sm font-medium hover:cursor-pointer" 
                 >
                   {showBulkImport ? 'Cancel Bulk Import' : 'Bulk Import'}
                 </button>
                 <button
                   type="button"
                   onClick={addVideoUrl}
-                  className="text-primary hover:text-primary/90 text-sm font-medium"
+                  className="text-primary hover:text-primary/90 text-sm font-medium hover:cursor-pointer"
                 >
                   + Add New Video URL
                 </button>
@@ -395,14 +395,14 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium transition-colors hover:cursor-pointer"
               disabled={isLoading}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-primary hover:bg-primary/90 rounded-md text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              className="px-4 py-2 bg-primary hover:cursor-pointer hover:bg-primary/90 rounded-md text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               disabled={isLoading}
             >
               {isLoading ? (
