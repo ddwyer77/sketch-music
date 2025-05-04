@@ -10,11 +10,6 @@ type CampaignCardProps = {
 };
 
 export default function CampaignCard({ campaign, onEdit, onDelete }: CampaignCardProps) {
-  // Calculate progress percentage based on budget
-  const budgetProgressPercent = campaign.budget > 0 
-    ? Math.min(Math.round((campaign.budgetUsed / campaign.budget) * 100), 100)
-    : 0;
-  
   // Format number with commas
   const formatNumber = (num: number): string => {
     return num.toLocaleString('en-US');
@@ -49,10 +44,12 @@ export default function CampaignCard({ campaign, onEdit, onDelete }: CampaignCar
         {/* Campaign Image or Placeholder */}
         <div className="h-36 bg-gray-200 relative">
           {campaign.imageUrl ? (
-            <img 
+            <Image 
               src={campaign.imageUrl} 
               alt={campaign.name}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 33vw"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-primary/10">

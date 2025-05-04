@@ -18,6 +18,10 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     ratePerMillion: 0,
     imageUrl: '',
     videoUrls: [''],
+    views: 0,
+    shares: 0,
+    comments: 0,
+    lastUpdated: new Date().toISOString()
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -32,6 +36,10 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         ratePerMillion: initialData.ratePerMillion,
         imageUrl: initialData.imageUrl,
         videoUrls: initialData.videoUrls.length ? initialData.videoUrls : [''],
+        views: initialData.views,
+        shares: initialData.shares,
+        comments: initialData.comments,
+        lastUpdated: initialData.lastUpdated
       });
     }
   }, [initialData]);

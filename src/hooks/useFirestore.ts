@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   collection, 
   doc,
@@ -12,7 +12,8 @@ import {
   orderBy,
   limit,
   DocumentData,
-  QueryConstraint
+  QueryConstraint,
+  WhereFilterOp
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -26,7 +27,7 @@ export const useCollection = <T>(collectionName: string) => {
   const [error, setError] = useState<Error | null>(null);
   const [refreshCounter, setRefreshCounter] = useState(0);
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     setLoading(true);
     try {
       const querySnapshot = await getDocs(collection(db, collectionName));
@@ -43,7 +44,7 @@ export const useCollection = <T>(collectionName: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [collectionName]);
 
   // Manually trigger a refresh by incrementing the counter
   const refresh = async () => {
@@ -53,7 +54,7 @@ export const useCollection = <T>(collectionName: string) => {
 
   useEffect(() => {
     fetchDocuments();
-  }, [collectionName, refreshCounter]);
+  }, [collectionName, refreshCounter, fetchDocuments]);
 
   return { documents, loading, error, refresh };
 };
@@ -111,7 +112,7 @@ export const useQuery = <T>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchQuery = async () => {
+  const fetchQuery = useCallback(async () => {
     setLoading(true);
     try {
       const collectionRef = collection(db, collectionName);
@@ -131,11 +132,11 @@ export const useQuery = <T>(
     } finally {
       setLoading(false);
     }
-  };
+  }, [collectionName, constraints]);
 
   useEffect(() => {
     fetchQuery();
-  }, [collectionName, JSON.stringify(constraints)]);
+  }, [collectionName, constraints, fetchQuery]);
 
   return { documents, loading, error, refresh: fetchQuery };
 };
@@ -222,7 +223,7 @@ export const useFirestoreOperations = <T>(collectionName: string) => {
 
 // Helper function for creating constraints
 export const createConstraints = {
-  filter: (field: string, operator: string, value: any) => where(field, operator as any, value),
+  filter: (field: string, operator: string, value: unknown) => where(field, operator as WhereFilterOp, value),
   sort: (field: string, direction: 'asc' | 'desc' = 'asc') => orderBy(field, direction),
   limitTo: (limitCount: number) => limit(limitCount)
 }; 

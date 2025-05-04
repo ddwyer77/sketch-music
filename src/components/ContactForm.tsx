@@ -36,7 +36,7 @@ export default function ContactForm() {
     return (
       <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center">
         <h3 className="text-xl font-medium text-green-800 mb-2">Thanks for reaching out!</h3>
-        <p className="text-green-700">We'll get back to you shortly.</p>
+        <p className="text-green-700">We&apos;ll get back to you shortly.</p>
       </div>
     );
   }
