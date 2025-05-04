@@ -157,7 +157,8 @@ export default function Dashboard() {
       await updateDocument(id, campaignData);
     } else {
       // Add new campaign with default metrics values
-      const { id, ...campaignData } = campaign;
+      // Destructure and ignore the id since Firestore will generate one
+      const { id: _, ...campaignData } = campaign;
       await addDocument({
         ...campaignData,
         createdAt: new Date().toISOString(),
