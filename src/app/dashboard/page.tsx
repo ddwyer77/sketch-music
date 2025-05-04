@@ -182,9 +182,9 @@ export default function Dashboard() {
   
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <div className="flex gap-3">
+      <div className="flex justify-between items-center mb-8 flex-wrap">
+        <h1 className="text-2xl font-bold w-full md:w-auto mb-2 md:mb-0">Dashboard</h1>
+        <div className="flex gap-3 flex-wrap w-full md:w-auto">
           {updateMessage && (
             <div className={`py-2 px-3 rounded-md text-sm font-medium ${
               updateMessage.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
@@ -195,7 +195,7 @@ export default function Dashboard() {
           <button
             onClick={handleUpdateMetrics}
             disabled={isUpdating || loading}
-            className="bg-secondary text-gray-900 px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            className="bg-secondary hover:bg-primary hover:text-white text-gray-900 px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center hover:cursor-pointer w-full md:w-auto justify-center"
           >
             {isUpdating ? (
               <>
@@ -209,7 +209,7 @@ export default function Dashboard() {
           </button>
           <button
             onClick={() => openModal()}
-            className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium transition-colors"
+            className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium transition-colors hover:cursor-pointer w-full md:w-auto"
           >
             Create Campaign
           </button>

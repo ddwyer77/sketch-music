@@ -42,7 +42,7 @@ export default function CampaignCard({ campaign, onEdit, onDelete }: CampaignCar
     <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow">
       <div className="flex flex-col h-full">
         {/* Campaign Image or Placeholder */}
-        <div className="h-36 bg-gray-200 relative">
+        <div className="h-64 bg-gray-200 relative">
           {campaign.imageUrl ? (
             <Image 
               src={campaign.imageUrl} 
@@ -79,62 +79,50 @@ export default function CampaignCard({ campaign, onEdit, onDelete }: CampaignCar
         
         <div className="p-5 flex-1 flex flex-col">
           {/* Campaign Name */}
-          <h3 className="font-bold text-lg mb-2 text-gray-800">{campaign.name}</h3>
+          <h3 className="font-bold text-lg mb-4 text-gray-800">{campaign.name}</h3>
           
           {/* Campaign Stats */}
-          <div className="space-y-4 mb-4 flex-1">
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-              <div>
-                <p className="text-gray-500">Budget</p>
-                <p className="font-medium">${campaign.budget.toFixed(2)}</p>
-              </div>
-              <div>
-                <p className="text-gray-500">Used</p>
-                <p className="font-medium">${viewsBasedBudget.toFixed(2)}</p>
-              </div>
-              <div>
-                <p className="text-gray-500">Rate per 1M</p>
-                <p className="font-medium">${campaign.ratePerMillion.toFixed(2)}</p>
-              </div>
+          <div className="flex-1 grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-gray-500">Budget</p>
+              <p className="font-medium">${campaign.budget.toFixed(2)}</p>
             </div>
-            
-            {/* TikTok Metrics */}
-            <div className="grid grid-cols-3 gap-x-2 text-sm mt-2">
-              <div>
-                <p className="text-gray-500">Views</p>
-                <p className="font-medium">{formatNumber(views)}</p>
-              </div>
-              <div>
-                <p className="text-gray-500">Shares</p>
-                <p className="font-medium">{formatNumber(shares)}</p>
-              </div>
-              <div>
-                <p className="text-gray-500">Comments</p>
-                <p className="font-medium">{formatNumber(comments)}</p>
-              </div>
+            <div>
+              <p className="text-gray-500">Used</p>
+              <p className="font-medium">${viewsBasedBudget.toFixed(2)}</p>
             </div>
-            
-            {/* Video count */}
-            <div className="text-sm">
+            <div>
+              <p className="text-gray-500">Rate per 1M</p>
+              <p className="font-medium">${campaign.ratePerMillion.toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Views</p>
+              <p className="font-medium">{formatNumber(views)}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Shares</p>
+              <p className="font-medium">{formatNumber(shares)}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Comments</p>
+              <p className="font-medium">{formatNumber(comments)}</p>
+            </div>
+            <div>
               <p className="text-gray-500">Videos</p>
               <p className="font-medium">{campaign.videoUrls.length}</p>
             </div>
-            
-            {/* Created and updated dates */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-              <div>
-                <p className="text-gray-500">Created</p>
-                <p className="font-medium">{formatDate(campaign.createdAt)}</p>
-              </div>
-              <div>
-                <p className="text-gray-500">Last Updated</p>
-                <p className="font-medium">{lastUpdated}</p>
-              </div>
+            <div>
+              <p className="text-gray-500">Created</p>
+              <p className="font-medium">{formatDate(campaign.createdAt)}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Last Updated</p>
+              <p className="font-medium">{lastUpdated}</p>
             </div>
           </div>
           
           {/* Progress Bar - based on views toward 1M */}
-          <div className="mt-auto">
+          <div className="mt-auto pt-4">
             <div className="flex justify-between items-center mb-1">
               <span className="text-sm font-medium text-gray-500">Progress to 1M Views</span>
               <span className="text-sm font-medium text-primary">
