@@ -25,6 +25,8 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [bulkImportText, setBulkImportText] = useState('');
+  const [showBulkImport, setShowBulkImport] = useState(false);
   
   // Initialize form with editing data if available
   useEffect(() => {
@@ -92,6 +94,56 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
       ...formData,
       videoUrls: updatedUrls.length ? updatedUrls : [''],
     });
+  };
+  
+  const handleBulkImportChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setBulkImportText(e.target.value);
+  };
+  
+  const handleBulkImport = () => {
+    if (!bulkImportText.trim()) return;
+    
+    // Parse comma-separated URLs
+    const urls = bulkImportText
+      .split(',')
+      .map(url => url.trim())
+      .filter(url => url !== '');
+    
+    if (urls.length > 0) {
+      setFormData({
+        ...formData,
+        videoUrls: [...formData.videoUrls.filter(url => url.trim() !== ''), ...urls],
+      });
+      setBulkImportText('');
+      setShowBulkImport(false);
+    }
+  };
+  
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const csvText = event.target?.result as string;
+      if (csvText) {
+        // Simple CSV parsing - assumes one URL per line or comma-separated
+        const urls = csvText
+          .split(/[\n,]/) // Split by newline or comma
+          .map(url => url.trim())
+          .filter(url => url !== '');
+        
+        if (urls.length > 0) {
+          setFormData({
+            ...formData,
+            videoUrls: [...formData.videoUrls.filter(url => url.trim() !== ''), ...urls],
+          });
+        }
+      }
+    };
+    reader.readAsText(file);
+    // Reset file input
+    e.target.value = '';
   };
   
   const validateForm = (): boolean => {
@@ -250,38 +302,92 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
               <label className="block text-sm font-medium text-gray-700">
                 Video URLs
               </label>
-              <button
-                type="button"
-                onClick={addVideoUrl}
-                className="text-primary hover:text-primary/90 text-sm font-medium"
-              >
-                + Add New Video URL
-              </button>
-            </div>
-            
-            {formData.videoUrls.map((url, index) => (
-              <div key={index} className="flex items-center gap-2 mb-2">
-                <input
-                  type="text"
-                  value={url}
-                  onChange={(e) => handleVideoUrlChange(index, e.target.value)}
-                  className={`flex-1 px-3 py-2 border rounded-md ${
-                    index === 0 && errors.videoUrls ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="https://example.com/video"
-                />
+              <div className="flex space-x-2">
                 <button
                   type="button"
-                  onClick={() => removeVideoUrl(index)}
-                  className="text-gray-500 hover:text-red-500"
-                  disabled={formData.videoUrls.length === 1}
+                  onClick={() => setShowBulkImport(!showBulkImport)}
+                  className="text-primary hover:text-primary/90 text-sm font-medium"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  {showBulkImport ? 'Cancel Bulk Import' : 'Bulk Import'}
+                </button>
+                <button
+                  type="button"
+                  onClick={addVideoUrl}
+                  className="text-primary hover:text-primary/90 text-sm font-medium"
+                >
+                  + Add New Video URL
                 </button>
               </div>
-            ))}
+            </div>
+            
+            {/* Bulk Import Section */}
+            {showBulkImport && (
+              <div className="mb-4 p-3 border border-gray-200 rounded-md">
+                <div className="mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Paste comma-separated URLs
+                  </label>
+                  <textarea
+                    value={bulkImportText}
+                    onChange={handleBulkImportChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    rows={3}
+                    placeholder="https://example.com/video1, https://example.com/video2, ..."
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label htmlFor="csv-upload" className="inline-block px-4 py-2 bg-gray-200 text-gray-700 rounded-md cursor-pointer hover:bg-gray-300 text-sm font-medium">
+                      Import from CSV
+                    </label>
+                    <input
+                      id="csv-upload"
+                      type="file"
+                      accept=".csv,.txt"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={handleBulkImport}
+                    className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 text-sm font-medium"
+                    disabled={!bulkImportText.trim()}
+                  >
+                    Add URLs
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {/* Video URL List */}
+            <div className="space-y-2 mb-2">
+              {formData.videoUrls.map((url, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={url}
+                    onChange={(e) => handleVideoUrlChange(index, e.target.value)}
+                    className={`flex-1 px-3 py-2 border rounded-md ${
+                      index === 0 && errors.videoUrls ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="https://example.com/video"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeVideoUrl(index)}
+                    className="text-gray-500 hover:text-red-500"
+                    disabled={formData.videoUrls.length === 1 && index === 0}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
             {errors.videoUrls && <p className="mt-1 text-sm text-red-500">{errors.videoUrls}</p>}
           </div>
           

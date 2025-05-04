@@ -84,7 +84,6 @@ export default function Dashboard() {
   const [updateMessage, setUpdateMessage] = useState<string | null>(null);
   const [initialUpdateDone, setInitialUpdateDone] = useState(false);
   
-  // Use our custom hooks for Firestore operations
   const { documents: campaigns, loading, error, refresh } = useCollection<Campaign>('campaigns');
   const { 
     addDocument, 
