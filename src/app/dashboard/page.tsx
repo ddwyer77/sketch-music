@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import CampaignModal from '../../components/CampaignModal';
 import CampaignCard from '../../components/CampaignCard';
 import { useCollection, useFirestoreOperations } from '../../hooks';
@@ -93,16 +93,8 @@ export default function Dashboard() {
     loading: operationLoading 
   } = useFirestoreOperations<Omit<Campaign, 'id'>>('campaigns');
   
-  // Update metrics only once when the dashboard first loads
-  useEffect(() => {
-    if (campaigns.length > 0 && !loading && !initialUpdateDone) {
-      handleUpdateMetrics();
-      setInitialUpdateDone(true);
-    }
-  }, [campaigns.length, loading, initialUpdateDone]);
-  
   // Function to update all campaign metrics
-  const handleUpdateMetrics = async () => {
+  const handleUpdateMetrics = useCallback(async () => {
     if (isUpdating || campaigns.length === 0) return;
     
     try {
@@ -134,7 +126,15 @@ export default function Dashboard() {
     } finally {
       setIsUpdating(false);
     }
-  };
+  }, [campaigns, isUpdating, refresh]);
+  
+  // Update metrics only once when the dashboard first loads
+  useEffect(() => {
+    if (campaigns.length > 0 && !loading && !initialUpdateDone) {
+      handleUpdateMetrics();
+      setInitialUpdateDone(true);
+    }
+  }, [campaigns.length, loading, initialUpdateDone, handleUpdateMetrics]);
   
   const openModal = (campaign?: Campaign) => {
     if (campaign) {
