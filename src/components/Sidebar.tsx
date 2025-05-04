@@ -76,7 +76,7 @@ export default function Sidebar() {
     <aside className="w-20 lg:w-64 h-screen bg-white border-r border-gray-200 flex flex-col">
       
       {/* Nav Items */}
-      <nav className="flex-1 pt-8 pb-4 px-2 overflow-y-auto">
+      <nav className="flex-1 pt-4 md:pt-8 pb-4 px-2 overflow-y-auto">
         <ul className="space-y-2">
           {navItems.map((item) => {
             const isActive = pathname === item.path;
