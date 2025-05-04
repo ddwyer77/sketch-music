@@ -151,21 +151,21 @@ export default function Dashboard() {
   };
   
   const handleSaveCampaign = async (campaign: Campaign) => {
-    if (campaign.id) {
+    if (editingCampaign && campaign.id) {
       // Update existing campaign
       const { id, ...campaignData } = campaign;
       await updateDocument(id, campaignData);
     } else {
       // Add new campaign with default metrics values
-      const newCampaign = {
-        ...campaign,
+      const { id, ...campaignData } = campaign;
+      await addDocument({
+        ...campaignData,
         createdAt: new Date().toISOString(),
         views: 0,
         shares: 0,
         comments: 0,
         lastUpdated: new Date().toISOString()
-      };
-      await addDocument(newCampaign);
+      });
     }
     
     // Refresh the list of campaigns
