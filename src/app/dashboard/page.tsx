@@ -181,7 +181,7 @@ export default function Dashboard() {
   };
   
   return (
-    <div className="max-w-7xl mx-auto">
+    <div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <div className="flex gap-3">
@@ -195,7 +195,7 @@ export default function Dashboard() {
           <button
             onClick={handleUpdateMetrics}
             disabled={isUpdating || loading}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            className="bg-secondary text-gray-900 px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           >
             {isUpdating ? (
               <>

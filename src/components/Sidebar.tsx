@@ -74,13 +74,6 @@ export default function Sidebar() {
 
   return (
     <aside className="w-20 lg:w-64 h-screen bg-white border-r border-gray-200 flex flex-col">
-      {/* Logo */}
-      <div className="p-4 border-b border-gray-200 flex justify-center lg:justify-start">
-        <div className="h-10 w-10 lg:h-12 lg:w-auto rounded-full bg-primary text-white flex items-center justify-center font-bold text-xl">
-          VC
-        </div>
-        <span className="ml-3 text-xl font-bold hidden lg:block text-primary">Sketch Music</span>
-      </div>
       
       {/* Nav Items */}
       <nav className="flex-1 pt-8 pb-4 px-2 overflow-y-auto">
