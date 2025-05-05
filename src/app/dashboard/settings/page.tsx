@@ -156,7 +156,7 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">Campaign Updates</p>
-                        <p className="text-sm text-gray-500">Get notified when there's activity in your campaigns</p>
+                        <p className="text-sm text-gray-500">Get notified when there&apos;s activity in your campaigns</p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input 

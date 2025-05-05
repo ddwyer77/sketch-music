@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { useCollection } from '../../../hooks';
 import VideoModal from '../../../components/VideoModal';
+import Image from 'next/image';
 
 // Define the Campaign type
 interface Campaign {
@@ -118,10 +119,12 @@ export default function CampaignsPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       {campaign.imageUrl ? (
-                        <img
+                        <Image
                           className="h-10 w-10 rounded-full mr-3 object-cover"
                           src={campaign.imageUrl}
                           alt={campaign.name}
+                          width={40}
+                          height={40}
                         />
                       ) : (
                         <div className="h-10 w-10 rounded-full mr-3 bg-gray-200 flex items-center justify-center">

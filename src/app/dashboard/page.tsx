@@ -6,6 +6,7 @@ import CampaignCard from '../../components/CampaignCard';
 import { useCollection, useFirestoreOperations } from '../../hooks';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
+import { fetchTikTokDataFromUrl } from '../../lib/webScraper';
 
 export type Campaign = {
   id: string;
@@ -22,12 +23,13 @@ export type Campaign = {
   lastUpdated: string;
 };
 
-// Simple mock function to generate random TikTok metrics
-const generateRandomMetrics = () => {
+const generateMetrics = async() => {
+  const data = await fetchTikTokDataFromUrl('https://www.tiktok.com/@santea_/video/7499635032324132126');
+  const stats = data.itemInfo.itemStruct.stats;
   return {
-    views: Math.floor(Math.random() * 100000),
-    shares: Math.floor(Math.random() * 1000),
-    comments: Math.floor(Math.random() * 500)
+    views: stats.playCount,
+    shares: stats.shareCount, 
+    comments: stats.commentCount
   };
 };
 
@@ -38,8 +40,8 @@ const updateCampaignMetrics = async (campaign: Campaign): Promise<Campaign> => {
   }
 
   try {
-    // Generate random metrics for each video and aggregate them
-    const metricsArray = campaign.videoUrls.map(() => generateRandomMetrics());
+    const metricsPromises = campaign.videoUrls.map(() => generateMetrics());
+    const metricsArray = await Promise.all(metricsPromises);
     
     const aggregatedMetrics = metricsArray.reduce((total, current) => {
       return {
