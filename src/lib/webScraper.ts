@@ -9,13 +9,13 @@ interface TikTokPostData {
         playCount: number;
         shareCount: number;
         commentCount: number;
-        [key: string]: any;
+        [key: string]: unknown;
       };
-      [key: string]: any;
+      [key: string]: unknown;
     };
-    [key: string]: any;
+    [key: string]: unknown;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export async function fetchTikTokDataFromUrl(url: string): Promise<TikTokPostData> {
@@ -49,7 +49,7 @@ export async function fetchTikTokDataFromUrl(url: string): Promise<TikTokPostDat
       res.on('end', () => {
         const body = Buffer.concat(chunks);
         try {
-          const data = JSON.parse(body.toString());
+          const data = JSON.parse(body.toString()) as TikTokPostData;
           resolve(data);
         } catch (error) {
           reject(new Error('Failed to parse response: ' + body.toString()));
