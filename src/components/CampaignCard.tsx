@@ -28,6 +28,7 @@ export default function CampaignCard({ campaign, onEdit, onDelete }: CampaignCar
   const views = campaign.views || 0;
   const comments = campaign.comments || 0;
   const shares = campaign.shares || 0;
+  const likes = campaign.likes || 0;
 
   // Calculate budget used based on actual views
   // Formula: (views / 1,000,000) * ratePerMillion
@@ -100,16 +101,20 @@ export default function CampaignCard({ campaign, onEdit, onDelete }: CampaignCar
               <p className="font-medium">{formatNumber(views)}</p>
             </div>
             <div>
+              <p className="text-gray-500">Likes</p>
+              <p className="font-medium">{formatNumber(likes)}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Videos</p>
+              <p className="font-medium">{campaign.videoUrls.length}</p>
+            </div>
+            <div>
               <p className="text-gray-500">Shares</p>
               <p className="font-medium">{formatNumber(shares)}</p>
             </div>
             <div>
               <p className="text-gray-500">Comments</p>
               <p className="font-medium">{formatNumber(comments)}</p>
-            </div>
-            <div>
-              <p className="text-gray-500">Videos</p>
-              <p className="font-medium">{campaign.videoUrls.length}</p>
             </div>
             <div>
               <p className="text-gray-500">Created</p>

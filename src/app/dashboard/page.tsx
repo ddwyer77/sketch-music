@@ -6,7 +6,7 @@ import CampaignCard from '../../components/CampaignCard';
 import { useCollection, useFirestoreOperations } from '../../hooks';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { fetchTikTokDataFromUrl } from '../../lib/webScraper';
+import { fetchTikTokDataFromUrl, extractTikTokMetrics } from '../../lib/webScraper';
 
 export type Campaign = {
   id: string;
@@ -20,58 +20,67 @@ export type Campaign = {
   views: number;
   shares: number;
   comments: number;
+  likes?: number;
   lastUpdated: string;
 };
 
-const generateMetrics = async() => {
-  const data = await fetchTikTokDataFromUrl('https://www.tiktok.com/@santea_/video/7499635032324132126');
-  const stats = data?.itemInfo?.itemStruct?.stats;
-  return {
-    views: stats?.playCount || 0,
-    shares: stats?.shareCount || 0, 
-    comments: stats?.commentCount || 0
-  };
+const generateMetrics = async(url: string) => {
+  try {
+    const data = await fetchTikTokDataFromUrl(url);
+    return extractTikTokMetrics(data);
+  } catch (error) {
+    console.error(`Error fetching data for ${url}:`, error);
+    return {
+      views: 0,
+      shares: 0,
+      comments: 0,
+      likes: 0
+    };
+  }
 };
 
-// Update a single campaign's metrics with random data
+// Update a single campaign's metrics with real TikTok data
 const updateCampaignMetrics = async (campaign: Campaign): Promise<Campaign> => {
   if (!campaign.videoUrls.length) {
     return campaign;
   }
 
   try {
-    const metricsPromises = campaign.videoUrls.map(() => generateMetrics());
+    // Fetch metrics for each video URL in the campaign
+    const metricsPromises = campaign.videoUrls.map(url => generateMetrics(url));
     const metricsArray = await Promise.all(metricsPromises);
     
+    // Aggregate metrics across all videos
     const aggregatedMetrics = metricsArray.reduce((total, current) => {
       return {
         views: total.views + current.views,
         shares: total.shares + current.shares,
-        comments: total.comments + current.comments
+        comments: total.comments + current.comments,
+        likes: (total.likes || 0) + (current.likes || 0)
       }
-    }, { views: 0, shares: 0, comments: 0 });
+    }, { views: 0, shares: 0, comments: 0, likes: 0 });
     
-    // Calculate budget used based on views
+    // Calculate budget used based on views and campaign rate
     const budgetUsed = (aggregatedMetrics.views / 1000000) * campaign.ratePerMillion;
 
-    // Update campaign in Firestore
-    const campaignRef = doc(db, 'campaigns', campaign.id);
-    await updateDoc(campaignRef, {
+    // Include additional metrics in the update
+    const campaignUpdate = {
       views: aggregatedMetrics.views,
       shares: aggregatedMetrics.shares,
       comments: aggregatedMetrics.comments,
+      likes: aggregatedMetrics.likes,
       budgetUsed,
       lastUpdated: new Date().toISOString()
-    });
+    };
+
+    // Update campaign in Firestore
+    const campaignRef = doc(db, 'campaigns', campaign.id);
+    await updateDoc(campaignRef, campaignUpdate);
 
     // Return updated campaign
     return {
       ...campaign,
-      views: aggregatedMetrics.views,
-      shares: aggregatedMetrics.shares,
-      comments: aggregatedMetrics.comments,
-      budgetUsed,
-      lastUpdated: new Date().toISOString()
+      ...campaignUpdate
     };
   } catch (error) {
     console.error(`Error updating metrics for campaign ${campaign.id}:`, error);

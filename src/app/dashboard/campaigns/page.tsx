@@ -33,12 +33,6 @@ export default function CampaignsPage() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
 
-  useEffect(() => {
-    if (campaigns.length > 0) {
-      console.log('Campaigns loaded: ',  campaigns)
-    }
-  }, [campaigns])
-
   // Function to format currency values
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -168,20 +162,12 @@ export default function CampaignsPage() {
                   
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <div className="text-sm text-gray-900">{campaign.videoUrls.length} videos</div>
-                    {campaign.videoUrls.length > 0 && (
-                      <button 
-                        onClick={() => handleViewVideos(campaign)}
-                        className="text-xs text-primary hover:underline cursor-pointer"
-                      >
-                        View
-                      </button>
-                    )}
                   </td>
                   
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <button 
-                      className="text-indigo-600 hover:text-indigo-900 mr-3"
-                      onClick={() => handleEditCampaign(campaign)}
+                      className="text-indigo-600 hover:text-indigo-900 mr-3 hover:cursor-pointer"
+                      onClick={() => handleViewVideos(campaign)}
                     >
                       Manage
                     </button>
