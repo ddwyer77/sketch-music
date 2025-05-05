@@ -1,7 +1,24 @@
 import { IncomingMessage } from 'http';
 import * as https from 'https';
 
-export async function fetchTikTokDataFromUrl(url: string): Promise<any> {
+// Define interface for TikTok API response
+interface TikTokPostData {
+  itemInfo?: {
+    itemStruct?: {
+      stats?: {
+        playCount: number;
+        shareCount: number;
+        commentCount: number;
+        [key: string]: any;
+      };
+      [key: string]: any;
+    };
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
+export async function fetchTikTokDataFromUrl(url: string): Promise<TikTokPostData> {
   // Extract video ID from URL
   const idMatch = url.match(/\/video\/(\d+)/);
   if (!idMatch || !idMatch[1]) {
@@ -10,7 +27,7 @@ export async function fetchTikTokDataFromUrl(url: string): Promise<any> {
   
   const videoId = idMatch[1];
   
-  return new Promise((resolve, reject) => {
+  return new Promise<TikTokPostData>((resolve, reject) => {
     const options = {
       method: 'GET',
       hostname: 'tiktok-api23.p.rapidapi.com',

@@ -25,11 +25,11 @@ export type Campaign = {
 
 const generateMetrics = async() => {
   const data = await fetchTikTokDataFromUrl('https://www.tiktok.com/@santea_/video/7499635032324132126');
-  const stats = data.itemInfo.itemStruct.stats;
+  const stats = data?.itemInfo?.itemStruct?.stats;
   return {
-    views: stats.playCount,
-    shares: stats.shareCount, 
-    comments: stats.commentCount
+    views: stats?.playCount || 0,
+    shares: stats?.shareCount || 0, 
+    comments: stats?.commentCount || 0
   };
 };
 
