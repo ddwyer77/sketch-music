@@ -30,7 +30,9 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Settings</h1>
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+        <h1 className="text-3xl font-bold text-gray-800">Settings</h1>
+      </div>
       
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         {/* Tabs Navigation */}

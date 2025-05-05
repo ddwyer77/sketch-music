@@ -175,7 +175,7 @@ export default function AnalyticsPage() {
   }
   
   return (
-    <div className="max-w-6xl mx-auto py-8">
+    <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8 flex-wrap">
         <h1 className="text-3xl font-bold text-gray-800">TikTok Analytics Dashboard</h1>
         

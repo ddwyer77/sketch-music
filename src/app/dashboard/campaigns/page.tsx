@@ -75,9 +75,9 @@ export default function CampaignsPage() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
         <h1 className="text-3xl font-bold text-gray-800">Campaigns</h1>
-        <button className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg">
+        <button className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg w-full md:w-auto">
           Create Campaign
         </button>
       </div>
