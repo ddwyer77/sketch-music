@@ -192,7 +192,7 @@ export default function Dashboard() {
   };
   
   return (
-    <div>
+    <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8 flex-wrap">
         <h1 className="text-2xl font-bold w-full md:w-auto mb-2 md:mb-0">Dashboard</h1>
         <div className="flex gap-3 flex-wrap w-full md:w-auto">
@@ -247,7 +247,7 @@ export default function Dashboard() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-screen-lg">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mx-auto">
           {campaigns.map((campaign) => (
             <CampaignCard 
               key={campaign.id} 
