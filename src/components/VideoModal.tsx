@@ -13,6 +13,8 @@ interface VideoModalProps {
 export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpdated }: VideoModalProps) {
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
   const [embedUrl, setEmbedUrl] = useState<string>('');
+  const [newVideoUrl, setNewVideoUrl] = useState('');
+  const [isAddingVideo, setIsAddingVideo] = useState(false);
   const { updateDocument, loading } = useFirestoreOperations('campaigns');
 
   useEffect(() => {
@@ -75,6 +77,22 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
     }
   };
 
+  const handleAddVideo = async () => {
+    if (!newVideoUrl.trim()) return;
+
+    const updatedUrls = [...videoUrls, { url: newVideoUrl.trim(), status: 'pending' }];
+    
+    try {
+      await updateDocument(campaignId, { videos: updatedUrls });
+      setNewVideoUrl('');
+      setIsAddingVideo(false);
+      onVideosUpdated();
+    } catch (error) {
+      console.error('Error adding video:', error);
+      alert('Failed to add video. Please try again.');
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-6xl h-[80vh] flex flex-col">
@@ -93,7 +111,45 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
         <div className="flex flex-1 min-h-0">
           {/* Video List - Left Column */}
           <div className="w-1/3 border-r border-gray-200 p-6 overflow-y-auto">
-            <h3 className="text-lg font-medium mb-4 text-gray-900">Video List</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Video List</h3>
+              <button
+                onClick={() => setIsAddingVideo(true)}
+                className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+              >
+                Add Video
+              </button>
+            </div>
+
+            {isAddingVideo && (
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <input
+                  type="text"
+                  value={newVideoUrl}
+                  onChange={(e) => setNewVideoUrl(e.target.value)}
+                  placeholder="Enter TikTok video URL"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-500"
+                />
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={handleAddVideo}
+                    disabled={!newVideoUrl.trim() || loading}
+                    className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsAddingVideo(false);
+                      setNewVideoUrl('');
+                    }}
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
             
             {videoUrls.length === 0 ? (
               <p className="text-gray-500">No videos in this campaign.</p>
