@@ -64,7 +64,7 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-xl font-bold">Campaign Videos</h2>
+          <h2 className="text-xl font-bold text-gray-900">Campaign Videos</h2>
           <button 
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
@@ -78,7 +78,7 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
         <div className="flex flex-col md:flex-row h-[70vh]">
           {/* Video List - Left Column */}
           <div className="w-full md:w-1/3 border-r border-gray-200 overflow-y-auto p-4">
-            <h3 className="text-lg font-medium mb-4">Video List</h3>
+            <h3 className="text-lg font-medium mb-4 text-gray-900">Video List</h3>
             
             {videoUrls.length === 0 ? (
               <p className="text-gray-500">No videos in this campaign.</p>
@@ -97,8 +97,8 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
                       className="flex-1 text-left truncate"
                       onClick={() => setSelectedVideoIndex(index)}
                     >
-                      <span className="font-medium">Video {index + 1}</span>
-                      <div className="text-xs truncate">
+                      <span className="font-medium text-gray-900">Video {index + 1}</span>
+                      <div className="text-xs truncate text-gray-900">
                         {url}
                       </div>
                     </button>
@@ -124,7 +124,7 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
           
           {/* Video Preview - Right Column */}
           <div className="w-full md:w-2/3 p-4 flex flex-col">
-            <h3 className="text-lg font-medium mb-4">Video Preview</h3>
+            <h3 className="text-lg font-medium mb-4 text-gray-900">Video Preview</h3>
             
             {videoUrls.length > 0 ? (
               <div className="flex-1 bg-black flex items-center justify-center rounded-lg overflow-hidden">
