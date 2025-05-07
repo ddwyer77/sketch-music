@@ -5,7 +5,7 @@ import { useFirestoreOperations } from '../hooks';
 
 interface VideoModalProps {
   campaignId: string;
-  videoUrls: string[];
+  videoUrls: { url: string; status: 'pending' | 'approved' | 'denied' }[];
   onClose: () => void;
   onVideosUpdated: () => void;
 }
@@ -17,7 +17,7 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
 
   useEffect(() => {
     if (videoUrls.length > 0) {
-      const url = videoUrls[selectedVideoIndex];
+      const url = videoUrls[selectedVideoIndex].url;
       // Convert TikTok URL to embed URL
       try {
         // Extract video ID from TikTok URL format
@@ -42,7 +42,7 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
       const updatedUrls = videoUrls.filter((_, index) => index !== indexToDelete);
       
       try {
-        await updateDocument(campaignId, { videoUrls: updatedUrls });
+        await updateDocument(campaignId, { videos: updatedUrls });
         // If we deleted the currently selected video, select the first one
         if (indexToDelete === selectedVideoIndex) {
           setSelectedVideoIndex(0);
@@ -60,10 +60,25 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
     }
   };
 
+  const handleStatusChange = async (index: number, newStatus: 'pending' | 'approved' | 'denied') => {
+    // Update local state immediately
+    const updatedVideos = [...videoUrls];
+    updatedVideos[index] = { ...updatedVideos[index], status: newStatus };
+    videoUrls[index] = { ...videoUrls[index], status: newStatus };
+    
+    try {
+      await updateDocument(campaignId, { videos: updatedVideos });
+      onVideosUpdated();
+    } catch (error) {
+      console.error('Error updating video status:', error);
+      alert('Failed to update video status. Please try again.');
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+      <div className="bg-white rounded-lg w-full max-w-6xl h-[80vh] flex flex-col">
+        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-xl font-bold text-gray-900">Campaign Videos</h2>
           <button 
             onClick={onClose}
@@ -75,39 +90,57 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
           </button>
         </div>
         
-        <div className="flex flex-col md:flex-row h-[70vh]">
+        <div className="flex flex-1 min-h-0">
           {/* Video List - Left Column */}
-          <div className="w-full md:w-1/3 border-r border-gray-200 overflow-y-auto p-4">
+          <div className="w-1/3 border-r border-gray-200 p-6 overflow-y-auto">
             <h3 className="text-lg font-medium mb-4 text-gray-900">Video List</h3>
             
             {videoUrls.length === 0 ? (
               <p className="text-gray-500">No videos in this campaign.</p>
             ) : (
               <ul className="space-y-3">
-                {videoUrls.map((url, index) => (
+                {videoUrls.map((video, index) => (
                   <li 
                     key={index} 
                     className={`flex justify-between items-center p-3 rounded-lg ${
                       selectedVideoIndex === index 
-                        ? 'bg-primary text-white' 
+                        ? 'bg-primary/10 outline-primary outline-2' 
                         : 'bg-gray-50 hover:bg-gray-100'
                     }`}
                   >
-                    <button
-                      className="flex-1 text-left truncate"
-                      onClick={() => setSelectedVideoIndex(index)}
-                    >
-                      <span className="font-medium text-gray-900">Video {index + 1}</span>
-                      <div className="text-xs truncate text-gray-900">
-                        {url}
-                      </div>
-                    </button>
+                    <div className="flex-1 min-w-0">
+                      <button
+                        className="text-left w-full"
+                        onClick={() => setSelectedVideoIndex(index)}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium text-gray-900 truncate">Video {index + 1}</span>
+                          <select
+                            value={video.status}
+                            onChange={(e) => handleStatusChange(index, e.target.value as 'pending' | 'approved' | 'denied')}
+                            className={`shrink-0 px-2 py-1 text-sm rounded-md ${
+                              video.status === 'approved' ? 'bg-green-50 text-green-700 border-green-200' :
+                              video.status === 'denied' ? 'bg-red-50 text-red-700 border-red-200' :
+                              'bg-yellow-50 text-yellow-700 border-yellow-200'
+                            }`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <option value="pending" className="bg-yellow-50 text-gray-900">Pending</option>
+                            <option value="approved" className="bg-green-50 text-gray-900">Approved</option>
+                            <option value="denied" className="bg-red-50 text-gray-900">Denied</option>
+                          </select>
+                        </div>
+                        <div className="text-xs text-gray-900 mt-1 truncate">
+                          {video.url}
+                        </div>
+                      </button>
+                    </div>
                     
                     <button
                       onClick={() => handleDeleteVideo(index)}
-                      className={`ml-2 p-1 rounded-full ${
+                      className={`ml-2 shrink-0 p-1 rounded-full ${
                         selectedVideoIndex === index 
-                          ? 'bg-white/20 hover:bg-white/30 text-white' 
+                          ? 'bg-gray-200 hover:bg-gray-300 text-red-500' 
                           : 'bg-gray-200 hover:bg-gray-300 text-red-500'
                       }`}
                       title="Delete video"
@@ -123,11 +156,11 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
           </div>
           
           {/* Video Preview - Right Column */}
-          <div className="w-full md:w-2/3 p-4 flex flex-col">
+          <div className="flex-1 p-6 flex flex-col">
             <h3 className="text-lg font-medium mb-4 text-gray-900">Video Preview</h3>
             
             {videoUrls.length > 0 ? (
-              <div className="flex-1 bg-black flex items-center justify-center rounded-lg overflow-hidden">
+              <div className="flex-1 bg-black rounded-lg overflow-hidden">
                 {embedUrl ? (
                   <iframe
                     src={embedUrl}
@@ -137,11 +170,11 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
                     allowFullScreen
                   ></iframe>
                 ) : (
-                  <div className="text-white">Loading video...</div>
+                  <div className="text-white flex items-center justify-center h-full">Loading video...</div>
                 )}
               </div>
             ) : (
-              <div className="flex-1 bg-gray-100 flex items-center justify-center rounded-lg">
+              <div className="flex-1 bg-gray-100 rounded-lg flex items-center justify-center">
                 <p className="text-gray-500">No video selected</p>
               </div>
             )}
@@ -149,14 +182,14 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
             {videoUrls.length > 0 && (
               <div className="mt-4">
                 <p className="text-sm text-gray-500 break-all">
-                  {videoUrls[selectedVideoIndex]}
+                  {videoUrls[selectedVideoIndex].url}
                 </p>
               </div>
             )}
           </div>
         </div>
         
-        <div className="p-4 border-t border-gray-200 flex justify-end">
+        <div className="p-6 border-t border-gray-200 flex justify-end">
           <button
             onClick={onClose}
             className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"

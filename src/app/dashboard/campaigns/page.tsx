@@ -180,10 +180,10 @@ export default function CampaignsPage() {
       </div>
 
       {/* Video Modal */}
-      {showVideoModal && selectedCampaign && (
+      {selectedCampaign && (
         <VideoModal
           campaignId={selectedCampaign.id}
-          videoUrls={Array.isArray(selectedCampaign.videos) ? selectedCampaign.videos.map(v => v.url) : []}
+          videoUrls={selectedCampaign.videos}
           onClose={handleCloseVideoModal}
           onVideosUpdated={refresh}
         />

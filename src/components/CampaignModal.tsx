@@ -393,11 +393,15 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
                       updatedVideos[index] = { ...video, status: e.target.value as 'approved' | 'denied' | 'pending' };
                       setFormData({ ...formData, videos: updatedVideos });
                     }}
-                    className="px-3 py-2 border border-gray-300 rounded-md text-gray-900"
+                    className={`px-3 py-2 border rounded-md text-gray-900 ${
+                      video.status === 'approved' ? 'bg-green-50 border-green-200' :
+                      video.status === 'denied' ? 'bg-red-50 border-red-200' :
+                      'bg-yellow-50 border-yellow-200'
+                    }`}
                   >
-                    <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                    <option value="denied">Denied</option>
+                    <option value="pending" className="bg-yellow-50 text-gray-900">Pending</option>
+                    <option value="approved" className="bg-green-50 text-gray-900">Approved</option>
+                    <option value="denied" className="bg-red-50 text-gray-900">Denied</option>
                   </select>
                   <button
                     type="button"
