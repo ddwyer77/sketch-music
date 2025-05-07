@@ -11,11 +11,29 @@ export default function AnalyticsPage() {
   const [selectedTimeRange, setSelectedTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
   const [isLoading, setIsLoading] = useState(true);
   
+  // Filter campaigns based on selected time range
+  const filteredCampaigns = useMemo(() => {
+    if (!campaigns.length) return [];
+    
+    const now = new Date();
+    const timeRanges = {
+      '7d': 7 * 24 * 60 * 60 * 1000,
+      '30d': 30 * 24 * 60 * 60 * 1000,
+      '90d': 90 * 24 * 60 * 60 * 1000,
+    };
+    
+    return campaigns.filter(campaign => {
+      const campaignDate = new Date(campaign.lastUpdated);
+      const timeDiff = now.getTime() - campaignDate.getTime();
+      return timeDiff <= timeRanges[selectedTimeRange];
+    });
+  }, [campaigns, selectedTimeRange]);
+  
   // Total aggregate metrics across all campaigns
   const aggregateMetrics = useMemo(() => {
-    if (!campaigns.length) return null;
+    if (!filteredCampaigns.length) return null;
     
-    return campaigns.reduce((acc, campaign) => {
+    return filteredCampaigns.reduce((acc, campaign) => {
       return {
         totalViews: acc.totalViews + (campaign.views || 0),
         totalLikes: acc.totalLikes + (campaign.likes || 0),
@@ -34,7 +52,7 @@ export default function AnalyticsPage() {
       totalBudgetUsed: 0,
       totalVideos: 0,
     });
-  }, [campaigns]);
+  }, [filteredCampaigns]);
   
   // Calculate engagement rate: (likes + comments + shares) / views * 100
   const engagementRate = useMemo(() => {
@@ -46,22 +64,22 @@ export default function AnalyticsPage() {
   
   // Sort campaigns by views
   const topCampaigns = useMemo(() => {
-    if (!campaigns.length) return [];
+    if (!filteredCampaigns.length) return [];
     
-    return [...campaigns]
+    return [...filteredCampaigns]
       .sort((a, b) => (b.views || 0) - (a.views || 0))
       .slice(0, 5);
-  }, [campaigns]);
+  }, [filteredCampaigns]);
   
   useEffect(() => {
     // Simulate loading for better UX
-    if (campaigns.length > 0) {
+    if (filteredCampaigns.length > 0) {
       const timer = setTimeout(() => {
         setIsLoading(false);
       }, 800);
       return () => clearTimeout(timer);
     }
-  }, [campaigns]);
+  }, [filteredCampaigns]);
   
   // Format number with commas
   const formatNumber = (num: number): string => {
@@ -156,7 +174,7 @@ export default function AnalyticsPage() {
     );
   }
   
-  if (!campaigns.length) {
+  if (!filteredCampaigns.length) {
     return (
       <div className="max-w-6xl mx-auto py-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">Analytics Dashboard</h1>
@@ -443,12 +461,12 @@ export default function AnalyticsPage() {
               </div>
               
               <div className="w-full flex space-x-1">
-                {campaigns.map((campaign, idx) => {
+                {filteredCampaigns.map((campaign, idx) => {
                   const costPer1k = campaign.views
                     ? ((campaign.budgetUsed / campaign.views) * 1000)
                     : 0;
                   
-                  const barWidth = `${Math.max(5, 100 / campaigns.length)}%`;
+                  const barWidth = `${Math.max(5, 100 / filteredCampaigns.length)}%`;
                   
                   return (
                     <div key={idx} className="flex flex-col items-center" style={{ width: barWidth }}>
