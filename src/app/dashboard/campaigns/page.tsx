@@ -63,6 +63,7 @@ export default function CampaignsPage() {
 
   const handleCloseVideoModal = () => {
     setShowVideoModal(false);
+    setSelectedCampaign(null);
   };
 
   if (loading) {
