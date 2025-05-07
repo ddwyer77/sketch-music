@@ -34,7 +34,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
       setFormData({
         name: initialData.name,
         budget: initialData.budget,
-        budgetUsed: initialData.budgetUsed,
+        budgetUsed: Math.round(initialData.budgetUsed / 100) * 100,
         ratePerMillion: initialData.ratePerMillion,
         imageUrl: initialData.imageUrl,
         videos: initialData.videos.length ? initialData.videos : [{ url: '', status: 'pending' }],
@@ -51,9 +51,10 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     
     // Convert numeric fields to numbers
     if (type === 'number') {
+      const numValue = parseFloat(value) || 0;
       setFormData({
         ...formData,
-        [name]: parseFloat(value) || 0,
+        [name]: name === 'budgetUsed' ? Math.round(numValue / 100) * 100 : numValue,
       });
     } else {
       setFormData({

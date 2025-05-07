@@ -257,7 +257,20 @@ export default function Dashboard() {
               campaign={campaign} 
               onEdit={() => openModal(campaign)}
               onDelete={() => handleDeleteCampaign(campaign.id)}
-            />
+            >
+              <div className="mt-auto pt-4">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-sm font-medium text-gray-500">Progress</span>
+                  <span className="text-sm font-medium text-primary">{Math.round((campaign.budgetUsed / campaign.budget) * 100)}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div 
+                    className="bg-primary h-2.5 rounded-full" 
+                    style={{ width: `${Math.min(100, (campaign.budgetUsed / campaign.budget) * 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+            </CampaignCard>
           ))}
         </div>
       )}

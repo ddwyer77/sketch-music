@@ -126,18 +126,18 @@ export default function CampaignCard({ campaign, onEdit, onDelete }: CampaignCar
             </div>
           </div>
           
-          {/* Progress Bar - based on views toward 1M */}
+          {/* Progress Bar - based on budget utilization */}
           <div className="mt-auto pt-4">
             <div className="flex justify-between items-center mb-1">
-              <span className="text-sm font-medium text-gray-500">Progress to 1M Views</span>
+              <span className="text-sm font-medium text-gray-500">Progress</span>
               <span className="text-sm font-medium text-primary">
-                {Math.min(Math.round((views / 1000000) * 100), 100)}%
+                {Math.min(Math.round((campaign.budgetUsed / campaign.budget) * 100), 100)}%
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5">
               <div 
                 className="bg-primary h-2.5 rounded-full" 
-                style={{ width: `${Math.min(Math.round((views / 1000000) * 100), 100)}%` }}
+                style={{ width: `${Math.min(Math.round((campaign.budgetUsed / campaign.budget) * 100), 100)}%` }}
               ></div>
             </div>
           </div>
