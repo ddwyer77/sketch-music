@@ -17,7 +17,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     budgetUsed: 0,
     ratePerMillion: 0,
     imageUrl: '',
-    videoUrls: [''],
+    videos: [{ url: '', status: 'pending' }],
     views: 0,
     shares: 0,
     comments: 0,
@@ -37,7 +37,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         budgetUsed: initialData.budgetUsed,
         ratePerMillion: initialData.ratePerMillion,
         imageUrl: initialData.imageUrl,
-        videoUrls: initialData.videoUrls.length ? initialData.videoUrls : [''],
+        videos: initialData.videos.length ? initialData.videos : [{ url: '', status: 'pending' }],
         views: initialData.views,
         shares: initialData.shares,
         comments: initialData.comments,
@@ -72,27 +72,27 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
   };
   
   const handleVideoUrlChange = (index: number, value: string) => {
-    const updatedUrls = [...formData.videoUrls];
-    updatedUrls[index] = value;
+    const updatedVideos = [...formData.videos];
+    updatedVideos[index] = { ...updatedVideos[index], url: value };
     
     setFormData({
       ...formData,
-      videoUrls: updatedUrls,
+      videos: updatedVideos,
     });
   };
   
   const addVideoUrl = () => {
     setFormData({
       ...formData,
-      videoUrls: [...formData.videoUrls, ''],
+      videos: [...formData.videos, { url: '', status: 'pending' }],
     });
   };
   
   const removeVideoUrl = (index: number) => {
-    const updatedUrls = formData.videoUrls.filter((_, i) => i !== index);
+    const updatedVideos = formData.videos.filter((_, i) => i !== index);
     setFormData({
       ...formData,
-      videoUrls: updatedUrls.length ? updatedUrls : [''],
+      videos: updatedVideos.length ? updatedVideos : [{ url: '', status: 'pending' }],
     });
   };
   
@@ -112,7 +112,10 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     if (urls.length > 0) {
       setFormData({
         ...formData,
-        videoUrls: [...formData.videoUrls.filter(url => url.trim() !== ''), ...urls],
+        videos: [
+          ...formData.videos.filter(video => video.url.trim() !== ''),
+          ...urls.map(url => ({ url, status: 'pending' as const }))
+        ],
       });
       setBulkImportText('');
       setShowBulkImport(false);
@@ -136,7 +139,10 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         if (urls.length > 0) {
           setFormData({
             ...formData,
-            videoUrls: [...formData.videoUrls.filter(url => url.trim() !== ''), ...urls],
+            videos: [
+              ...formData.videos.filter(video => video.url.trim() !== ''),
+              ...urls.map(url => ({ url, status: 'pending' as const }))
+            ],
           });
         }
       }
@@ -162,8 +168,8 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     }
     
     // Only require the first video URL if any are entered
-    if (formData.videoUrls[0] && !isValidUrl(formData.videoUrls[0])) {
-      newErrors.videoUrls = 'Please enter a valid URL';
+    if (formData.videos[0]?.url && !isValidUrl(formData.videos[0].url)) {
+      newErrors.videos = 'Please enter a valid URL';
     }
     
     setErrors(newErrors);
@@ -191,7 +197,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
       createdAt: initialData?.createdAt || new Date().toISOString(),
       ...formData,
       // Filter out empty video URLs
-      videoUrls: formData.videoUrls.filter(url => url.trim() !== ''),
+      videos: formData.videos.filter(video => video.url.trim() !== ''),
     };
     
     onSave(campaign);
@@ -201,7 +207,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold">
+          <h2 className="text-xl font-bold text-gray-900">
             {initialData ? 'Edit Campaign' : 'Create New Campaign'}
           </h2>
         </div>
@@ -209,7 +215,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Campaign Name */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-900 mb-1">
               Campaign Name*
             </label>
             <input
@@ -218,7 +224,8 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
+              className={`w-full px-3 py-2 border rounded-md text-gray-900 placeholder-gray-500 ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
+              placeholder="Enter campaign name"
             />
             {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
           </div>
@@ -226,7 +233,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Budget */}
             <div>
-              <label htmlFor="budget" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="budget" className="block text-sm font-medium text-gray-900 mb-1">
                 Budget ($)*
               </label>
               <input
@@ -237,14 +244,15 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
                 step="0.01"
                 value={formData.budget}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md ${errors.budget ? 'border-red-500' : 'border-gray-300'}`}
+                className={`w-full px-3 py-2 border rounded-md text-gray-900 placeholder-gray-500 ${errors.budget ? 'border-red-500' : 'border-gray-300'}`}
+                placeholder="0.00"
               />
               {errors.budget && <p className="mt-1 text-sm text-red-500">{errors.budget}</p>}
             </div>
             
             {/* Budget Used */}
             <div>
-              <label htmlFor="budgetUsed" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="budgetUsed" className="block text-sm font-medium text-gray-900 mb-1">
                 Budget Used ($)
               </label>
               <input
@@ -255,7 +263,8 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
                 step="0.01"
                 value={formData.budgetUsed}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
+                placeholder="0.00"
               />
             </div>
           </div>
@@ -263,7 +272,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Rate Per Million Views */}
             <div>
-              <label htmlFor="ratePerMillion" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="ratePerMillion" className="block text-sm font-medium text-gray-900 mb-1">
                 Rate Per 1M Views ($)*
               </label>
               <input
@@ -274,14 +283,15 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
                 step="0.01"
                 value={formData.ratePerMillion}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md ${errors.ratePerMillion ? 'border-red-500' : 'border-gray-300'}`}
+                className={`w-full px-3 py-2 border rounded-md text-gray-900 placeholder-gray-500 ${errors.ratePerMillion ? 'border-red-500' : 'border-gray-300'}`}
+                placeholder="0.00"
               />
               {errors.ratePerMillion && <p className="mt-1 text-sm text-red-500">{errors.ratePerMillion}</p>}
             </div>
             
             {/* Image URL */}
             <div>
-              <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-900 mb-1">
                 Campaign Image URL
               </label>
               <input
@@ -290,7 +300,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
                 name="imageUrl"
                 value={formData.imageUrl}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
                 placeholder="https://example.com/image.jpg"
               />
             </div>
@@ -299,7 +309,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
           {/* Video URLs */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-900">
                 Video URLs
               </label>
               <div className="flex space-x-2">
@@ -324,13 +334,13 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
             {showBulkImport && (
               <div className="mb-4 p-3 border border-gray-200 rounded-md">
                 <div className="mb-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-900 mb-1">
                     Paste comma-separated URLs
                   </label>
                   <textarea
                     value={bulkImportText}
                     onChange={handleBulkImportChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
                     rows={3}
                     placeholder="https://example.com/video1, https://example.com/video2, ..."
                   />
@@ -338,7 +348,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
                 
                 <div className="flex items-center justify-between">
                   <div>
-                    <label htmlFor="csv-upload" className="inline-block px-4 py-2 bg-gray-200 text-gray-700 rounded-md cursor-pointer hover:bg-gray-300 text-sm font-medium">
+                    <label htmlFor="csv-upload" className="inline-block px-4 py-2 bg-gray-200 text-gray-900 rounded-md cursor-pointer hover:bg-gray-300 text-sm font-medium">
                       Import from CSV
                     </label>
                     <input
@@ -364,22 +374,35 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
             
             {/* Video URL List */}
             <div className="space-y-2 mb-2">
-              {formData.videoUrls.map((url, index) => (
+              {formData.videos.map((video, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <input
                     type="text"
-                    value={url}
+                    value={video.url}
                     onChange={(e) => handleVideoUrlChange(index, e.target.value)}
-                    className={`flex-1 px-3 py-2 border rounded-md ${
-                      index === 0 && errors.videoUrls ? 'border-red-500' : 'border-gray-300'
+                    className={`flex-1 px-3 py-2 border rounded-md text-gray-900 placeholder-gray-500 ${
+                      index === 0 && errors.videos ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="https://example.com/video"
                   />
+                  <select
+                    value={video.status}
+                    onChange={(e) => {
+                      const updatedVideos = [...formData.videos];
+                      updatedVideos[index] = { ...video, status: e.target.value as 'approved' | 'denied' | 'pending' };
+                      setFormData({ ...formData, videos: updatedVideos });
+                    }}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-gray-900"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="denied">Denied</option>
+                  </select>
                   <button
                     type="button"
                     onClick={() => removeVideoUrl(index)}
                     className="text-gray-500 hover:text-red-500"
-                    disabled={formData.videoUrls.length === 1 && index === 0}
+                    disabled={formData.videos.length === 1 && index === 0}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-5 h-5">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -388,7 +411,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
                 </div>
               ))}
             </div>
-            {errors.videoUrls && <p className="mt-1 text-sm text-red-500">{errors.videoUrls}</p>}
+            {errors.videos && <p className="mt-1 text-sm text-red-500">{errors.videos}</p>}
           </div>
           
           <div className="flex justify-end space-x-4 border-t border-gray-200 pt-6">

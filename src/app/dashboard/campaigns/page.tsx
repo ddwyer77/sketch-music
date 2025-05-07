@@ -14,7 +14,7 @@ interface Campaign {
   budgetUsed: number;
   ratePerMillion: number;
   imageUrl: string;
-  videoUrls: string[];
+  videos: { url: string; status: 'pending' | 'approved' | 'denied' }[];
   createdAt: string;
   views: number;
   shares: number;
@@ -161,7 +161,7 @@ export default function CampaignsPage() {
                   </td>
                   
                   <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <div className="text-sm text-gray-900">{campaign.videoUrls.length} videos</div>
+                    <div className="text-sm text-gray-900">{campaign.videos.length} videos</div>
                   </td>
                   
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -183,7 +183,7 @@ export default function CampaignsPage() {
       {showVideoModal && selectedCampaign && (
         <VideoModal
           campaignId={selectedCampaign.id}
-          videoUrls={selectedCampaign.videoUrls}
+          videoUrls={Array.isArray(selectedCampaign.videos) ? selectedCampaign.videos.map(v => v.url) : []}
           onClose={handleCloseVideoModal}
           onVideosUpdated={refresh}
         />

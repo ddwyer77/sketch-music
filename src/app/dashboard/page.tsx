@@ -15,7 +15,10 @@ export type Campaign = {
   budgetUsed: number;
   ratePerMillion: number;
   imageUrl: string;
-  videoUrls: string[];
+  videos: Array<{
+    url: string;
+    status: 'approved' | 'denied' | 'pending';
+  }>;
   createdAt: string;
   views: number;
   shares: number;
@@ -41,13 +44,13 @@ const generateMetrics = async(url: string) => {
 
 // Update a single campaign's metrics with real TikTok data
 const updateCampaignMetrics = async (campaign: Campaign): Promise<Campaign> => {
-  if (!campaign.videoUrls.length) {
+  if (!campaign.videos.length) {
     return campaign;
   }
 
   try {
     // Fetch metrics for each video URL in the campaign
-    const metricsPromises = campaign.videoUrls.map(url => generateMetrics(url));
+    const metricsPromises = campaign.videos.map(video => generateMetrics(video.url));
     const metricsArray = await Promise.all(metricsPromises);
     
     // Aggregate metrics across all videos
@@ -95,7 +98,7 @@ export default function Dashboard() {
   const [updateMessage, setUpdateMessage] = useState<string | null>(null);
   const [initialUpdateDone, setInitialUpdateDone] = useState(false);
   
-  const { documents: campaigns, loading, error, refresh } = useCollection<Campaign>('campaigns');
+  const { documents: campaigns = [], loading, error, refresh } = useCollection<Campaign>('campaigns');
   const { 
     addDocument, 
     updateDocument, 
@@ -105,7 +108,7 @@ export default function Dashboard() {
   
   // Function to update all campaign metrics
   const handleUpdateMetrics = useCallback(async () => {
-    if (isUpdating || campaigns.length === 0) return;
+    if (isUpdating || !campaigns?.length) return;
     
     try {
       setIsUpdating(true);
@@ -140,11 +143,11 @@ export default function Dashboard() {
   
   // Update metrics only once when the dashboard first loads
   useEffect(() => {
-    if (campaigns.length > 0 && !loading && !initialUpdateDone) {
+    if (campaigns?.length > 0 && !loading && !initialUpdateDone) {
       handleUpdateMetrics();
       setInitialUpdateDone(true);
     }
-  }, [campaigns.length, loading, initialUpdateDone, handleUpdateMetrics]);
+  }, [campaigns?.length, loading, initialUpdateDone, handleUpdateMetrics]);
   
   const openModal = (campaign?: Campaign) => {
     if (campaign) {
@@ -194,7 +197,7 @@ export default function Dashboard() {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8 flex-wrap">
-        <h1 className="text-2xl font-bold w-full md:w-auto mb-2 md:mb-0">Dashboard</h1>
+        <h1 className="text-3xl font-bold w-full md:w-auto mb-2 md:mb-0 text-gray-900">Dashboard</h1>
         <div className="flex gap-3 flex-wrap w-full md:w-auto">
           {updateMessage && (
             <div className={`py-2 px-3 rounded-md text-sm font-medium ${

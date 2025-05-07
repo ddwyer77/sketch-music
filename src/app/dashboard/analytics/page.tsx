@@ -23,7 +23,7 @@ export default function AnalyticsPage() {
         totalComments: acc.totalComments + (campaign.comments || 0),
         totalBudget: acc.totalBudget + (campaign.budget || 0),
         totalBudgetUsed: acc.totalBudgetUsed + (campaign.budgetUsed || 0),
-        totalVideos: acc.totalVideos + (campaign.videoUrls?.length || 0),
+        totalVideos: acc.totalVideos + (campaign.videos?.length || 0),
       };
     }, {
       totalViews: 0,
@@ -182,19 +182,19 @@ export default function AnalyticsPage() {
         {/* Time range selector */}
         <div className="flex space-x-2 p-1 bg-gray-100 rounded-lg mt-4 sm:mt-0">
           <button 
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${selectedTimeRange === '7d' ? 'bg-white shadow-sm' : 'text-gray-900 hover:text-gray-700'}`}
+            className={`hover:cursor-pointer hover:bg-white hover:text-primary px-4 py-2 text-sm font-medium rounded-md transition-colors ${selectedTimeRange === '7d' ? 'bg-white shadow-sm text-primary' : 'text-gray-900 hover:text-gray-700'}`}
             onClick={() => setSelectedTimeRange('7d')}
           >
             7 Days
           </button>
           <button 
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${selectedTimeRange === '30d' ? 'bg-white shadow-sm' : 'text-gray-900 hover:text-gray-700'}`}
+            className={`hover:cursor-pointer hover:bg-white hover:text-primary px-4 py-2 text-sm font-medium rounded-md transition-colors ${selectedTimeRange === '30d' ? 'bg-white shadow-sm text-primary' : 'text-gray-900 hover:text-gray-700'}`}
             onClick={() => setSelectedTimeRange('30d')}
           >
             30 Days
           </button>
           <button 
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${selectedTimeRange === '90d' ? 'bg-white shadow-sm' : 'text-gray-900 hover:text-gray-700'}`}
+            className={`hover:cursor-pointer hover:bg-white hover:text-primary px-4 py-2 text-sm font-medium rounded-md transition-colors ${selectedTimeRange === '90d' ? 'bg-white shadow-sm text-primary' : 'text-gray-900 hover:text-gray-700'}`}
             onClick={() => setSelectedTimeRange('90d')}
           >
             90 Days
@@ -529,7 +529,7 @@ export default function AnalyticsPage() {
                         </div>
                         <div>
                           <div className="text-sm font-medium text-gray-900">{campaign.name}</div>
-                          <div className="text-xs text-gray-900">{campaign.videoUrls.length} videos</div>
+                          <div className="text-xs text-gray-900">{campaign.videos.length} videos</div>
                         </div>
                       </div>
                     </td>
@@ -554,7 +554,7 @@ export default function AnalyticsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium">
+                      <div className="text-sm font-medium text-gray-900">
                         {formatNumber(Math.round(roi))} views/$
                       </div>
                       <div className={`text-xs ${roi > 1000 ? 'text-green-500' : roi > 500 ? 'text-yellow-500' : 'text-red-500'}`}>
