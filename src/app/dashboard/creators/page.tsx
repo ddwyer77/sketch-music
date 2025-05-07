@@ -90,17 +90,17 @@ export default function CreatorsPage() {
                 </span>
               </div>
               
-              <h3 className="text-xl font-bold mt-4">{creator.name}</h3>
-              <p className="text-gray-500 text-sm">{creator.genre} • {creator.location}</p>
+              <h3 className="text-xl font-bold mt-4 text-gray-900">{creator.name}</h3>
+              <p className="text-gray-900 text-sm">{creator.genre} • {creator.location}</p>
               
               <div className="mt-4 grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-500">Followers</p>
-                  <p className="text-lg font-semibold">{creator.followers}</p>
+                  <p className="text-sm text-gray-900">Followers</p>
+                  <p className="text-lg font-semibold text-gray-900">{creator.followers}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Monthly Listeners</p>
-                  <p className="text-lg font-semibold">{creator.monthlyListeners}</p>
+                  <p className="text-sm text-gray-900">Monthly Listeners</p>
+                  <p className="text-lg font-semibold text-gray-900">{creator.monthlyListeners}</p>
                 </div>
               </div>
               
@@ -120,11 +120,11 @@ export default function CreatorsPage() {
       {/* Pending Applications */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden mt-8">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium">Pending Applications</h2>
+          <h2 className="text-lg font-medium text-gray-900">Pending Applications</h2>
         </div>
         <div className="p-6">
           <div className="flex items-center justify-center py-8">
-            <p className="text-gray-500">No pending applications at this time</p>
+            <p className="text-gray-900">No pending applications at this time</p>
           </div>
         </div>
       </div>

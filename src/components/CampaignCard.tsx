@@ -86,43 +86,43 @@ export default function CampaignCard({ campaign, onEdit, onDelete }: CampaignCar
           <div className="flex-1 grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-gray-500">Budget</p>
-              <p className="font-medium">${campaign.budget.toFixed(2)}</p>
+              <p className="font-medium text-gray-900">${campaign.budget.toFixed(2)}</p>
             </div>
             <div>
               <p className="text-gray-500">Used</p>
-              <p className="font-medium">${viewsBasedBudget.toFixed(2)}</p>
+              <p className="font-medium text-gray-900">${viewsBasedBudget.toFixed(2)}</p>
             </div>
             <div>
               <p className="text-gray-500">Rate per 1M</p>
-              <p className="font-medium">${campaign.ratePerMillion.toFixed(2)}</p>
+              <p className="font-medium text-gray-900">${campaign.ratePerMillion.toFixed(2)}</p>
             </div>
             <div>
               <p className="text-gray-500">Views</p>
-              <p className="font-medium">{formatNumber(views)}</p>
+              <p className="font-medium text-gray-900">{formatNumber(views)}</p>
             </div>
             <div>
               <p className="text-gray-500">Likes</p>
-              <p className="font-medium">{formatNumber(likes)}</p>
+              <p className="font-medium text-gray-900">{formatNumber(likes)}</p>
             </div>
             <div>
               <p className="text-gray-500">Videos</p>
-              <p className="font-medium">{campaign.videoUrls.length}</p>
+              <p className="font-medium text-gray-900">{campaign.videoUrls.length}</p>
             </div>
             <div>
               <p className="text-gray-500">Shares</p>
-              <p className="font-medium">{formatNumber(shares)}</p>
+              <p className="font-medium text-gray-900">{formatNumber(shares)}</p>
             </div>
             <div>
               <p className="text-gray-500">Comments</p>
-              <p className="font-medium">{formatNumber(comments)}</p>
+              <p className="font-medium text-gray-900">{formatNumber(comments)}</p>
             </div>
             <div>
               <p className="text-gray-500">Created</p>
-              <p className="font-medium">{formatDate(campaign.createdAt)}</p>
+              <p className="font-medium text-gray-900">{formatDate(campaign.createdAt)}</p>
             </div>
             <div>
               <p className="text-gray-500">Last Updated</p>
-              <p className="font-medium">{lastUpdated}</p>
+              <p className="font-medium text-gray-900">{lastUpdated}</p>
             </div>
           </div>
           

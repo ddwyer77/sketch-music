@@ -87,22 +87,22 @@ export default function CampaignsPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Campaign Name
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Views
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Engagement
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Budget
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Videos
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -122,12 +122,12 @@ export default function CampaignsPage() {
                         />
                       ) : (
                         <div className="h-10 w-10 rounded-full mr-3 bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-500">{campaign.name.charAt(0)}</span>
+                          <span className="text-gray-900">{campaign.name.charAt(0)}</span>
                         </div>
                       )}
                       <div>
                         <div className="font-medium text-gray-900">{campaign.name}</div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-900">
                           Created: {new Date(campaign.createdAt).toLocaleDateString()}
                         </div>
                       </div>
@@ -136,20 +136,20 @@ export default function CampaignsPage() {
                   
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{formatNumber(campaign.views)}</div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-900">
                       Rate: {formatCurrency(campaign.ratePerMillion)} per 1M
                     </div>
                   </td>
                   
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm">
+                    <div className="text-sm text-gray-900">
                       <div>{formatNumber(campaign.comments)} comments</div>
                       <div>{formatNumber(campaign.shares)} shares</div>
                     </div>
                   </td>
                   
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm">
+                    <div className="text-sm text-gray-900">
                       <div>{formatCurrency(campaign.budgetUsed)} of {formatCurrency(campaign.budget)}</div>
                       <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                         <div 

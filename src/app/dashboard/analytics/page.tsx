@@ -164,8 +164,8 @@ export default function AnalyticsPage() {
           <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
-          <h2 className="text-xl font-medium mb-2">No Campaign Data Available</h2>
-          <p className="text-gray-500 mb-6">Create your first campaign to start seeing analytics</p>
+          <h2 className="text-xl font-medium mb-2 text-gray-900">No Campaign Data Available</h2>
+          <p className="text-gray-900 mb-6">Create your first campaign to start seeing analytics</p>
           <a href="/dashboard" className="inline-block bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-md font-medium transition-colors">
             Go to Campaigns
           </a>
@@ -182,19 +182,19 @@ export default function AnalyticsPage() {
         {/* Time range selector */}
         <div className="flex space-x-2 p-1 bg-gray-100 rounded-lg mt-4 sm:mt-0">
           <button 
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${selectedTimeRange === '7d' ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${selectedTimeRange === '7d' ? 'bg-white shadow-sm' : 'text-gray-900 hover:text-gray-700'}`}
             onClick={() => setSelectedTimeRange('7d')}
           >
             7 Days
           </button>
           <button 
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${selectedTimeRange === '30d' ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${selectedTimeRange === '30d' ? 'bg-white shadow-sm' : 'text-gray-900 hover:text-gray-700'}`}
             onClick={() => setSelectedTimeRange('30d')}
           >
             30 Days
           </button>
           <button 
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${selectedTimeRange === '90d' ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${selectedTimeRange === '90d' ? 'bg-white shadow-sm' : 'text-gray-900 hover:text-gray-700'}`}
             onClick={() => setSelectedTimeRange('90d')}
           >
             90 Days
@@ -208,8 +208,8 @@ export default function AnalyticsPage() {
         <div className="bg-white rounded-xl shadow-sm p-6 border-t-4 border-blue-500">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-gray-500">Total Views</p>
-              <p className="text-3xl font-bold mt-2">{formatCompactNumber(aggregateMetrics?.totalViews || 0)}</p>
+              <p className="text-sm font-medium text-gray-900">Total Views</p>
+              <p className="text-3xl font-bold mt-2 text-gray-900">{formatCompactNumber(aggregateMetrics?.totalViews || 0)}</p>
             </div>
             <div className="p-2 bg-blue-50 rounded-lg">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -222,7 +222,7 @@ export default function AnalyticsPage() {
             <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
               <div className="bg-blue-500 h-full rounded-full" style={{ width: `${Math.min(100, (aggregateMetrics?.totalViews || 0) / 10000)}%` }}></div>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Goal: 1,000,000 views</p>
+            <p className="text-xs text-gray-900 mt-1">Goal: 1,000,000 views</p>
           </div>
         </div>
 
@@ -230,8 +230,8 @@ export default function AnalyticsPage() {
         <div className="bg-white rounded-xl shadow-sm p-6 border-t-4 border-green-500">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-gray-500">Engagement Rate</p>
-              <p className="text-3xl font-bold mt-2">{engagementRate.toFixed(1)}%</p>
+              <p className="text-sm font-medium text-gray-900">Engagement Rate</p>
+              <p className="text-3xl font-bold mt-2 text-gray-900">{engagementRate.toFixed(1)}%</p>
             </div>
             <div className="p-2 bg-green-50 rounded-lg">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -241,7 +241,7 @@ export default function AnalyticsPage() {
           </div>
           <div className="mt-4">
             <div className="flex items-center">
-              <span className="text-xs text-gray-500">Low</span>
+              <span className="text-xs text-gray-900">Low</span>
               <div className="flex-1 mx-2 h-1 bg-gray-200 rounded-full overflow-hidden">
                 <div 
                   className={`h-full rounded-full ${
@@ -251,9 +251,9 @@ export default function AnalyticsPage() {
                   style={{ width: `${Math.min(100, engagementRate * 5)}%` }}
                 ></div>
               </div>
-              <span className="text-xs text-gray-500">High</span>
+              <span className="text-xs text-gray-900">High</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-900 mt-1">
               {engagementRate < 3 ? 'Below average' : 
                engagementRate < 5 ? 'Average' : 'Above average'}
             </p>
@@ -264,8 +264,8 @@ export default function AnalyticsPage() {
         <div className="bg-white rounded-xl shadow-sm p-6 border-t-4 border-purple-500">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-gray-500">Budget Usage</p>
-              <p className="text-3xl font-bold mt-2">${aggregateMetrics?.totalBudgetUsed.toFixed(2)}</p>
+              <p className="text-sm font-medium text-gray-900">Budget Usage</p>
+              <p className="text-3xl font-bold mt-2 text-gray-900">${aggregateMetrics?.totalBudgetUsed.toFixed(2)}</p>
             </div>
             <div className="p-2 bg-purple-50 rounded-lg">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -274,7 +274,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="flex justify-between text-xs text-gray-500 mb-1">
+            <div className="flex justify-between text-xs text-gray-900 mb-1">
               <span>Used: ${aggregateMetrics?.totalBudgetUsed.toFixed(2)}</span>
               <span>Total: ${aggregateMetrics?.totalBudget.toFixed(2)}</span>
             </div>
@@ -294,8 +294,8 @@ export default function AnalyticsPage() {
         <div className="bg-white rounded-xl shadow-sm p-6 border-t-4 border-amber-500">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-gray-500">Total Videos</p>
-              <p className="text-3xl font-bold mt-2">{aggregateMetrics?.totalVideos || 0}</p>
+              <p className="text-sm font-medium text-gray-900">Total Videos</p>
+              <p className="text-3xl font-bold mt-2 text-gray-900">{aggregateMetrics?.totalVideos || 0}</p>
             </div>
             <div className="p-2 bg-amber-50 rounded-lg">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -304,7 +304,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
           <div className="mt-4">
-            <p className="text-sm text-gray-500">Average views per video</p>
+            <p className="text-sm text-gray-900">Average views per video</p>
             <p className="font-medium">
               {aggregateMetrics?.totalVideos 
                 ? formatCompactNumber(aggregateMetrics.totalViews / aggregateMetrics.totalVideos) 
@@ -318,7 +318,7 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Engagement Metrics */}
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-medium mb-6">Engagement Metrics</h2>
+          <h2 className="text-lg font-medium mb-6 text-gray-900">Engagement Metrics</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center">
@@ -328,8 +328,8 @@ export default function AnalyticsPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Likes</p>
-                  <p className="text-xl font-bold">{formatCompactNumber(aggregateMetrics?.totalLikes || 0)}</p>
+                  <p className="text-sm font-medium text-gray-900">Likes</p>
+                  <p className="text-xl font-bold text-gray-900">{formatCompactNumber(aggregateMetrics?.totalLikes || 0)}</p>
                 </div>
               </div>
               <div className="mt-2">
@@ -340,7 +340,7 @@ export default function AnalyticsPage() {
                       : '0%' 
                   }}></div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-900 mt-1">
                   {aggregateMetrics?.totalViews 
                     ? ((aggregateMetrics?.totalLikes / aggregateMetrics?.totalViews) * 100).toFixed(2) 
                     : '0'}% like rate
@@ -356,8 +356,8 @@ export default function AnalyticsPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Comments</p>
-                  <p className="text-xl font-bold">{formatCompactNumber(aggregateMetrics?.totalComments || 0)}</p>
+                  <p className="text-sm font-medium text-gray-900">Comments</p>
+                  <p className="text-xl font-bold text-gray-900">{formatCompactNumber(aggregateMetrics?.totalComments || 0)}</p>
                 </div>
               </div>
               <div className="mt-2">
@@ -368,7 +368,7 @@ export default function AnalyticsPage() {
                       : '0%' 
                   }}></div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-900 mt-1">
                   {aggregateMetrics?.totalViews 
                     ? ((aggregateMetrics?.totalComments / aggregateMetrics?.totalViews) * 100).toFixed(2) 
                     : '0'}% comment rate
@@ -384,8 +384,8 @@ export default function AnalyticsPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Shares</p>
-                  <p className="text-xl font-bold">{formatCompactNumber(aggregateMetrics?.totalShares || 0)}</p>
+                  <p className="text-sm font-medium text-gray-900">Shares</p>
+                  <p className="text-xl font-bold text-gray-900">{formatCompactNumber(aggregateMetrics?.totalShares || 0)}</p>
                 </div>
               </div>
               <div className="mt-2">
@@ -396,7 +396,7 @@ export default function AnalyticsPage() {
                       : '0%' 
                   }}></div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-900 mt-1">
                   {aggregateMetrics?.totalViews 
                     ? ((aggregateMetrics?.totalShares / aggregateMetrics?.totalViews) * 100).toFixed(2) 
                     : '0'}% share rate
@@ -412,15 +412,15 @@ export default function AnalyticsPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Content</p>
-                  <p className="text-xl font-bold">{aggregateMetrics?.totalVideos || 0} videos</p>
+                  <p className="text-sm font-medium text-gray-900">Content</p>
+                  <p className="text-xl font-bold text-gray-900">{aggregateMetrics?.totalVideos || 0} videos</p>
                 </div>
               </div>
               <div className="mt-2">
                 <div className="h-1 w-full bg-gray-200 rounded-full">
                   <div className="bg-purple-500 h-full rounded-full" style={{ width: `${Math.min(100, (aggregateMetrics?.totalVideos || 0) * 10)}%` }}></div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-900 mt-1">
                   Goal: {Math.max(10, (aggregateMetrics?.totalVideos || 0) + 5)} videos
                 </p>
               </div>
@@ -430,11 +430,11 @@ export default function AnalyticsPage() {
         
         {/* ROI Chart */}
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-medium mb-6">Campaign ROI</h2>
+          <h2 className="text-lg font-medium mb-6 text-gray-900">Campaign ROI</h2>
           <div className="h-64 flex items-center justify-center bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg mb-4">
             <div className="w-full h-full flex flex-col items-center justify-center p-4">
               <div className="text-center mb-4">
-                <p className="text-sm font-medium text-gray-500">Cost per 1000 views</p>
+                <p className="text-sm font-medium text-gray-900">Cost per 1000 views</p>
                 <p className="text-3xl font-bold text-gray-800">
                   ${aggregateMetrics?.totalViews
                     ? ((aggregateMetrics?.totalBudgetUsed / aggregateMetrics?.totalViews) * 1000).toFixed(2)
@@ -458,7 +458,7 @@ export default function AnalyticsPage() {
                           style={{ height: `${Math.min(100, Math.max(10, 100 - (costPer1k * 10)))}%` }}
                         ></div>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1 truncate w-full text-center" title={campaign.name}>
+                      <p className="text-xs text-gray-900 mt-1 truncate w-full text-center" title={campaign.name}>
                         {campaign.name.length > 10 ? `${campaign.name.substring(0, 10)}...` : campaign.name}
                       </p>
                     </div>
@@ -467,7 +467,7 @@ export default function AnalyticsPage() {
               </div>
             </div>
           </div>
-          <p className="text-sm text-gray-500 text-center">
+          <p className="text-sm text-gray-900 text-center">
             Lower cost per 1000 views indicates better ROI
           </p>
         </div>
@@ -476,25 +476,25 @@ export default function AnalyticsPage() {
       {/* Top Campaigns */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium">Top Performing Campaigns</h2>
+          <h2 className="text-lg font-medium text-gray-900">Top Performing Campaigns</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Campaign
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Views
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Engagement
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Budget Used
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   ROI
                 </th>
               </tr>
@@ -529,19 +529,19 @@ export default function AnalyticsPage() {
                         </div>
                         <div>
                           <div className="text-sm font-medium text-gray-900">{campaign.name}</div>
-                          <div className="text-xs text-gray-500">{campaign.videoUrls.length} videos</div>
+                          <div className="text-xs text-gray-900">{campaign.videoUrls.length} videos</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{formatNumber(campaign.views || 0)}</div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-900">
                         Last updated: {formatDate(campaign.lastUpdated)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{campaignEngagementRate.toFixed(2)}%</div>
-                      <div className="flex items-center text-xs text-gray-500">
+                      <div className="flex items-center text-xs text-gray-900">
                         <span className="mr-1">{formatNumber(campaign.likes || 0)} likes</span>
                         <span className="mx-1">•</span>
                         <span>{formatNumber(campaign.comments || 0)} comments</span>
@@ -549,7 +549,7 @@ export default function AnalyticsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">${campaign.budgetUsed.toFixed(2)}</div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-900">
                         of ${campaign.budget.toFixed(2)} ({Math.round((campaign.budgetUsed / campaign.budget) * 100)}%)
                       </div>
                     </td>

@@ -120,7 +120,7 @@ export default function HelpPage() {
         {/* Categories Sidebar */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-lg font-medium mb-4">Categories</h2>
+            <h2 className="text-lg font-medium mb-4 text-gray-900">Categories</h2>
             <ul className="space-y-2">
               <li>
                 <button
@@ -151,7 +151,7 @@ export default function HelpPage() {
             </ul>
             
             <div className="mt-8">
-              <h2 className="text-lg font-medium mb-4">Need More Help?</h2>
+              <h2 className="text-lg font-medium mb-4 text-gray-900">Need More Help?</h2>
               <div className="space-y-3">
                 <button className="w-full bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg">
                   Contact Support
@@ -167,7 +167,7 @@ export default function HelpPage() {
         {/* FAQ Content */}
         <div className="lg:col-span-3">
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-xl font-semibold mb-6">
+            <h2 className="text-xl font-semibold mb-6 text-gray-900">
               {activeCategory === 'all' 
                 ? 'All FAQs' 
                 : faqCategories.find(cat => cat.id === activeCategory)?.label || 'FAQs'}
@@ -175,7 +175,7 @@ export default function HelpPage() {
             
             {filteredFaqs.length === 0 ? (
               <div className="py-10 flex flex-col items-center justify-center">
-                <p className="text-gray-500 mb-4">No results found for your search.</p>
+                <p className="text-gray-900 mb-4">No results found for your search.</p>
                 <button 
                   className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg"
                   onClick={() => {
@@ -191,11 +191,11 @@ export default function HelpPage() {
                 {filteredFaqs.map((faq) => (
                   <div key={faq.id} className="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0">
                     <h3 className="text-lg font-medium text-gray-900 mb-2">{faq.question}</h3>
-                    <p className="text-gray-700">{faq.answer}</p>
+                    <p className="text-gray-900">{faq.answer}</p>
                     <div className="mt-3 flex items-center">
-                      <span className="text-sm text-gray-500 mr-3">Was this helpful?</span>
-                      <button className="text-sm text-gray-500 hover:text-gray-700 mr-3">Yes</button>
-                      <button className="text-sm text-gray-500 hover:text-gray-700">No</button>
+                      <span className="text-sm text-gray-900 mr-3">Was this helpful?</span>
+                      <button className="text-sm text-gray-900 hover:text-gray-700 mr-3">Yes</button>
+                      <button className="text-sm text-gray-900 hover:text-gray-700">No</button>
                     </div>
                   </div>
                 ))}
@@ -205,24 +205,24 @@ export default function HelpPage() {
           
           {/* Resources */}
           <div className="bg-white rounded-xl shadow-sm p-6 mt-8">
-            <h2 className="text-xl font-semibold mb-6">Resources</h2>
+            <h2 className="text-xl font-semibold mb-6 text-gray-900">Resources</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <h3 className="font-medium mb-2">Getting Started Guide</h3>
-                <p className="text-sm text-gray-500 mb-3">A complete walkthrough for new users</p>
+                <h3 className="font-medium mb-2 text-gray-900">Getting Started Guide</h3>
+                <p className="text-sm text-gray-900 mb-3">A complete walkthrough for new users</p>
                 <a href="#" className="text-primary hover:text-primary-dark text-sm font-medium">Download PDF →</a>
               </div>
               
               <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <h3 className="font-medium mb-2">Marketing Best Practices</h3>
-                <p className="text-sm text-gray-500 mb-3">Tips for successful music campaigns</p>
+                <h3 className="font-medium mb-2 text-gray-900">Marketing Best Practices</h3>
+                <p className="text-sm text-gray-900 mb-3">Tips for successful music campaigns</p>
                 <a href="#" className="text-primary hover:text-primary-dark text-sm font-medium">View Article →</a>
               </div>
               
               <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <h3 className="font-medium mb-2">Video Tutorials</h3>
-                <p className="text-sm text-gray-500 mb-3">Step-by-step visual guides</p>
+                <h3 className="font-medium mb-2 text-gray-900">Video Tutorials</h3>
+                <p className="text-sm text-gray-900 mb-3">Step-by-step visual guides</p>
                 <a href="#" className="text-primary hover:text-primary-dark text-sm font-medium">Watch Now →</a>
               </div>
             </div>

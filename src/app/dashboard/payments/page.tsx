@@ -83,19 +83,19 @@ export default function PaymentsPage() {
       {/* Balance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <p className="text-sm font-medium text-gray-500">Available Balance</p>
+          <p className="text-sm font-medium text-gray-900">Available Balance</p>
           <p className="text-3xl font-bold mt-2 text-green-600">{formatCurrency(balanceData.available)}</p>
         </div>
         
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <p className="text-sm font-medium text-gray-500">Pending Balance</p>
-          <p className="text-3xl font-bold mt-2">{formatCurrency(balanceData.pending)}</p>
-          <p className="text-sm text-gray-500 mt-4">Available on {formatDate(balanceData.nextPayout)}</p>
+          <p className="text-sm font-medium text-gray-900">Pending Balance</p>
+          <p className="text-3xl font-bold mt-2 text-gray-700">{formatCurrency(balanceData.pending)}</p>
+          <p className="text-sm text-gray-900 mt-4">Available on {formatDate(balanceData.nextPayout)}</p>
         </div>
         
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <p className="text-sm font-medium text-gray-500">Next Payout</p>
-          <p className="text-3xl font-bold mt-2">{formatDate(balanceData.nextPayout)}</p>
+          <p className="text-sm font-medium text-gray-900">Next Payout</p>
+          <p className="text-3xl font-bold mt-2 text-gray-700">{formatDate(balanceData.nextPayout)}</p>
           <button className="mt-4 w-full bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg">
             View Schedule
           </button>
@@ -105,7 +105,7 @@ export default function PaymentsPage() {
       {/* Payment Methods */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-medium">Payment Methods</h2>
+          <h2 className="text-lg font-medium text-gray-900">Payment Methods</h2>
           <button className="text-primary hover:text-primary-dark">+ Add Method</button>
         </div>
         
@@ -113,8 +113,8 @@ export default function PaymentsPage() {
           <div className="flex items-center">
             <div className="w-10 h-6 bg-blue-600 rounded mr-4"></div>
             <div>
-              <p className="font-medium">Visa ending in 4242</p>
-              <p className="text-sm text-gray-500">Expires 05/2025</p>
+              <p className="font-medium text-gray-900">Visa ending in 4242</p>
+              <p className="text-sm text-gray-900">Expires 05/2025</p>
             </div>
           </div>
           <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Default</span>
@@ -124,23 +124,23 @@ export default function PaymentsPage() {
           <div className="flex items-center">
             <div className="w-10 h-6 bg-gray-800 rounded mr-4"></div>
             <div>
-              <p className="font-medium">Bank Account (ACH)</p>
-              <p className="text-sm text-gray-500">Wells Fargo ****2568</p>
+              <p className="font-medium text-gray-900">Bank Account (ACH)</p>
+              <p className="text-sm text-gray-900">Wells Fargo ****2568</p>
             </div>
           </div>
-          <button className="text-gray-500 hover:text-gray-700 text-sm">Set as Default</button>
+          <button className="text-gray-900 hover:text-gray-700 text-sm">Set as Default</button>
         </div>
       </div>
       
       {/* Transactions */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-lg font-medium">Recent Transactions</h2>
+          <h2 className="text-lg font-medium text-gray-900">Recent Transactions</h2>
           <div className="flex items-center space-x-2">
             <input
               type="text"
               placeholder="Search transactions..."
-              className="border border-gray-300 rounded-lg px-3 py-1 text-sm"
+              className="border border-gray-300 rounded-lg px-3 py-1 text-sm text-gray-900"
             />
             <button className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-1 rounded-lg text-sm">
               Filter
@@ -151,22 +151,22 @@ export default function PaymentsPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Transaction ID
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Date
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Description
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Recipient
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Amount
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Status
                 </th>
               </tr>
@@ -177,13 +177,13 @@ export default function PaymentsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {transaction.id}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {formatDate(transaction.date)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {transaction.description}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {transaction.recipient}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -204,7 +204,7 @@ export default function PaymentsPage() {
           </table>
         </div>
         <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
-          <p className="text-sm text-gray-500">Showing 5 of 25 transactions</p>
+          <p className="text-sm text-gray-900">Showing 5 of 25 transactions</p>
           <div className="flex space-x-2">
             <button className="border border-gray-300 rounded-lg px-3 py-1 text-sm" disabled>Previous</button>
             <button className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-1 rounded-lg text-sm">Next</button>
