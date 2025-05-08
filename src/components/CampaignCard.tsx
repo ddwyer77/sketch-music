@@ -2,14 +2,16 @@
 
 import Image from 'next/image';
 import { Campaign } from '../app/dashboard/page';
+import { ReactNode } from 'react';
 
 type CampaignCardProps = {
   campaign: Campaign;
   onEdit: () => void;
   onDelete: () => void;
+  children?: ReactNode;
 };
 
-export default function CampaignCard({ campaign, onEdit, onDelete }: CampaignCardProps) {
+export default function CampaignCard({ campaign, onEdit, onDelete, children }: CampaignCardProps) {
   // Format number with commas
   const formatNumber = (num: number): string => {
     return num.toLocaleString('en-US');
@@ -127,20 +129,7 @@ export default function CampaignCard({ campaign, onEdit, onDelete }: CampaignCar
           </div>
           
           {/* Progress Bar - based on budget utilization */}
-          <div className="mt-auto pt-4">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-sm font-medium text-gray-500">Progress</span>
-              <span className="text-sm font-medium text-primary">
-                {Math.min(Math.round((campaign.budgetUsed / campaign.budget) * 100), 100)}%
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div 
-                className="bg-primary h-2.5 rounded-full" 
-                style={{ width: `${Math.min(Math.round((campaign.budgetUsed / campaign.budget) * 100), 100)}%` }}
-              ></div>
-            </div>
-          </div>
+          {children}
         </div>
       </div>
     </div>
