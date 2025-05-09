@@ -12,35 +12,35 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="py-20 px-6">
+      <section className="py-20 px-6 bg-gray-50">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           {/* Left Column - Text and CTA */}
           <div className="space-y-8">
-            <h1 className="text-5xl font-bold leading-tight">
+            <h1 className="text-5xl font-bold leading-tight text-gray-900">
               The All-in-One Tool for <span className="text-primary">Virality</span>
             </h1>
             <p className="text-xl text-gray-600">
               Sketch Music turns passionate creators into a viral engine for brands—paying only for real views, real engagement, and real impact.
             </p>
             <div className="flex flex-wrap gap-4 pt-4">
-              <Link 
-                href="/dashboard" 
+              <a 
                 className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-md font-medium transition-colors"
+                href="/dashboard"
               >
                 Join Now
-              </Link>
-              <Link 
-                href="/partner" 
+              </a>
+              <a 
                 className="border border-primary text-primary hover:bg-primary/5 px-8 py-3 rounded-md font-medium transition-colors"
+                href="/partner"
               >
                 Partner With Us
-              </Link>
+              </a>
             </div>
           </div>
           
           {/* Right Column - Videos */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-2xl overflow-hidden bg-black aspect-[9/16] relative shadow-xl">
+            <div className="rounded-2xl overflow-hidden bg-white aspect-[9/16] relative shadow-xl">
               <iframe 
                 className="absolute inset-0 w-full h-full"
                 src="https://www.youtube.com/embed/_P8e1umu3xc?autoplay=1&mute=1&loop=1&playlist=_P8e1umu3xc"
@@ -49,7 +49,7 @@ export default function Home() {
                 allowFullScreen
               ></iframe>
             </div>
-            <div className="rounded-2xl overflow-hidden bg-black aspect-[9/16] relative shadow-xl mt-12">
+            <div className="rounded-2xl overflow-hidden bg-white aspect-[9/16] relative shadow-xl mt-12">
               <iframe 
                 className="absolute inset-0 w-full h-full"
                 src="https://youtube.com/embed/bR6-I3AGCsk?autoplay=1&mute=1&loop=1&playlist=bR6-I3AGCsk"
@@ -57,7 +57,7 @@ export default function Home() {
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               ></iframe>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-white/30 to-transparent" />
             </div>
           </div>
         </div>
