@@ -11,6 +11,7 @@ type Campaign = {
   id: string;
   name: string;
   imageUrl: string;
+  campaign_url: string;
 };
 
 export default function LandingPage() {
@@ -39,7 +40,7 @@ export default function LandingPage() {
             {campaigns.map((campaign) => (
               <Link 
                 key={campaign.id}
-                href={`/campaign/${campaign.id}`}
+                href={campaign.campaign_url}
                 className="group"
               >
                 <div className="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-200 group-hover:scale-105">

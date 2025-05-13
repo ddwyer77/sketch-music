@@ -15,7 +15,8 @@ interface Campaign {
   budgetUsed: number;
   ratePerMillion: number;
   imageUrl: string;
-  videos: { url: string; status: 'pending' | 'approved' | 'denied' }[];
+  campaign_url: string;
+  videos: { url: string; status: 'pending' | 'approved' | 'denied'; author_id: string }[];
   createdAt: string;
   views: number;
   shares: number;
@@ -31,7 +32,11 @@ export default function CampaignsPage() {
     refresh
   } = useCollection<Campaign>('campaigns');
   
-  const { addDocument, loading: operationLoading } = useFirestoreOperations<Omit<Campaign, 'id'>>('campaigns');
+  const { 
+    addDocument, 
+    updateDocument,
+    loading: operationLoading 
+  } = useFirestoreOperations<Omit<Campaign, 'id'>>('campaigns');
   
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
@@ -84,14 +89,32 @@ export default function CampaignsPage() {
     try {
       // Extract everything except the id since Firestore will generate one
       const { id, ...campaignData } = campaign;
-      await addDocument({
-        ...campaignData,
-        createdAt: new Date().toISOString(),
-        views: 0,
-        shares: 0,
-        comments: 0,
-        lastUpdated: new Date().toISOString()
-      });
+      
+      // If this is a new campaign (no id), create it and set the URL
+      if (!id) {
+        const docId = await addDocument({
+          ...campaignData,
+          createdAt: new Date().toISOString(),
+          views: 0,
+          shares: 0,
+          comments: 0,
+          lastUpdated: new Date().toISOString()
+        });
+
+        // Update the campaign with its URL using the Firestore document ID
+        if (docId) {
+          await updateDocument(docId, {
+            campaign_url: `${window.location.origin}/campaigns/${docId}`
+          });
+        }
+      } else {
+        // For existing campaigns, preserve the campaign_url
+        await updateDocument(id, {
+          ...campaignData,
+          lastUpdated: new Date().toISOString()
+        });
+      }
+
       setShowCampaignModal(false);
       refresh();
     } catch (error) {

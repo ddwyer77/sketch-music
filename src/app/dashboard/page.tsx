@@ -16,9 +16,11 @@ export type Campaign = {
   budgetUsed: number;
   ratePerMillion: number;
   imageUrl: string;
+  campaign_url: string;
   videos: Array<{
     url: string;
     status: 'approved' | 'denied' | 'pending';
+    author_id: string;
   }>;
   createdAt: string;
   views: number;
@@ -173,7 +175,7 @@ export default function Dashboard() {
       // Add new campaign with default metrics values
       // Extract everything except the id since Firestore will generate one
       const { id, ...campaignData } = campaign;
-      await addDocument({
+      const docId = await addDocument({
         ...campaignData,
         createdAt: new Date().toISOString(),
         views: 0,
@@ -181,6 +183,13 @@ export default function Dashboard() {
         comments: 0,
         lastUpdated: new Date().toISOString()
       });
+
+      // Update the campaign with its URL using the Firestore document ID
+      if (docId) {
+        await updateDocument(docId, {
+          campaign_url: `${window.location.origin}/campaigns/${docId}`
+        });
+      }
     }
     
     // Refresh the list of campaigns

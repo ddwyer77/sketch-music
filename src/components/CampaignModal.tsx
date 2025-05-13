@@ -20,7 +20,8 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     budgetUsed: 0,
     ratePerMillion: 0,
     imageUrl: '',
-    videos: [{ url: '', status: 'pending' }],
+    campaign_url: '',
+    videos: [{ url: '', status: 'pending', author_id: '' }],
     views: 0,
     shares: 0,
     comments: 0,
@@ -43,7 +44,8 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         budgetUsed: Math.round(initialData.budgetUsed / 100) * 100,
         ratePerMillion: initialData.ratePerMillion,
         imageUrl: initialData.imageUrl,
-        videos: initialData.videos.length ? initialData.videos : [{ url: '', status: 'pending' }],
+        campaign_url: initialData.campaign_url,
+        videos: initialData.videos.length ? initialData.videos : [{ url: '', status: 'pending', author_id: '' }],
         views: initialData.views,
         shares: initialData.shares,
         comments: initialData.comments,
@@ -88,10 +90,20 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     });
   };
   
+  const handleVideoAuthorChange = (index: number, value: string) => {
+    const updatedVideos = [...formData.videos];
+    updatedVideos[index] = { ...updatedVideos[index], author_id: value };
+    
+    setFormData({
+      ...formData,
+      videos: updatedVideos,
+    });
+  };
+  
   const addVideoUrl = () => {
     setFormData({
       ...formData,
-      videos: [...formData.videos, { url: '', status: 'pending' }],
+      videos: [...formData.videos, { url: '', status: 'pending', author_id: '' }],
     });
   };
   
@@ -99,7 +111,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     const updatedVideos = formData.videos.filter((_, i) => i !== index);
     setFormData({
       ...formData,
-      videos: updatedVideos.length ? updatedVideos : [{ url: '', status: 'pending' }],
+      videos: updatedVideos.length ? updatedVideos : [{ url: '', status: 'pending', author_id: '' }],
     });
   };
   
@@ -121,7 +133,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         ...formData,
         videos: [
           ...formData.videos.filter(video => video.url.trim() !== ''),
-          ...urls.map(url => ({ url, status: 'pending' as const }))
+          ...urls.map(url => ({ url, status: 'pending' as const, author_id: '' }))
         ],
       });
       setBulkImportText('');
@@ -239,9 +251,11 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     }
     
     const campaign: Campaign = {
-      id: initialData?.id || crypto.randomUUID(),
+      id: initialData?.id || '', // Let Firestore generate the ID
       createdAt: initialData?.createdAt || new Date().toISOString(),
       ...formData,
+      // Preserve the existing campaign_url if it exists
+      campaign_url: initialData?.campaign_url || formData.campaign_url,
       // Filter out empty video URLs
       videos: formData.videos.filter(video => video.url.trim() !== ''),
     };
@@ -478,45 +492,36 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
             )}
             
             {/* Video URL List */}
-            <div className="space-y-2 mb-2">
+            <div className="space-y-4">
               {formData.videos.map((video, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={video.url}
-                    onChange={(e) => handleVideoUrlChange(index, e.target.value)}
-                    className={`flex-1 px-3 py-2 border rounded-md text-gray-900 placeholder-gray-500 ${
-                      index === 0 && errors.videos ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="https://example.com/video"
-                  />
-                  <select
-                    value={video.status}
-                    onChange={(e) => {
-                      const updatedVideos = [...formData.videos];
-                      updatedVideos[index] = { ...video, status: e.target.value as 'approved' | 'denied' | 'pending' };
-                      setFormData({ ...formData, videos: updatedVideos });
-                    }}
-                    className={`px-3 py-2 border rounded-md text-gray-900 ${
-                      video.status === 'approved' ? 'bg-green-50 border-green-200' :
-                      video.status === 'denied' ? 'bg-red-50 border-red-200' :
-                      'bg-yellow-50 border-yellow-200'
-                    }`}
-                  >
-                    <option value="pending" className="bg-yellow-50 text-gray-900">Pending</option>
-                    <option value="approved" className="bg-green-50 text-gray-900">Approved</option>
-                    <option value="denied" className="bg-red-50 text-gray-900">Denied</option>
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => removeVideoUrl(index)}
-                    className="text-gray-500 hover:text-red-500"
-                    disabled={formData.videos.length === 1 && index === 0}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+                <div key={index} className="flex gap-4 items-start">
+                  <div className="flex-grow">
+                    <input
+                      type="text"
+                      value={video.url}
+                      onChange={(e) => handleVideoUrlChange(index, e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
+                      placeholder="Enter video URL"
+                    />
+                  </div>
+                  <div className="flex-grow">
+                    <input
+                      type="text"
+                      value={video.author_id}
+                      onChange={(e) => handleVideoAuthorChange(index, e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
+                      placeholder="Author ID"
+                    />
+                  </div>
+                  {formData.videos.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeVideoUrl(index)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
