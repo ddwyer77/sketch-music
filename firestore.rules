@@ -4,7 +4,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Allow users to read and write their own user document
     match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null; // Allow any authenticated user to read user documents
       allow create: if request.auth != null && request.auth.uid == userId;
       allow update: if request.auth != null && request.auth.uid == userId;
       allow delete: if false; // Prevent users from deleting their own documents
@@ -13,12 +13,8 @@ service cloud.firestore {
     // Campaign rules - allow public read access, but only admins can write
     match /campaigns/{campaignId} {
       allow read: if true; // Allow anyone to read campaigns
-      allow write: if request.auth != null && (
-        // Allow admins to write anything
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true ||
-        // Allow authenticated users to only update the videos array
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['videos', 'lastUpdated']))
-      );
+      allow write: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true;
     }
   }
 } 
