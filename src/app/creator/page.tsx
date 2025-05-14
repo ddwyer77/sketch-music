@@ -80,14 +80,14 @@ export default function CreatorPage() {
           {activeTab === 'campaigns' && (
             <div>
               <h2 className="text-xl font-semibold mb-4 text-gray-800">Your Campaigns</h2>
-              <p className="text-gray-500">No campaigns yet. You'll see your active campaigns here.</p>
+              <p className="text-gray-500">No campaigns yet. You&apos;ll see your active campaigns here.</p>
             </div>
           )}
 
           {activeTab === 'invitations' && (
             <div>
               <h2 className="text-xl font-semibold mb-4 text-gray-800">Campaign Invitations</h2>
-              <p className="text-gray-500">No pending invitations. You'll see your campaign invitations here.</p>
+              <p className="text-gray-500">No pending invitations. You&apos;ll see your campaign invitations here.</p>
             </div>
           )}
 
