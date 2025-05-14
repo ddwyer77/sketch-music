@@ -10,14 +10,14 @@ import {
   onAuthStateChanged,
   GoogleAuthProvider
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, googleProvider } from '@/lib/firebase';
 import { UserType } from '@/types/user';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (userType: UserType) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, firstName: string, lastName: string, paymentEmail?: string, userType?: UserType) => Promise<void>;
   logout: () => Promise<void>;
@@ -38,25 +38,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (userType: UserType) => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      
-      // Create or update user document
-      const userRef = doc(db, 'users', result.user.uid);
-      const userDoc = await getDoc(userRef);
-      
-      if (!userDoc.exists()) {
-        // Create new user document if it doesn't exist
-        await setDoc(userRef, {
-          email: result.user.email,
-          first_name: result.user.displayName?.split(' ')[0] || '',
-          last_name: result.user.displayName?.split(' ').slice(1).join(' ') || '',
-          user_type: 'creator',
-          groups: [],
-          payment_info: []
-        });
-      }
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Create user document in Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        email: user.email,
+        firstName: user.displayName?.split(' ')[0] || '',
+        lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+        paymentEmail: user.email,
+        user_type: userType,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      return user;
     } catch (error) {
       console.error('Error signing in with Google:', error);
       throw error;
@@ -92,9 +91,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         groups: [],
         payment_info: paymentEmail ? [{ email: paymentEmail }] : []
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing up with email:', error);
-      throw error;
+      // Convert Firebase error codes to user-friendly messages
+      switch (error.code) {
+        case 'auth/weak-password':
+          throw new Error('Password should be at least 6 characters long');
+        case 'auth/email-already-in-use':
+          throw new Error('This email is already registered');
+        case 'auth/invalid-email':
+          throw new Error('Please enter a valid email address');
+        default:
+          throw new Error('Failed to create account. Please try again.');
+      }
     }
   };
 

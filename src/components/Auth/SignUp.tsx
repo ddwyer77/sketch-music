@@ -48,7 +48,12 @@ export default function SignUp() {
     try {
       setError('');
       setIsLoading(true);
-      await signInWithGoogle();
+      if (!selectedUserType) {
+        throw new Error('Please select how you want to use the platform');
+      }
+      await signInWithGoogle(selectedUserType);
+      clearSelectedUserType();
+      router.push('/dashboard');
     } catch (error) {
       setError('Failed to sign in with Google');
     } finally {
@@ -62,10 +67,14 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
-      await signUpWithEmail(email, password, firstName, lastName, paymentEmail, selectedUserType || 'creator');
+      if (!selectedUserType) {
+        throw new Error('Please select how you want to use the platform');
+      }
+      await signUpWithEmail(email, password, firstName, lastName, paymentEmail, selectedUserType);
       clearSelectedUserType();
-    } catch (error) {
-      setError('Failed to create account');
+      router.push('/dashboard');
+    } catch (error: any) {
+      setError(error.message || 'Failed to create account');
     } finally {
       setIsLoading(false);
     }
@@ -78,6 +87,11 @@ export default function SignUp() {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Create your account
           </h2>
+          {selectedUserType && (
+            <p className="mt-2 text-center text-sm text-gray-600">
+              Creating a {selectedUserType} account
+            </p>
+          )}
         </div>
 
         {error && (
