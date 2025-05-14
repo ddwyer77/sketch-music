@@ -9,6 +9,7 @@ import { db } from '../../lib/firebase';
 import { fetchTikTokDataFromUrl, extractTikTokMetrics } from '../../lib/webScraper';
 import AdminProtectedRoute from '@/components/Auth/AdminProtectedRoute';
 import { Campaign } from '@/types/campaign';
+import { useAuth } from '@/contexts/AuthContext';
 
 const generateMetrics = async(url: string) => {
   try {
@@ -75,6 +76,7 @@ const updateCampaignMetrics = async (campaign: Campaign): Promise<Campaign> => {
 };
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -147,16 +149,21 @@ export default function Dashboard() {
   };
   
   const handleSaveCampaign = async (campaign: Campaign) => {
+    if (!user) {
+      console.error('No user logged in');
+      return;
+    }
+
     if (editingCampaign && campaign.id) {
       // Update existing campaign
       const { id, ...campaignData } = campaign;
       await updateDocument(id, campaignData);
     } else {
-      // Add new campaign with default metrics values
-      // Extract everything except the id since Firestore will generate one
+      // Add new campaign with default metrics values and owner_id
       const { id, ...campaignData } = campaign;
       const docId = await addDocument({
         ...campaignData,
+        owner_id: user.uid,  // Add the owner_id
         createdAt: new Date().toISOString(),
         views: 0,
         shares: 0,
@@ -164,10 +171,10 @@ export default function Dashboard() {
         lastUpdated: new Date().toISOString()
       });
 
-      // Update the campaign with its URL using the Firestore document ID
+      // Update the campaign with its path using the Firestore document ID
       if (docId) {
         await updateDocument(docId, {
-          campaign_url: `${window.location.origin}/campaigns/${docId}`
+          campaign_path: `/campaigns/${docId}`
         });
       }
     }

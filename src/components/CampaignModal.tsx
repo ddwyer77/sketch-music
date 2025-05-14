@@ -20,12 +20,13 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     budgetUsed: 0,
     ratePerMillion: 0,
     imageUrl: '',
-    campaign_url: '',
+    campaign_path: '',
     videos: [{ url: '', status: 'pending', author_id: '' }],
     views: 0,
     shares: 0,
     comments: 0,
-    lastUpdated: new Date().toISOString()
+    lastUpdated: new Date().toISOString(),
+    owner_id: ''
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -41,15 +42,16 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
       setFormData({
         name: initialData.name,
         budget: initialData.budget,
-        budgetUsed: Math.round(initialData.budgetUsed / 100) * 100,
+        budgetUsed: initialData.budgetUsed,
         ratePerMillion: initialData.ratePerMillion,
         imageUrl: initialData.imageUrl,
-        campaign_url: initialData.campaign_url,
+        campaign_path: initialData.campaign_path,
         videos: initialData.videos.length ? initialData.videos : [{ url: '', status: 'pending', author_id: '' }],
         views: initialData.views,
         shares: initialData.shares,
         comments: initialData.comments,
-        lastUpdated: initialData.lastUpdated
+        lastUpdated: initialData.lastUpdated,
+        owner_id: initialData.owner_id
       });
     }
   }, [initialData]);
@@ -62,7 +64,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
       const numValue = parseFloat(value) || 0;
       setFormData({
         ...formData,
-        [name]: name === 'budgetUsed' ? Math.round(numValue / 100) * 100 : numValue,
+        [name]: numValue,
       });
     } else {
       setFormData({
@@ -254,8 +256,8 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
       id: initialData?.id || '', // Let Firestore generate the ID
       createdAt: initialData?.createdAt || new Date().toISOString(),
       ...formData,
-      // Preserve the existing campaign_url if it exists
-      campaign_url: initialData?.campaign_url || formData.campaign_url,
+      // Preserve the existing campaign_path if it exists
+      campaign_path: initialData?.campaign_path || formData.campaign_path,
       // Filter out empty video URLs
       videos: formData.videos.filter(video => video.url.trim() !== ''),
     };
@@ -310,26 +312,6 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
               {errors.budget && <p className="mt-1 text-sm text-red-500">{errors.budget}</p>}
             </div>
             
-            {/* Budget Used */}
-            <div>
-              <label htmlFor="budgetUsed" className="block text-sm font-medium text-gray-900 mb-1">
-                Budget Used ($)
-              </label>
-              <input
-                type="number"
-                id="budgetUsed"
-                name="budgetUsed"
-                min="0"
-                step="0.01"
-                value={formData.budgetUsed}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
-                placeholder="0.00"
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Rate Per Million Views */}
             <div>
               <label htmlFor="ratePerMillion" className="block text-sm font-medium text-gray-900 mb-1">
@@ -348,81 +330,81 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
               />
               {errors.ratePerMillion && <p className="mt-1 text-sm text-red-500">{errors.ratePerMillion}</p>}
             </div>
-            
-            {/* Image Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1">
-                Campaign Image
-              </label>
-              <div
-                className={`relative border-2 border-dashed rounded-lg p-4 text-center ${
-                  dragActive ? 'border-primary bg-primary/5' : 'border-gray-300'
-                } ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-                onClick={() => !isUploading && fileInputRef.current?.click()}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileInput}
-                  className="hidden"
-                  disabled={isUploading}
-                />
-                
-                {formData.imageUrl ? (
-                  <div className="relative w-full aspect-video">
-                    <Image
-                      src={formData.imageUrl}
-                      alt="Campaign preview"
-                      fill
-                      className="object-contain rounded"
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFormData(prev => ({ ...prev, imageUrl: '' }));
-                      }}
-                      className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </div>
+          
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-1">
+              Campaign Image
+            </label>
+            <div
+              className={`relative border-2 border-dashed rounded-lg p-4 text-center ${
+                dragActive ? 'border-primary bg-primary/5' : 'border-gray-300'
+              } ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              onClick={() => !isUploading && fileInputRef.current?.click()}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileInput}
+                className="hidden"
+                disabled={isUploading}
+              />
+              
+              {formData.imageUrl ? (
+                <div className="relative w-full aspect-video">
+                  <Image
+                    src={formData.imageUrl}
+                    alt="Campaign preview"
+                    fill
+                    className="object-contain rounded"
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFormData(prev => ({ ...prev, imageUrl: '' }));
+                    }}
+                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div className="py-8">
+                  {isUploading ? (
+                    <div className="flex items-center justify-center">
+                      <svg className="animate-spin h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="py-8">
-                    {isUploading ? (
-                      <div className="flex items-center justify-center">
-                        <svg className="animate-spin h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                      </div>
-                    ) : (
-                      <>
-                        <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                          <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        <p className="mt-1 text-sm text-gray-600">
-                          Drag and drop an image here, or click to select
-                        </p>
-                        <p className="mt-1 text-xs text-gray-500">
-                          PNG, JPG, GIF up to 5MB
-                        </p>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-              {errors.imageUrl && (
-                <p className="mt-1 text-sm text-red-500">{errors.imageUrl}</p>
+                    </div>
+                  ) : (
+                    <>
+                      <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <p className="mt-1 text-sm text-gray-600">
+                        Drag and drop an image here, or click to select
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        PNG, JPG, GIF up to 5MB
+                      </p>
+                    </>
+                  )}
+                </div>
               )}
             </div>
+            {errors.imageUrl && (
+              <p className="mt-1 text-sm text-red-500">{errors.imageUrl}</p>
+            )}
           </div>
           
           {/* Video URLs */}

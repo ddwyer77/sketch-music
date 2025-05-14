@@ -12,7 +12,7 @@ export type Campaign = {
   budgetUsed: number;
   ratePerMillion: number;
   imageUrl: string;
-  campaign_url: string;
+  campaign_path: string;
   videos: Video[];
   createdAt: string;
   views: number;
