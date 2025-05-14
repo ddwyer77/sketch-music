@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
-import { useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useFirestoreOperations } from '../../../hooks';
 import { where } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,6 +27,17 @@ interface Campaign {
 
 export default function CampaignsPage() {
   const { user } = useAuth();
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Use a stable query reference
+  const queryConstraints = useMemo(() => 
+    user ? [where('owner_id', '==', user.uid)] : [], 
+    [user]
+  );
+
   const {
     documents: campaigns,
     loading,
@@ -35,7 +45,7 @@ export default function CampaignsPage() {
     refresh
   } = useQuery<Campaign>(
     'campaigns',
-    user ? [where('owner_id', '==', user.uid)] : []
+    queryConstraints
   );
   
   const { 
@@ -43,11 +53,6 @@ export default function CampaignsPage() {
     updateDocument,
     loading: operationLoading 
   } = useFirestoreOperations<Omit<Campaign, 'id'>>('campaigns');
-  
-  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
-  const [showVideoModal, setShowVideoModal] = useState(false);
-  const [showCampaignModal, setShowCampaignModal] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
   // Function to format currency values
   const formatCurrency = (value: number) => {
@@ -70,7 +75,10 @@ export default function CampaignsPage() {
   };
 
   // Sort campaigns by view count (descending)
-  const sortedCampaigns = [...campaigns].sort((a, b) => b.views - a.views);
+  const sortedCampaigns = useMemo(() => 
+    [...campaigns].sort((a, b) => b.views - a.views),
+    [campaigns]
+  );
 
   const handleViewVideos = (campaign: Campaign) => {
     setSelectedCampaign(campaign);
@@ -122,7 +130,7 @@ export default function CampaignsPage() {
       }
 
       setShowCampaignModal(false);
-      refresh();
+      await refresh();
     } catch (error) {
       console.error('Error saving campaign:', error);
     } finally {
