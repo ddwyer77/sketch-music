@@ -10,7 +10,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signInWithEmail } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get('returnUrl') || '/';
@@ -21,7 +21,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      await signIn(email, password);
+      await signInWithEmail(email, password);
       router.push(returnUrl);
     } catch (error) {
       console.error('Login error:', error);
