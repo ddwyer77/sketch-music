@@ -9,9 +9,9 @@ type User = {
   first_name: string;
   last_name: string;
   email: string;
-  payment_info: {
+  payment_info: Array<{
     email: string;
-  };
+  }>;
   groups: string[];
 };
 
@@ -111,7 +111,7 @@ export default function CreatorsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {creator.payment_info?.email || 'Not set'}
+                        {creator.payment_info?.[0]?.email || 'Not set'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
