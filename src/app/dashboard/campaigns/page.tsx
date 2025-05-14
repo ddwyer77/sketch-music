@@ -7,23 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import VideoModal from '../../../components/VideoModal';
 import CampaignModal from '../../../components/CampaignModal';
 import Image from 'next/image';
-
-// Define the Campaign type
-interface Campaign {
-  id: string;
-  name: string;
-  budget: number;
-  budgetUsed: number;
-  ratePerMillion: number;
-  imageUrl: string;
-  campaign_url: string;
-  videos: { url: string; status: 'pending' | 'approved' | 'denied'; author_id: string }[];
-  createdAt: string;
-  views: number;
-  shares: number;
-  comments: number;
-  lastUpdated: string;
-}
+import { Campaign } from '@/types/campaign';
 
 export default function CampaignsPage() {
   const { user } = useAuth();
@@ -104,7 +88,7 @@ export default function CampaignsPage() {
       // Extract everything except the id since Firestore will generate one
       const { id, ...campaignData } = campaign;
       
-      // If this is a new campaign (no id), create it and set the URL
+      // If this is a new campaign (no id), create it and set the path
       if (!id) {
         const docId = await addDocument({
           ...campaignData,
@@ -115,14 +99,14 @@ export default function CampaignsPage() {
           lastUpdated: new Date().toISOString()
         });
 
-        // Update the campaign with its URL using the Firestore document ID
+        // Update the campaign with its path using the Firestore document ID
         if (docId) {
           await updateDocument(docId, {
-            campaign_url: `${window.location.origin}/campaigns/${docId}`
+            campaign_path: `/campaigns/${docId}`
           });
         }
       } else {
-        // For existing campaigns, preserve the campaign_url
+        // For existing campaigns, preserve the campaign_path
         await updateDocument(id, {
           ...campaignData,
           lastUpdated: new Date().toISOString()
