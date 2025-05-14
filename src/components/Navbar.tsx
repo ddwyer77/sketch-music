@@ -38,7 +38,7 @@ export default function Navbar() {
         ) : (
           <button 
             onClick={handleSignIn}
-            className="bg-primary hover:bg-primary/90 px-5 text-white hover:cursor-pointer py-2 rounded-md transition-colors"
+            className="bg-primary hover:bg-primary/90 px-5 text-white py-2 rounded-md transition-colors cursor-pointer"
           >
             Sign In
           </button>

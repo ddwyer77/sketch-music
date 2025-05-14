@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "../components/Navbar";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SignUpProvider } from '@/contexts/SignUpContext';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,10 +32,12 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <AuthProvider>
-          <Navbar />
-          <main className="min-h-screen">
-            {children}
-          </main>
+          <SignUpProvider>
+            <Navbar />
+            <main className="min-h-screen">
+              {children}
+            </main>
+          </SignUpProvider>
         </AuthProvider>
       </body>
     </html>

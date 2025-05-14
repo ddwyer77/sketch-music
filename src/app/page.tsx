@@ -1,7 +1,40 @@
+"use client";
+
+import { useRouter } from 'next/navigation';
+import { useSignUp } from '@/contexts/SignUpContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import ContactForm from '../components/ContactForm';
 
 export default function Home() {
+  const router = useRouter();
+  const { setSelectedUserType } = useSignUp();
+  const { user } = useAuth();
+
+  const handleStartManaging = async () => {
+    if (user) {
+      // Check if user is already a manager
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.user_type === 'manager') {
+          router.push('/dashboard');
+          return;
+        }
+      }
+    }
+    // If not signed in or not a manager, go to signup
+    setSelectedUserType('manager');
+    router.push('/auth/signup');
+  };
+
+  const handleEarnAsCreator = () => {
+    setSelectedUserType('creator');
+    router.push('/auth/signup');
+  };
+
   const stats = [
     { title: '$200K', description: 'Paid to creators' },
     { title: '9,000', description: 'Active clippers' },
@@ -23,18 +56,18 @@ export default function Home() {
               Sketch Music turns passionate creators into a viral engine for brands—paying only for real views, real engagement, and real impact.
             </p>
             <div className="flex flex-wrap gap-4 pt-2">
-              <a 
-                className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-md font-medium transition-colors"
-                href="/dashboard"
+              <button
+                onClick={handleStartManaging}
+                className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-md font-medium transition-colors cursor-pointer"
               >
                 Start Managing
-              </a>
-              <a 
-                className="border border-primary text-primary hover:bg-primary/5 px-8 py-3 rounded-md font-medium transition-colors"
-                href="/partner"
+              </button>
+              <button
+                onClick={handleEarnAsCreator}
+                className="border border-primary text-primary hover:bg-primary/5 px-8 py-3 rounded-md font-medium transition-colors cursor-pointer"
               >
                 🤑 Earn as Creator
-              </a>
+              </button>
             </div>
           </div>
           

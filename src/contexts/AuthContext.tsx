@@ -12,13 +12,14 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '@/lib/firebase';
+import { UserType } from '@/types/user';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
-  signUpWithEmail: (email: string, password: string, firstName: string, lastName: string, paymentEmail?: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string, firstName: string, lastName: string, paymentEmail?: string, userType?: UserType) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -51,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: result.user.email,
           first_name: result.user.displayName?.split(' ')[0] || '',
           last_name: result.user.displayName?.split(' ').slice(1).join(' ') || '',
-          admin: false,
+          user_type: 'creator',
           groups: [],
           payment_info: []
         });
@@ -76,7 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string, 
     firstName: string, 
     lastName: string,
-    paymentEmail?: string
+    paymentEmail?: string,
+    userType: UserType = 'creator'
   ) => {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
@@ -86,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         first_name: firstName,
         last_name: lastName,
-        admin: false,
+        user_type: userType,
         groups: [],
         payment_info: paymentEmail ? [{ email: paymentEmail }] : []
       });
