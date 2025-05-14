@@ -10,6 +10,7 @@ import {
   onAuthStateChanged,
   GoogleAuthProvider
 } from 'firebase/auth';
+import { FirebaseError } from 'firebase/app';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, googleProvider } from '@/lib/firebase';
 import { UserType } from '@/types/user';
@@ -91,19 +92,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         groups: [],
         payment_info: paymentEmail ? [{ email: paymentEmail }] : []
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error signing up with email:', error);
       // Convert Firebase error codes to user-friendly messages
-      switch (error.code) {
-        case 'auth/weak-password':
-          throw new Error('Password should be at least 6 characters long');
-        case 'auth/email-already-in-use':
-          throw new Error('This email is already registered');
-        case 'auth/invalid-email':
-          throw new Error('Please enter a valid email address');
-        default:
-          throw new Error('Failed to create account. Please try again.');
+      if (error instanceof FirebaseError) {
+        switch (error.code) {
+          case 'auth/weak-password':
+            throw new Error('Password should be at least 6 characters long');
+          case 'auth/email-already-in-use':
+            throw new Error('This email is already registered');
+          case 'auth/invalid-email':
+            throw new Error('Please enter a valid email address');
+          default:
+            throw new Error('Failed to create account. Please try again.');
+        }
       }
+      throw new Error('Failed to create account. Please try again.');
     }
   };
 
