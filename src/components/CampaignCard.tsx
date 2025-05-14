@@ -82,7 +82,8 @@ export default function CampaignCard({ campaign, onEdit, onDelete, children }: C
         
         <div className="p-5 flex-1 flex flex-col">
           {/* Campaign Name */}
-          <h3 className="font-bold text-lg mb-4 text-gray-800">{campaign.name}</h3>
+          <h3 className="font-bold text-lg text-gray-800">{campaign.name}</h3>
+          <a href={`${campaign.campaign_url}`} className="font-bold text-sm mb-4 text-primary underline" target="_blank">Campaign Url</a>
           
           {/* Campaign Stats */}
           <div className="flex-1 grid grid-cols-2 gap-4 text-sm">

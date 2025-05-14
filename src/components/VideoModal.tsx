@@ -24,12 +24,20 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
   const [embedUrl, setEmbedUrl] = useState<string>('');
   const [newVideoUrl, setNewVideoUrl] = useState('');
   const [isAddingVideo, setIsAddingVideo] = useState(false);
+  const [localVideos, setLocalVideos] = useState<Video[]>(videoUrls);
+  const [hasChanges, setHasChanges] = useState(false);
   const { user } = useAuth();
   const { updateDocument, loading } = useFirestoreOperations('campaigns');
 
+  // Update local videos when prop changes
   useEffect(() => {
-    if (videoUrls.length > 0) {
-      const url = videoUrls[selectedVideoIndex].url;
+    setLocalVideos(videoUrls);
+    setHasChanges(false);
+  }, [videoUrls]);
+
+  useEffect(() => {
+    if (localVideos.length > 0) {
+      const url = localVideos[selectedVideoIndex].url;
       // Convert TikTok URL to embed URL
       try {
         // Extract video ID from TikTok URL format
@@ -47,59 +55,58 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
         setEmbedUrl(url);
       }
     }
-  }, [videoUrls, selectedVideoIndex]);
+  }, [localVideos, selectedVideoIndex]);
 
-  const handleDeleteVideo = async (indexToDelete: number) => {
-    if (window.confirm('Are you sure you want to delete this video?')) {
-      const updatedUrls = videoUrls.filter((_, index) => index !== indexToDelete);
+  const handleStatusChange = (index: number, newStatus: 'pending' | 'approved' | 'denied') => {
+    setLocalVideos(prevVideos => 
+      prevVideos.map((video, i) => 
+        i === index ? { ...video, status: newStatus } : video
+      )
+    );
+    setHasChanges(true);
+  };
 
-      try {
-        await updateDocument(campaignId, { videos: updatedUrls });
-        // If we deleted the currently selected video, select the first one
-        if (indexToDelete === selectedVideoIndex) {
-          setSelectedVideoIndex(0);
-        }
-        // If we deleted a video before the currently selected one, adjust the index
-        else if (indexToDelete < selectedVideoIndex) {
-          setSelectedVideoIndex(selectedVideoIndex - 1);
-        }
-        
-        onVideosUpdated();
-      } catch (error) {
-        console.error('Error deleting video:', error);
-        alert('Failed to delete video. Please try again.');
-      }
+  const handleSaveChanges = async () => {
+    try {
+      await updateDocument(campaignId, { videos: localVideos });
+      setHasChanges(false);
+      onVideosUpdated();
+      onClose();
+    } catch (error) {
+      console.error('Error saving changes:', error);
+      alert('Failed to save changes. Please try again.');
     }
   };
 
-  const handleStatusChange = async (index: number, newStatus: 'pending' | 'approved' | 'denied') => {
-    // Update local state immediately
-    const updatedVideos = [...videoUrls];
-    updatedVideos[index] = { ...updatedVideos[index], status: newStatus };
-    
-    try {
-      await updateDocument(campaignId, { videos: updatedVideos });
-      onVideosUpdated();
-    } catch (error) {
-      console.error('Error updating video status:', error);
-      alert('Failed to update video status. Please try again.');
+  const handleDeleteVideo = async (indexToDelete: number) => {
+    if (window.confirm('Are you sure you want to delete this video?')) {
+      setLocalVideos(prevVideos => prevVideos.filter((_, index) => index !== indexToDelete));
+      setHasChanges(true);
+      
+      // If we deleted the currently selected video, select the first one
+      if (indexToDelete === selectedVideoIndex) {
+        setSelectedVideoIndex(0);
+      }
+      // If we deleted a video before the currently selected one, adjust the index
+      else if (indexToDelete < selectedVideoIndex) {
+        setSelectedVideoIndex(selectedVideoIndex - 1);
+      }
     }
   };
 
   const handleAddVideo = async () => {
     if (!newVideoUrl.trim()) return;
 
-    const updatedUrls = [...videoUrls, { url: newVideoUrl.trim(), status: 'pending', author_id: user?.uid || '' }];
+    const newVideo = { 
+      url: newVideoUrl.trim(), 
+      status: 'pending' as const, 
+      author_id: user?.uid || '' 
+    };
 
-    try {
-      await updateDocument(campaignId, { videos: updatedUrls });
-      setNewVideoUrl('');
-      setIsAddingVideo(false);
-      onVideosUpdated();
-    } catch (error) {
-      console.error('Error adding video:', error);
-      alert('Failed to add video. Please try again.');
-    }
+    setLocalVideos(prevVideos => [...prevVideos, newVideo]);
+    setNewVideoUrl('');
+    setIsAddingVideo(false);
+    setHasChanges(true);
   };
 
   return (
@@ -107,14 +114,25 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
       <div className="bg-white rounded-lg w-full max-w-6xl h-[80vh] flex flex-col">
         <div className="p-6 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-xl font-bold text-gray-900">Campaign Videos</h2>
-          <button 
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-4">
+            {hasChanges && (
+              <button
+                onClick={handleSaveChanges}
+                disabled={loading}
+                className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Saving...' : 'Save Changes'}
+              </button>
+            )}
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-1 min-h-0">
@@ -142,10 +160,10 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
                 <div className="flex gap-2 mt-2">
                   <button
                     onClick={handleAddVideo}
-                    disabled={!newVideoUrl.trim() || loading}
+                    disabled={!newVideoUrl.trim()}
                     className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
                   >
-                    Save
+                    Add
                   </button>
                   <button
                     onClick={() => {
@@ -160,11 +178,11 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
               </div>
             )}
 
-            {videoUrls.length === 0 ? (
+            {localVideos.length === 0 ? (
               <p className="text-gray-500">No videos in this campaign.</p>
             ) : (
               <ul className="space-y-3">
-                {videoUrls.map((video, index) => (
+                {localVideos.map((video, index) => (
                   <li 
                     key={index} 
                     className={`flex justify-between items-center p-3 rounded-lg ${
@@ -226,7 +244,7 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
           <div className="flex-1 p-6 flex flex-col">
             <h3 className="text-lg font-medium mb-4 text-gray-900">Video Preview</h3>
             
-            {videoUrls.length > 0 ? (
+            {localVideos.length > 0 ? (
               <div className="flex-1 bg-black rounded-lg overflow-hidden">
                 {embedUrl ? (
                   <iframe
@@ -246,10 +264,10 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
               </div>
             )}
             
-            {videoUrls.length > 0 && (
+            {localVideos.length > 0 && (
               <div className="mt-4">
                 <p className="text-sm text-gray-500 break-all">
-                  {videoUrls[selectedVideoIndex].url}
+                  {localVideos[selectedVideoIndex].url}
                 </p>
               </div>
             )}
