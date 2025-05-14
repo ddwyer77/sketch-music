@@ -2,19 +2,46 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user is a manager or admin
+    function isManagerOrAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.user_type == 'manager' ||
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.user_type == 'admin');
+    }
+
+    // Helper function to check if user is a creator
+    function isCreator() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.user_type == 'creator';
+    }
+
     // Allow users to read and write their own user document
     match /users/{userId} {
-      allow read: if request.auth != null; // Allow any authenticated user to read user documents
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && request.auth.uid == userId;
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && request.auth.uid == userId;
       allow delete: if false; // Prevent users from deleting their own documents
     }
 
     // Campaign rules - allow public read access, but only admins can write
     match /campaigns/{campaignId} {
-      allow read: if true; // Allow anyone to read campaigns
-      allow write: if request.auth != null && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true;
+      allow read: if isAuthenticated();
+      allow create: if isManagerOrAdmin();
+      allow update: if isManagerOrAdmin();
+      allow delete: if isManagerOrAdmin();
+    }
+
+    // Videos subcollection rules
+    match /campaigns/{campaignId}/videos/{videoId} {
+      allow read: if isAuthenticated();
+      allow create: if isCreator();
+      allow update: if isCreator() || isManagerOrAdmin();
+      allow delete: if isManagerOrAdmin();
     }
   }
 } 

@@ -1,13 +1,19 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { useCollection } from '../../../hooks';
-import { Campaign } from '../page';
+import { useQuery } from '../../../hooks';
+import { where } from 'firebase/firestore';
+import { useAuth } from '@/contexts/AuthContext';
+import { Campaign } from '@/types/campaign';
 import { extractTikTokMetrics } from '../../../lib/webScraper';
 import Image from 'next/image';
 
 export default function AnalyticsPage() {
-  const { documents: campaigns, loading, error } = useCollection<Campaign>('campaigns');
+  const { user } = useAuth();
+  const { documents: campaigns, loading, error } = useQuery<Campaign>(
+    'campaigns',
+    user ? [where('owner_id', '==', user.uid)] : []
+  );
   const [selectedTimeRange, setSelectedTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
   const [isLoading, setIsLoading] = useState(true);
   

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import CampaignModal from '../../components/CampaignModal';
 import CampaignCard from '../../components/CampaignCard';
-import { useCollection, useFirestoreOperations } from '../../hooks';
-import { doc, updateDoc } from 'firebase/firestore';
+import { useQuery, useFirestoreOperations } from '../../hooks';
+import { doc, updateDoc, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { fetchTikTokDataFromUrl, extractTikTokMetrics } from '../../lib/webScraper';
 import { Campaign } from '@/types/campaign';
@@ -83,9 +83,18 @@ export default function Dashboard() {
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateMessage, setUpdateMessage] = useState<string | null>(null);
-  const [initialUpdateDone, setInitialUpdateDone] = useState(false);
   
-  const { documents: campaigns = [], loading, error, refresh } = useCollection<Campaign>('campaigns');
+  // Use a stable query reference
+  const queryConstraints = useMemo(() => 
+    user ? [where('owner_id', '==', user.uid)] : [], 
+    [user]
+  );
+  
+  const { documents: campaigns = [], loading, error, refresh } = useQuery<Campaign>(
+    'campaigns',
+    queryConstraints
+  );
+  
   const { 
     addDocument, 
     updateDocument, 
@@ -143,14 +152,6 @@ export default function Dashboard() {
       setIsUpdating(false);
     }
   }, [campaigns, isUpdating, refresh]);
-  
-  // Update metrics only once when the dashboard first loads
-  useEffect(() => {
-    if (campaigns?.length > 0 && !loading && !initialUpdateDone) {
-      handleUpdateMetrics();
-      setInitialUpdateDone(true);
-    }
-  }, [campaigns?.length, loading, initialUpdateDone, handleUpdateMetrics]);
   
   const openModal = (campaign?: Campaign) => {
     if (campaign) {

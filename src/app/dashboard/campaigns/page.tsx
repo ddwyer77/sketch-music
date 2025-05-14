@@ -2,7 +2,9 @@
 
 import React, { useState } from 'react';
 import { useEffect } from 'react';
-import { useCollection, useFirestoreOperations } from '../../../hooks';
+import { useQuery, useFirestoreOperations } from '../../../hooks';
+import { where } from 'firebase/firestore';
+import { useAuth } from '@/contexts/AuthContext';
 import VideoModal from '../../../components/VideoModal';
 import CampaignModal from '../../../components/CampaignModal';
 import Image from 'next/image';
@@ -25,12 +27,16 @@ interface Campaign {
 }
 
 export default function CampaignsPage() {
+  const { user } = useAuth();
   const {
     documents: campaigns,
     loading,
     error,
     refresh
-  } = useCollection<Campaign>('campaigns');
+  } = useQuery<Campaign>(
+    'campaigns',
+    user ? [where('owner_id', '==', user.uid)] : []
+  );
   
   const { 
     addDocument, 
