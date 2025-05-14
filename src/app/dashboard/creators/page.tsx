@@ -3,29 +3,8 @@
 import { useState } from 'react';
 import { useCollection } from '@/hooks';
 import { useAuth } from '@/contexts/AuthContext';
-
-type User = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  payment_info: Array<{
-    email: string;
-  }>;
-  groups: string[];
-};
-
-type Video = {
-  url: string;
-  status: 'pending' | 'approved' | 'denied';
-  author_id: string;
-};
-
-type Campaign = {
-  id: string;
-  name: string;
-  videos: Video[];
-};
+import { User } from '@/types/user';
+import { Campaign, Video } from '@/types/campaign';
 
 type Contribution = {
   campaignName: string;

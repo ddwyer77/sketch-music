@@ -33,7 +33,7 @@ export default function Home() {
                 className="border border-primary text-primary hover:bg-primary/5 px-8 py-3 rounded-md font-medium transition-colors"
                 href="/partner"
               >
-                Join as Creator
+                🤑 Earn as Creator
               </a>
             </div>
           </div>

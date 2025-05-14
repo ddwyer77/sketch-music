@@ -7,13 +7,16 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
 
-export default function SignIn() {
+export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [paymentEmail, setPaymentEmail] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  const { signInWithGoogle, signInWithEmail, user } = useAuth();
+  const { signInWithGoogle, signUpWithEmail, user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -50,15 +53,15 @@ export default function SignIn() {
     }
   };
 
-  const handleEmailSignIn = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
-      await signInWithEmail(email, password);
+      await signUpWithEmail(email, password, firstName, lastName, paymentEmail);
     } catch (error) {
-      setError('Failed to sign in');
+      setError('Failed to create account');
     } finally {
       setIsLoading(false);
     }
@@ -69,7 +72,7 @@ export default function SignIn() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
+            Create your account
           </h2>
         </div>
 
@@ -79,8 +82,37 @@ export default function SignIn() {
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleEmailSignIn}>
+        <form className="mt-8 space-y-6" onSubmit={handleSignUp}>
           <div className="rounded-md shadow-sm -space-y-px">
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label htmlFor="first-name" className="sr-only">First Name</label>
+                <input
+                  id="first-name"
+                  name="first-name"
+                  type="text"
+                  required
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+                  placeholder="First Name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="last-name" className="sr-only">Last Name</label>
+                <input
+                  id="last-name"
+                  name="last-name"
+                  type="text"
+                  required
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+                  placeholder="Last Name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                />
+              </div>
+            </div>
+
             <div>
               <label htmlFor="email-address" className="sr-only">Email address</label>
               <input
@@ -95,18 +127,32 @@ export default function SignIn() {
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
+
             <div>
               <label htmlFor="password" className="sr-only">Password</label>
               <input
                 id="password"
                 name="password"
                 type="password"
-                autoComplete="current-password"
+                autoComplete="new-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="payment-email" className="sr-only">Payment Email (Optional)</label>
+              <input
+                id="payment-email"
+                name="payment-email"
+                type="email"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+                placeholder="Payment Email (Optional)"
+                value={paymentEmail}
+                onChange={(e) => setPaymentEmail(e.target.value)}
               />
             </div>
           </div>
@@ -123,10 +169,10 @@ export default function SignIn() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Signing in...
+                  Creating account...
                 </div>
               ) : (
-                'Sign in'
+                'Sign up'
               )}
             </button>
           </div>
@@ -166,17 +212,17 @@ export default function SignIn() {
                   fill="#EA4335"
                 />
               </svg>
-              {isLoading ? 'Signing in...' : 'Sign in with Google'}
+              {isLoading ? 'Signing up...' : 'Sign up with Google'}
             </button>
           </div>
         </div>
 
         <div className="text-center">
           <Link
-            href="/auth/signup"
+            href="/auth/signin"
             className="text-sm text-primary hover:text-primary-dark"
           >
-            Don't have an account? Sign up
+            Already have an account? Sign in
           </Link>
         </div>
       </div>
