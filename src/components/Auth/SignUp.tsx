@@ -53,7 +53,7 @@ export default function SignUp() {
       }
       await signInWithGoogle(selectedUserType);
       clearSelectedUserType();
-      router.push('/dashboard');
+      router.push(selectedUserType === 'creator' ? '/creator' : '/dashboard');
     } catch (error) {
       setError('Failed to sign in with Google');
     } finally {
@@ -72,7 +72,7 @@ export default function SignUp() {
       }
       await signUpWithEmail(email, password, firstName, lastName, paymentEmail, selectedUserType);
       clearSelectedUserType();
-      router.push('/dashboard');
+      router.push(selectedUserType === 'creator' ? '/creator' : '/dashboard');
     } catch (error: any) {
       setError(error.message || 'Failed to create account');
     } finally {
