@@ -1,8 +1,8 @@
 "use client";
 
 import Image from 'next/image';
-import { Campaign } from '../app/dashboard/page';
 import { ReactNode } from 'react';
+import { Campaign } from '@/types/campaign';
 
 type CampaignCardProps = {
   campaign: Campaign;

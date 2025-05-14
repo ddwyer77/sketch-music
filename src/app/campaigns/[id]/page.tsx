@@ -7,22 +7,7 @@ import { useCollection } from '@/hooks';
 import Image from 'next/image';
 import Link from 'next/link';
 import VideoModal from '@/components/VideoModal';
-
-type Campaign = {
-  id: string;
-  name: string;
-  budget: number;
-  budgetUsed: number;
-  ratePerMillion: number;
-  imageUrl: string;
-  campaign_url: string;
-  videos: { url: string; status: 'pending' | 'approved' | 'denied'; author_id: string }[];
-  createdAt: string;
-  views: number;
-  shares: number;
-  comments: number;
-  lastUpdated: string;
-};
+import { Campaign } from '@/types/campaign';
 
 export default function CampaignPage() {
   const { id } = useParams();

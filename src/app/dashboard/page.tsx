@@ -8,27 +8,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { fetchTikTokDataFromUrl, extractTikTokMetrics } from '../../lib/webScraper';
 import AdminProtectedRoute from '@/components/Auth/AdminProtectedRoute';
-
-export type Campaign = {
-  id: string;
-  name: string;
-  budget: number;
-  budgetUsed: number;
-  ratePerMillion: number;
-  imageUrl: string;
-  campaign_url: string;
-  videos: Array<{
-    url: string;
-    status: 'approved' | 'denied' | 'pending';
-    author_id: string;
-  }>;
-  createdAt: string;
-  views: number;
-  shares: number;
-  comments: number;
-  likes?: number;
-  lastUpdated: string;
-};
+import { Campaign } from '@/types/campaign';
 
 const generateMetrics = async(url: string) => {
   try {

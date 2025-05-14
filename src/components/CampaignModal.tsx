@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { Campaign } from '../app/dashboard/page';
 import { storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Image from 'next/image';
+import { Campaign } from '@/types/campaign';
 
 type CampaignModalProps = {
   onClose: () => void;

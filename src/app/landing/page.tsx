@@ -6,13 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCollection } from '@/hooks';
 import Image from 'next/image';
 import Link from 'next/link';
-
-type Campaign = {
-  id: string;
-  name: string;
-  imageUrl: string;
-  campaign_url: string;
-};
+import { Campaign } from '@/types/campaign';
 
 export default function LandingPage() {
   const { user } = useAuth();
