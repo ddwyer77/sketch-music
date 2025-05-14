@@ -159,19 +159,23 @@ export default function Dashboard() {
       const { id, ...campaignData } = campaign;
       await updateDocument(id, campaignData);
     } else {
-      // Add new campaign with default metrics values and owner_id
-      const { id, ...campaignData } = campaign;
-      const docId = await addDocument({
+      // Create new campaign
+      const { id, owner_id, ...campaignData } = campaign; // Remove any existing owner_id
+      
+      // Create the campaign with explicit owner_id
+      const newCampaign = {
         ...campaignData,
-        owner_id: user.uid,  // Add the owner_id
+        owner_id: user.uid,
         createdAt: new Date().toISOString(),
         views: 0,
         shares: 0,
         comments: 0,
         lastUpdated: new Date().toISOString()
-      });
+      };
 
-      // Update the campaign with its path using the Firestore document ID
+      console.log('Creating new campaign:', newCampaign);
+      const docId = await addDocument(newCampaign);
+
       if (docId) {
         await updateDocument(docId, {
           campaign_path: `/campaigns/${docId}`
@@ -179,7 +183,6 @@ export default function Dashboard() {
       }
     }
     
-    // Refresh the list of campaigns
     refresh();
     closeModal();
   };
@@ -238,7 +241,7 @@ export default function Dashboard() {
           </div>
         ) : campaigns.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-10 text-center">
-            <h2 className="text-xl font-medium mb-4">No campaigns yet</h2>
+            <h2 className="text-xl font-medium mb-4 text-gray-800">No campaigns yet</h2>
             <p className="text-gray-900 mb-6">Start creating your first campaign to track your marketing efforts</p>
             <button
               onClick={() => openModal()}

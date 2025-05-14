@@ -260,8 +260,11 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
       campaign_path: initialData?.campaign_path || formData.campaign_path,
       // Filter out empty video URLs
       videos: formData.videos.filter(video => video.url.trim() !== ''),
+      // Don't include owner_id here - it will be set by the parent component
+      owner_id: initialData?.owner_id || ''  // Only include if editing
     };
     
+    console.log('CampaignModal sending data:', campaign); // Debug log
     onSave(campaign);
   };
   

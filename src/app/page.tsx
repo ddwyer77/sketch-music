@@ -10,30 +10,30 @@ export default function Home() {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="py-20 px-6 bg-gray-50">
+      <section className="flex-1 py-16 px-6">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           {/* Left Column - Text and CTA */}
-          <div className="space-y-8">
+          <div className="space-y-6">
             <h1 className="text-5xl font-bold leading-tight text-gray-900">
               The All-in-One Tool for <span className="text-primary">Virality</span>
             </h1>
             <p className="text-xl text-gray-600">
               Sketch Music turns passionate creators into a viral engine for brands—paying only for real views, real engagement, and real impact.
             </p>
-            <div className="flex flex-wrap gap-4 pt-4">
+            <div className="flex flex-wrap gap-4 pt-2">
               <a 
                 className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-md font-medium transition-colors"
                 href="/dashboard"
               >
-                Join Now
+                Start Managing
               </a>
               <a 
                 className="border border-primary text-primary hover:bg-primary/5 px-8 py-3 rounded-md font-medium transition-colors"
                 href="/partner"
               >
-                Partner With Us
+                Join as Creator
               </a>
             </div>
           </div>
@@ -64,27 +64,24 @@ export default function Home() {
       </section>
 
       {/* Stats Section */}
-      <section className="bg-gray-50 py-16 px-6">
+      <section className="py-20 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {stats.map((stat, index) => (
               <div 
                 key={index} 
-                className="bg-white rounded-xl p-8 text-center shadow-md border border-gray-100 hover:shadow-lg transition-shadow"
+                className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 p-8 hover:shadow-lg transition-all duration-300"
               >
-                <h2 className="text-4xl font-bold text-primary mb-2">{stat.title}</h2>
-                <p className="text-gray-600">{stat.description}</p>
+                <div className="flex items-start gap-6">
+                  <div className="flex-1">
+                    <h2 className="text-6xl font-bold text-primary mb-3">{stat.title}</h2>
+                    <p className="text-2xl text-gray-700 font-medium">{stat.description}</p>
+                  </div>
+                  <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-primary/10 rounded-full blur-2xl"></div>
+                </div>
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Contact Section */}
-      <section className="py-20 px-6 bg-white">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-8">Ready to go viral? Hit us up</h2>
-          <ContactForm />
         </div>
       </section>
     </div>
