@@ -88,7 +88,7 @@ export default function CampaignCard({ campaign, onEdit, onDelete, children }: C
             className="font-bold text-sm mb-4 text-primary underline" 
             target="_blank"
           >
-            Campaign Link
+            Campaign URL
           </a>
           
           {/* Campaign Stats */}
