@@ -20,20 +20,18 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.user_type == 'creator';
     }
 
-    // Allow users to read and write their own user document
-    match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update: if isAuthenticated() && request.auth.uid == userId;
-      allow delete: if false; // Prevent users from deleting their own documents
+    // Campaign rules
+    match /campaigns/{campaignId} {
+      // Anyone can read campaigns
+      allow read: if true;
+      // Only authenticated users can write to campaigns
+      allow write: if request.auth != null;
     }
 
-    // Campaign rules - allow public read access, but only admins can write
-    match /campaigns/{campaignId} {
-      allow read: if isAuthenticated();
-      allow create: if isManagerOrAdmin();
-      allow update: if isManagerOrAdmin();
-      allow delete: if isManagerOrAdmin();
+    // User rules
+    match /users/{userId} {
+      // Users can read and write their own documents
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
     // Videos subcollection rules

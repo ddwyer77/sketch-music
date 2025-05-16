@@ -17,10 +17,24 @@ export default function SignUp() {
   const [paymentEmail, setPaymentEmail] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedUserType, setSelectedUserType] = useState<UserType>('creator');
   
   const { signInWithGoogle, signUpWithEmail, user } = useAuth();
-  const { selectedUserType, clearSelectedUserType } = useSignUp();
+  const { clearSelectedUserType } = useSignUp();
   const router = useRouter();
+
+  // Check URL parameters and referrer for default type
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const defaultType = searchParams.get('type') as UserType;
+    const referrer = document.referrer;
+
+    if (defaultType === 'manager' || defaultType === 'creator') {
+      setSelectedUserType(defaultType);
+    } else if (referrer.includes('/campaigns/')) {
+      setSelectedUserType('creator');
+    }
+  }, []);
 
   useEffect(() => {
     const checkUserAndRedirect = async () => {
@@ -70,6 +84,12 @@ export default function SignUp() {
       if (!selectedUserType) {
         throw new Error('Please select how you want to use the platform');
       }
+
+      // Validate password
+      if (password.length < 6) {
+        throw new Error('Password must be at least 6 characters long');
+      }
+
       await signUpWithEmail(email, password, firstName, lastName, paymentEmail, selectedUserType);
       clearSelectedUserType();
       router.push(selectedUserType === 'creator' ? '/creator' : '/dashboard');
@@ -87,11 +107,9 @@ export default function SignUp() {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Create your account
           </h2>
-          {selectedUserType && (
-            <p className="mt-2 text-center text-sm text-gray-600">
-              Creating a {selectedUserType} account
-            </p>
-          )}
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Creating a {selectedUserType} account
+          </p>
         </div>
 
         {error && (
@@ -99,6 +117,40 @@ export default function SignUp() {
             <span className="block sm:inline">{error}</span>
           </div>
         )}
+
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-gray-900">How do you want to use the platform?</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setSelectedUserType('creator')}
+              className={`relative rounded-lg border px-6 py-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary ${
+                selectedUserType === 'creator'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-gray-300 bg-white hover:border-primary'
+              }`}
+            >
+              <span className="flex flex-col items-center">
+                <span className="text-sm font-medium text-gray-900">Creator</span>
+                <span className="mt-1 text-xs text-gray-500">Create and submit videos for campaigns</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedUserType('manager')}
+              className={`relative rounded-lg border px-6 py-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary ${
+                selectedUserType === 'manager'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-gray-300 bg-white hover:border-primary'
+              }`}
+            >
+              <span className="flex flex-col items-center">
+                <span className="text-sm font-medium text-gray-900">Manager</span>
+                <span className="mt-1 text-xs text-gray-500">Create and manage marketing campaigns</span>
+              </span>
+            </button>
+          </div>
+        </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSignUp}>
           <div className="rounded-md shadow-sm -space-y-px">

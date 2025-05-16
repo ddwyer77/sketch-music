@@ -91,21 +91,37 @@ export default function CampaignPage() {
             {!user ? (
               <div className="text-center py-6 border-t border-gray-200">
                 <p className="text-gray-600 mb-4">Sign in to contribute to this campaign</p>
-                <Link 
-                  href="/auth/signin"
-                  className="inline-block bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-md font-medium transition-colors"
-                >
-                  Sign In
-                </Link>
+                <div className="space-x-4">
+                  <Link 
+                    href={`/auth/signin?redirect=/campaigns/${id}`}
+                    className="inline-block bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-md font-medium transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link 
+                    href={`/auth/signup?redirect=/campaigns/${id}`}
+                    className="inline-block bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
+                  >
+                    Sign Up
+                  </Link>
+                </div>
               </div>
             ) : (
-              <div className="text-center py-6 border-t border-gray-200">
+              <div className="text-center py-6 border-t border-gray-200 space-y-4">
                 <button
                   onClick={() => setShowVideoModal(true)}
                   className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-md font-medium transition-colors"
                 >
                   Submit a Video
                 </button>
+                <div>
+                  <Link
+                    href="/creator"
+                    className="inline-block bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
+                  >
+                    Creator Dashboard
+                  </Link>
+                </div>
               </div>
             )}
           </div>

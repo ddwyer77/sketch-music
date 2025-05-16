@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -42,7 +44,21 @@ export default function SignIn() {
     try {
       setError('');
       setIsLoading(true);
-      await signInWithGoogle('creator');
+      
+      // Get the Google sign-in result
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      
+      // Check if user exists in Firestore
+      const userDoc = await getDoc(doc(db, 'users', result.user.uid));
+      
+      if (!userDoc.exists()) {
+        // If user doesn't exist, redirect to sign up
+        router.push('/auth/signup');
+        return;
+      }
+      
+      // If user exists, let the useEffect handle the redirect
     } catch (error) {
       setError('Failed to sign in with Google');
     } finally {

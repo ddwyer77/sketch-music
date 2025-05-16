@@ -30,7 +30,7 @@ export default function Home() {
       }
     } else {
       setSelectedUserType('manager');
-      router.push('/auth/signup');
+      router.push('/auth/signup?type=manager');
     }
   };
 
@@ -51,7 +51,7 @@ export default function Home() {
       }
     } else {
       setSelectedUserType('creator');
-      router.push('/auth/signup');
+      router.push('/auth/signup?type=creator');
     }
   };
 

@@ -45,16 +45,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // Create user document in Firestore
-      await setDoc(doc(db, 'users', user.uid), {
-        email: user.email,
-        firstName: user.displayName?.split(' ')[0] || '',
-        lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
-        paymentEmail: user.email,
-        user_type: userType,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+      // Check if user document already exists
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      
+      if (!userDoc.exists()) {
+        // Only create new user document if it doesn't exist
+        await setDoc(doc(db, 'users', user.uid), {
+          email: user.email,
+          firstName: user.displayName?.split(' ')[0] || '',
+          lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+          paymentEmail: user.email,
+          user_type: userType,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      }
 
       return user;
     } catch (error) {
