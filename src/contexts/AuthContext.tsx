@@ -18,7 +18,7 @@ import { UserType } from '@/types/user';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signInWithGoogle: (userType: UserType) => Promise<void>;
+  signInWithGoogle: (userType: UserType) => Promise<User>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, firstName: string, lastName: string, paymentEmail?: string, userType?: UserType) => Promise<void>;
   logout: () => Promise<void>;
