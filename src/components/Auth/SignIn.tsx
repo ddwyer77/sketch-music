@@ -42,7 +42,7 @@ export default function SignIn() {
     try {
       setError('');
       setIsLoading(true);
-      await signInWithGoogle();
+      await signInWithGoogle('creator');
     } catch (error) {
       setError('Failed to sign in with Google');
     } finally {
