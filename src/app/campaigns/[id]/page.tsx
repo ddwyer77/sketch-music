@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCollection } from '@/hooks';
 import Image from 'next/image';
 import Link from 'next/link';
-import VideoModal from '@/components/VideoModal';
+import SubmitVideoModal from '@/components/SubmitVideoModal';
 import { Campaign } from '@/types/campaign';
 
 export default function CampaignPage() {
@@ -93,13 +93,13 @@ export default function CampaignPage() {
                 <p className="text-gray-600 mb-4">Sign in to contribute to this campaign</p>
                 <div className="space-x-4">
                   <Link 
-                    href={`/auth/signin?redirect=/campaigns/${id}`}
+                    href={`/auth/signin?redirect=${encodeURIComponent(window.location.pathname)}`}
                     className="inline-block bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-md font-medium transition-colors"
                   >
                     Sign In
                   </Link>
                   <Link 
-                    href={`/auth/signup?redirect=/campaigns/${id}`}
+                    href={`/auth/signup?type=creator&redirect=${encodeURIComponent(window.location.pathname)}`}
                     className="inline-block bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
                   >
                     Sign Up
@@ -130,9 +130,8 @@ export default function CampaignPage() {
 
       {/* Video Submission Modal */}
       {showVideoModal && (
-        <VideoModal
+        <SubmitVideoModal
           campaignId={campaign.id}
-          videoUrls={campaign.videos}
           onClose={() => setShowVideoModal(false)}
           onVideosUpdated={refresh}
         />

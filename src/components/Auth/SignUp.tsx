@@ -40,6 +40,14 @@ export default function SignUp() {
     const checkUserAndRedirect = async () => {
       if (user) {
         try {
+          const searchParams = new URLSearchParams(window.location.search);
+          const redirectPath = searchParams.get('redirect');
+          
+          if (redirectPath) {
+            router.push(redirectPath);
+            return;
+          }
+
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
             const userData = userDoc.data();
@@ -67,7 +75,8 @@ export default function SignUp() {
       }
       await signInWithGoogle(selectedUserType);
       clearSelectedUserType();
-      router.push(selectedUserType === 'creator' ? '/creator' : '/dashboard');
+      
+      // The useEffect will handle the redirect
     } catch (error) {
       setError('Failed to sign in with Google');
     } finally {
@@ -92,7 +101,8 @@ export default function SignUp() {
 
       await signUpWithEmail(email, password, firstName, lastName, paymentEmail, selectedUserType);
       clearSelectedUserType();
-      router.push(selectedUserType === 'creator' ? '/creator' : '/dashboard');
+      
+      // The useEffect will handle the redirect
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'Failed to create account');
     } finally {

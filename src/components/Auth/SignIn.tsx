@@ -22,6 +22,14 @@ export default function SignIn() {
     const checkUserAndRedirect = async () => {
       if (user) {
         try {
+          const searchParams = new URLSearchParams(window.location.search);
+          const redirectPath = searchParams.get('redirect');
+          
+          if (redirectPath) {
+            router.push(redirectPath);
+            return;
+          }
+
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
             const userData = userDoc.data();
@@ -53,8 +61,10 @@ export default function SignIn() {
       const userDoc = await getDoc(doc(db, 'users', result.user.uid));
       
       if (!userDoc.exists()) {
-        // If user doesn't exist, redirect to sign up
-        router.push('/auth/signup');
+        // If user doesn't exist, redirect to sign up with the same redirect
+        const searchParams = new URLSearchParams(window.location.search);
+        const redirectPath = searchParams.get('redirect');
+        router.push(`/auth/signup${redirectPath ? `?redirect=${redirectPath}` : ''}`);
         return;
       }
       
@@ -73,6 +83,7 @@ export default function SignIn() {
 
     try {
       await signInWithEmail(email, password);
+      // The useEffect will handle the redirect
     } catch (error) {
       setError('Failed to sign in');
     } finally {
