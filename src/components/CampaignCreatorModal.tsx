@@ -56,8 +56,16 @@ export default function CampaignCreatorModal({ isOpen, onClose, selectedCampaign
     if (!inviteEmail || !selectedCampaignId) return;
 
     try {
-      // TODO: Implement email sending logic
-      console.log('Sending invite to:', inviteEmail);
+      const campaign = campaigns.find(c => c.id === selectedCampaignId);
+      if (!campaign) return;
+
+      const currentCreators = campaign.creators || [];
+      if (!currentCreators.includes(inviteEmail)) {
+        await updateDoc(doc(db, 'campaigns', selectedCampaignId), {
+          creators: [...currentCreators, inviteEmail]
+        });
+      }
+      
       setShowInviteForm(false);
       setInviteEmail('');
     } catch (error) {
@@ -91,7 +99,7 @@ export default function CampaignCreatorModal({ isOpen, onClose, selectedCampaign
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden">
         <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-gray-900">Manage Campaign Creators</h2>
+          <h2 className="text-xl font-bold text-gray-800">Manage Creators</h2>
           <button 
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
@@ -105,7 +113,7 @@ export default function CampaignCreatorModal({ isOpen, onClose, selectedCampaign
         <div className="flex h-[calc(90vh-8rem)]">
           {/* Left Column - Campaigns */}
           <div className="w-1/3 border-r border-gray-200 p-4 overflow-y-auto">
-            <h3 className="font-medium text-gray-900 mb-4">Campaigns</h3>
+            <h3 className="font-medium text-gray-800 mb-4">Select Campaign</h3>
             <div className="space-y-2">
               {campaigns.map((campaign) => (
                 <button
@@ -113,8 +121,8 @@ export default function CampaignCreatorModal({ isOpen, onClose, selectedCampaign
                   onClick={() => setSelectedCampaignId(campaign.id)}
                   className={`w-full p-3 text-left rounded-lg transition-colors ${
                     selectedCampaignId === campaign.id
-                      ? 'bg-primary/10 text-primary'
-                      : 'hover:bg-gray-50'
+                      ? 'bg-primary text-white'
+                      : 'hover:bg-gray-100 text-gray-800'
                   }`}
                 >
                   <div className="flex items-center space-x-3">
@@ -128,14 +136,14 @@ export default function CampaignCreatorModal({ isOpen, onClose, selectedCampaign
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center">
-                        <span className="text-gray-500 font-medium">
+                        <span className="text-gray-800 font-medium">
                           {campaign.name ? campaign.name.charAt(0) : 'C'}
                         </span>
                       </div>
                     )}
                     <div>
-                      <h4 className="font-medium">{campaign.name || 'Unnamed Campaign'}</h4>
-                      <p className="text-sm text-gray-500">
+                      <h4 className="font-medium text-gray-800">{campaign.name || 'Unnamed Campaign'}</h4>
+                      <p className="text-sm text-gray-800">
                         {campaign.creators?.length || 0} creators
                       </p>
                     </div>
@@ -152,16 +160,16 @@ export default function CampaignCreatorModal({ isOpen, onClose, selectedCampaign
                 <div className="flex-1">
                   <input
                     type="text"
-                    placeholder="Search creators..."
+                    placeholder="Search by name or email..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-gray-800"
                   />
                 </div>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as 'name' | 'email')}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-gray-800"
                 >
                   <option value="name">Sort by Name</option>
                   <option value="email">Sort by Email</option>
@@ -184,14 +192,14 @@ export default function CampaignCreatorModal({ isOpen, onClose, selectedCampaign
 
             {showInviteForm && (
               <div className="mb-6 p-4 border border-gray-200 rounded-lg">
-                <h4 className="font-medium mb-2">Invite Creator</h4>
+                <h4 className="font-medium mb-2 text-gray-800">Invite Creator</h4>
                 <div className="flex space-x-2">
                   <input
                     type="email"
                     placeholder="Enter creator's email"
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-gray-800"
                   />
                   <button
                     onClick={handleInviteCreator}
@@ -213,41 +221,38 @@ export default function CampaignCreatorModal({ isOpen, onClose, selectedCampaign
             )}
 
             <div className="space-y-4">
-              {filteredUsers.map((user) => {
-                const isAssigned = campaigns
-                  .find(c => c.id === selectedCampaignId)
-                  ?.creators?.includes(user.id);
-
-                return (
-                  <div key={user.id} className="p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-center justify-between">
+              {campaigns
+                .find(c => c.id === selectedCampaignId)
+                ?.creators?.map((creatorEmail) => {
+                  const user = users.find(u => u.email === creatorEmail);
+                  
+                  return (
+                    <div key={creatorEmail} className="p-4 border border-gray-200 rounded-lg">
                       <div className="flex items-center space-x-4">
                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-500 font-medium">
-                            {user.first_name ? user.first_name.charAt(0) : '?'}
+                          <span className="text-gray-800 font-medium">
+                            {user?.first_name ? user.first_name.charAt(0) : creatorEmail.charAt(0)}
                           </span>
                         </div>
                         <div>
-                          <h4 className="font-medium">
-                            {user.first_name || ''} {user.last_name || ''}
-                          </h4>
-                          <p className="text-sm text-gray-500">{user.email || 'No email'}</p>
+                          {user ? (
+                            <>
+                              <h4 className="font-medium text-gray-800">
+                                {user.first_name} {user.last_name}
+                              </h4>
+                              <p className="text-sm text-gray-800">{user.email}</p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-sm text-gray-800">{creatorEmail}</p>
+                              <p className="text-sm text-red-500">No account created yet</p>
+                            </>
+                          )}
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleCreatorToggle(user.id)}
-                        className={`px-4 py-2 rounded-lg ${
-                          isAssigned
-                            ? 'bg-red-100 text-red-800 hover:bg-red-200'
-                            : 'bg-green-100 text-green-800 hover:bg-green-200'
-                        }`}
-                      >
-                        {isAssigned ? 'Remove' : 'Add'}
-                      </button>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           </div>
         </div>
