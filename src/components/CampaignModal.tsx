@@ -269,7 +269,8 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     }
     
     // Only require the first video URL if any are entered
-    if (formData.videos[0]?.url && !isValidUrl(formData.videos[0].url)) {
+    const videos = formData.videos || [];
+    if (videos[0]?.url && !isValidUrl(videos[0].url)) {
       newErrors.videos = 'Please enter a valid URL';
     }
     
