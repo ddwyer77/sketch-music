@@ -5,10 +5,12 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const isDashboard = pathname.startsWith('/dashboard');
   const [userType, setUserType] = useState<'creator' | 'manager' | 'admin' | null>(null);
   const [firstName, setFirstName] = useState<string>('');
   const { user, logout } = useAuth();
@@ -60,8 +62,8 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-white shadow">
-      <div className="px-4 sm:px-6 lg:px-8">
+    <nav className="bg-white shadow px-6">
+      <div className={isDashboard ? '' : 'max-w-7xl mx-auto'}>
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
