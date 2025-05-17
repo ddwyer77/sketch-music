@@ -94,11 +94,11 @@ export default function CampaignsPage() {
       if (!id) {
         const docId = await addDocument({
           ...campaignData,
-          createdAt: new Date().toISOString(),
+          createdAt: Date.now(),
           views: 0,
           shares: 0,
           comments: 0,
-          lastUpdated: new Date().toISOString()
+          lastUpdated: Date.now()
         });
 
         // Update the campaign with its path using the Firestore document ID
@@ -111,7 +111,7 @@ export default function CampaignsPage() {
         // For existing campaigns, preserve the campaign_path
         await updateDocument(id, {
           ...campaignData,
-          lastUpdated: new Date().toISOString()
+          lastUpdated: Date.now()
         });
       }
 
@@ -231,7 +231,7 @@ export default function CampaignsPage() {
                   </td>
                   
                   <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <div className="text-sm text-gray-900">{campaign.videos.length} videos</div>
+                    <div className="text-sm text-gray-900">{campaign.videos?.length || 0} videos</div>
                   </td>
                   
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
@@ -262,7 +262,7 @@ export default function CampaignsPage() {
       {selectedCampaign && (
         <VideoModal
           campaignId={selectedCampaign.id}
-          videoUrls={selectedCampaign.videos}
+          videoUrls={selectedCampaign.videos || []}
           onClose={handleCloseVideoModal}
           onVideosUpdated={refresh}
         />

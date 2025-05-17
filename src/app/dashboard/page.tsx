@@ -30,7 +30,7 @@ const generateMetrics = async(url: string) => {
 
 // Update a single campaign's metrics with real TikTok data
 const updateCampaignMetrics = async (campaign: Campaign): Promise<Campaign> => {
-  if (!campaign.videos.length) {
+  if (!campaign.videos?.length) {
     return campaign;
   }
 
@@ -59,7 +59,7 @@ const updateCampaignMetrics = async (campaign: Campaign): Promise<Campaign> => {
       comments: aggregatedMetrics.comments,
       likes: aggregatedMetrics.likes,
       budgetUsed,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: Date.now()
     };
 
     // Update campaign in Firestore
@@ -188,11 +188,11 @@ export default function Dashboard() {
       const newCampaign = {
         ...campaignData,
         owner_id: user.uid,
-        createdAt: new Date().toISOString(),
+        createdAt: Date.now(),
         views: 0,
         shares: 0,
         comments: 0,
-        lastUpdated: new Date().toISOString()
+        lastUpdated: Date.now()
       };
 
       console.log('Creating new campaign:', newCampaign);

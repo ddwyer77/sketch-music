@@ -10,6 +10,14 @@ export interface Campaign {
   creators?: string[]; // Array of creator user IDs
   budget: number;
   budgetUsed: number;
+  ratePerMillion: number;
+  views: number;
+  shares: number;
+  comments: number;
+  likes: number;
+  lastUpdated: number;
+  campaign_path?: string;
+  owner_id: string;
 }
 
 export interface Video {
