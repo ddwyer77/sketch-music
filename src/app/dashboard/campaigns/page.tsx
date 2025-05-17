@@ -8,6 +8,7 @@ import VideoModal from '../../../components/VideoModal';
 import CampaignModal from '../../../components/CampaignModal';
 import Image from 'next/image';
 import { Campaign } from '@/types/campaign';
+import CampaignCreatorModal from '../../../components/CampaignCreatorModal';
 
 export default function CampaignsPage() {
   const { user } = useAuth();
@@ -15,6 +16,7 @@ export default function CampaignsPage() {
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [showCampaignModal, setShowCampaignModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showCreatorModal, setShowCreatorModal] = useState(false);
 
   // Use a stable query reference
   const queryConstraints = useMemo(() => 
@@ -122,6 +124,11 @@ export default function CampaignsPage() {
     }
   };
 
+  const handleManageCreators = (campaign: Campaign) => {
+    setSelectedCampaign(campaign);
+    setShowCreatorModal(true);
+  };
+
   if (loading) {
     return <div className="p-4 text-center">Loading campaigns data...</div>;
   }
@@ -163,7 +170,10 @@ export default function CampaignsPage() {
                   Videos
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                  Actions
+                  Contributions
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                  Creators
                 </th>
               </tr>
             </thead>
@@ -224,10 +234,19 @@ export default function CampaignsPage() {
                     <div className="text-sm text-gray-900">{campaign.videos.length} videos</div>
                   </td>
                   
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                     <button 
-                      className="text-indigo-600 hover:text-indigo-900 mr-3 hover:cursor-pointer"
+                      className="text-indigo-600 hover:text-indigo-900 hover:cursor-pointer"
                       onClick={() => handleViewVideos(campaign)}
+                    >
+                      Manage
+                    </button>
+                  </td>
+                  
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                    <button
+                      onClick={() => handleManageCreators(campaign)}
+                      className="text-primary hover:text-primary/90 font-medium"
                     >
                       Manage
                     </button>
@@ -256,6 +275,17 @@ export default function CampaignsPage() {
           onSave={handleSaveCampaign}
           initialData={null}
           isLoading={isSaving}
+        />
+      )}
+
+      {showCreatorModal && (
+        <CampaignCreatorModal
+          isOpen={showCreatorModal}
+          onClose={() => {
+            setShowCreatorModal(false);
+            setSelectedCampaign(null);
+          }}
+          selectedCampaign={selectedCampaign || undefined}
         />
       )}
     </div>

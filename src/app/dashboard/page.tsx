@@ -11,6 +11,7 @@ import { Campaign } from '@/types/campaign';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { getDoc } from 'firebase/firestore';
+import CampaignCreatorModal from '../../components/CampaignCreatorModal';
 
 const generateMetrics = async(url: string) => {
   try {
@@ -83,6 +84,8 @@ export default function Dashboard() {
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateMessage, setUpdateMessage] = useState<string | null>(null);
+  const [showCreatorModal, setShowCreatorModal] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   
   // Use a stable query reference
   const queryConstraints = useMemo(() => 
@@ -213,6 +216,11 @@ export default function Dashboard() {
     }
   };
   
+  const handleManageCreators = (campaign: Campaign) => {
+    setSelectedCampaign(campaign);
+    setShowCreatorModal(true);
+  };
+  
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8 flex-wrap">
@@ -276,6 +284,7 @@ export default function Dashboard() {
               campaign={campaign} 
               onEdit={() => openModal(campaign)}
               onDelete={() => handleDeleteCampaign(campaign.id)}
+              onManageCreators={() => handleManageCreators(campaign)}
             >
               <div className="mt-auto pt-4">
                 <div className="flex justify-between items-center mb-1">
@@ -300,6 +309,16 @@ export default function Dashboard() {
           onSave={handleSaveCampaign}
           initialData={editingCampaign}
           isLoading={operationLoading}
+        />
+      )}
+      {showCreatorModal && (
+        <CampaignCreatorModal
+          isOpen={showCreatorModal}
+          onClose={() => {
+            setShowCreatorModal(false);
+            setSelectedCampaign(null);
+          }}
+          selectedCampaign={selectedCampaign || undefined}
         />
       )}
     </div>

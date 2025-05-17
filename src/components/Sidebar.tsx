@@ -61,7 +61,6 @@ export default function Sidebar() {
     { path: '/dashboard', label: 'Dashboard', icon: DashboardIcon },
     { path: '/dashboard/campaigns', label: 'Campaigns', icon: CampaignsIcon },
     { path: '/dashboard/analytics', label: 'Analytics', icon: AnalyticsIcon },
-    { path: '/dashboard/creators', label: 'Creators', icon: CreatorsIcon },
     { path: '/dashboard/payments', label: 'Payments', icon: PaymentsIcon },
     { path: '/dashboard/settings', label: 'Settings', icon: SettingsIcon },
     { path: '/dashboard/help', label: 'Help', icon: HelpIcon },
