@@ -34,18 +34,18 @@ export default function CampaignCreatorModal({ isOpen, onClose, selectedCampaign
   const filteredUsers = users.filter(user => {
     const searchLower = searchQuery.toLowerCase();
     return (
-      user.email.toLowerCase().includes(searchLower) ||
-      user.first_name.toLowerCase().includes(searchLower) ||
-      user.last_name.toLowerCase().includes(searchLower) ||
-      user.payment_info?.[0]?.email?.toLowerCase().includes(searchLower)
+      (user.email?.toLowerCase() || '').includes(searchLower) ||
+      (user.first_name?.toLowerCase() || '').includes(searchLower) ||
+      (user.last_name?.toLowerCase() || '').includes(searchLower) ||
+      (user.payment_info?.[0]?.email?.toLowerCase() || '').includes(searchLower)
     );
   }).sort((a, b) => {
     const aValue = sortBy === 'name' 
-      ? `${a.first_name} ${a.last_name}`.toLowerCase()
-      : a.email.toLowerCase();
+      ? `${a.first_name || ''} ${a.last_name || ''}`.toLowerCase()
+      : (a.email || '').toLowerCase();
     const bValue = sortBy === 'name'
-      ? `${b.first_name} ${b.last_name}`.toLowerCase()
-      : b.email.toLowerCase();
+      ? `${b.first_name || ''} ${b.last_name || ''}`.toLowerCase()
+      : (b.email || '').toLowerCase();
     
     return sortOrder === 'asc'
       ? aValue.localeCompare(bValue)
