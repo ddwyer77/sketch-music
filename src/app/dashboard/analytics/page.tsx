@@ -559,7 +559,7 @@ export default function AnalyticsPage() {
                         </div>
                         <div>
                           <div className="text-sm font-medium text-gray-900">{campaign.name}</div>
-                          <div className="text-xs text-gray-900">{campaign.videos.length} videos</div>
+                          <div className="text-xs text-gray-900">{campaign.videos?.length || 0} videos</div>
                         </div>
                       </div>
                     </td>
