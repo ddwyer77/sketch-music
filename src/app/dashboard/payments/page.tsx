@@ -63,8 +63,9 @@ export default function PaymentsPage() {
   };
 
   // Function to format date
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (dateInput: string | number) => {
+    const date = new Date(dateInput);
+    return date.toLocaleDateString('en-US', {
       year: 'numeric', 
       month: 'short', 
       day: 'numeric'

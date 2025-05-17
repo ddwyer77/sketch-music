@@ -19,8 +19,9 @@ export default function CampaignCard({ campaign, onEdit, onDelete, onManageCreat
   };
   
   // Format date
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (dateInput: string | number): string => {
+    const date = new Date(dateInput);
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -124,7 +125,7 @@ export default function CampaignCard({ campaign, onEdit, onDelete, onManageCreat
             </div>
             <div>
               <p className="text-gray-500">Videos</p>
-              <p className="font-medium text-gray-900">{campaign.videos.length}</p>
+              <p className="font-medium text-gray-900">{campaign.videos?.length || 0}</p>
             </div>
             <div>
               <p className="text-gray-500">Shares</p>

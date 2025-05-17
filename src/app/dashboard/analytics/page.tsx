@@ -113,8 +113,9 @@ export default function AnalyticsPage() {
   };
 
   // Format date
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (dateInput: string | number): string => {
+    const date = new Date(dateInput);
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
