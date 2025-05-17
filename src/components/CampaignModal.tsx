@@ -21,11 +21,18 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     ratePerMillion: 0,
     imageUrl: '',
     campaign_path: '',
-    videos: [{ url: '', status: 'pending', author_id: '' }],
+    videos: [{
+      id: crypto.randomUUID(),
+      url: '',
+      status: 'pending',
+      author_id: '',
+      created_at: Date.now(),
+      updated_at: Date.now()
+    }],
     views: 0,
     shares: 0,
     comments: 0,
-    lastUpdated: new Date().toISOString(),
+    lastUpdated: Date.now(),
     owner_id: ''
   });
   
@@ -46,7 +53,14 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         ratePerMillion: initialData.ratePerMillion,
         imageUrl: initialData.imageUrl,
         campaign_path: initialData.campaign_path,
-        videos: initialData.videos.length ? initialData.videos : [{ url: '', status: 'pending', author_id: '' }],
+        videos: initialData.videos.length ? initialData.videos : [{
+          id: crypto.randomUUID(),
+          url: '',
+          status: 'pending',
+          author_id: '',
+          created_at: Date.now(),
+          updated_at: Date.now()
+        }],
         views: initialData.views,
         shares: initialData.shares,
         comments: initialData.comments,
@@ -105,7 +119,14 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
   const addVideoUrl = () => {
     setFormData({
       ...formData,
-      videos: [...formData.videos, { url: '', status: 'pending', author_id: '' }],
+      videos: [...formData.videos, {
+        id: crypto.randomUUID(),
+        url: '',
+        status: 'pending',
+        author_id: '',
+        created_at: Date.now(),
+        updated_at: Date.now()
+      }],
     });
   };
   
@@ -113,7 +134,14 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     const updatedVideos = formData.videos.filter((_, i) => i !== index);
     setFormData({
       ...formData,
-      videos: updatedVideos.length ? updatedVideos : [{ url: '', status: 'pending', author_id: '' }],
+      videos: updatedVideos.length ? updatedVideos : [{
+        id: crypto.randomUUID(),
+        url: '',
+        status: 'pending',
+        author_id: '',
+        created_at: Date.now(),
+        updated_at: Date.now()
+      }],
     });
   };
   
@@ -135,7 +163,14 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         ...formData,
         videos: [
           ...formData.videos.filter(video => video.url.trim() !== ''),
-          ...urls.map(url => ({ url, status: 'pending' as const, author_id: '' }))
+          ...urls.map(url => ({
+            id: crypto.randomUUID(),
+            url,
+            status: 'pending',
+            author_id: '',
+            created_at: Date.now(),
+            updated_at: Date.now()
+          }))
         ],
       });
       setBulkImportText('');

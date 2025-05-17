@@ -38,9 +38,12 @@ export default function SubmitVideoModal({ campaignId, onClose, onVideosUpdated 
 
     try {
       const newVideo = {
+        id: crypto.randomUUID(),
         url: videoUrl.trim(),
         status: 'pending' as const,
-        author_id: user?.uid || ''
+        author_id: user?.uid || '',
+        created_at: Date.now(),
+        updated_at: Date.now()
       };
 
       await updateDocument(campaignId, {
@@ -80,9 +83,12 @@ export default function SubmitVideoModal({ campaignId, onClose, onVideosUpdated 
       }
 
       const newVideos = urls.map(url => ({
+        id: crypto.randomUUID(),
         url,
         status: 'pending' as const,
-        author_id: user?.uid || ''
+        author_id: user?.uid || '',
+        created_at: Date.now(),
+        updated_at: Date.now()
       }));
 
       await updateDocument(campaignId, {
