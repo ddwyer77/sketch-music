@@ -24,7 +24,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     videos: [{
       id: crypto.randomUUID(),
       url: '',
-      status: 'pending',
+      status: 'pending' as const,
       author_id: '',
       created_at: Date.now(),
       updated_at: Date.now()
@@ -32,6 +32,9 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     views: 0,
     shares: 0,
     comments: 0,
+    likes: 0,
+    status: 'draft',
+    updatedAt: Date.now(),
     lastUpdated: Date.now(),
     owner_id: ''
   });
@@ -53,10 +56,10 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         ratePerMillion: initialData.ratePerMillion,
         imageUrl: initialData.imageUrl,
         campaign_path: initialData.campaign_path,
-        videos: initialData.videos.length ? initialData.videos : [{
+        videos: initialData.videos?.length ? initialData.videos : [{
           id: crypto.randomUUID(),
           url: '',
-          status: 'pending',
+          status: 'pending' as const,
           author_id: '',
           created_at: Date.now(),
           updated_at: Date.now()
@@ -64,6 +67,9 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         views: initialData.views,
         shares: initialData.shares,
         comments: initialData.comments,
+        likes: initialData.likes,
+        status: initialData.status,
+        updatedAt: initialData.updatedAt,
         lastUpdated: initialData.lastUpdated,
         owner_id: initialData.owner_id
       });
@@ -97,7 +103,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
   };
   
   const handleVideoUrlChange = (index: number, value: string) => {
-    const updatedVideos = [...formData.videos];
+    const updatedVideos = [...(formData.videos || [])];
     updatedVideos[index] = { ...updatedVideos[index], url: value };
     
     setFormData({
@@ -107,7 +113,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
   };
   
   const handleVideoAuthorChange = (index: number, value: string) => {
-    const updatedVideos = [...formData.videos];
+    const updatedVideos = [...(formData.videos || [])];
     updatedVideos[index] = { ...updatedVideos[index], author_id: value };
     
     setFormData({
@@ -119,10 +125,10 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
   const addVideoUrl = () => {
     setFormData({
       ...formData,
-      videos: [...formData.videos, {
+      videos: [...(formData.videos || []), {
         id: crypto.randomUUID(),
         url: '',
-        status: 'pending',
+        status: 'pending' as const,
         author_id: '',
         created_at: Date.now(),
         updated_at: Date.now()
@@ -131,13 +137,13 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
   };
   
   const removeVideoUrl = (index: number) => {
-    const updatedVideos = formData.videos.filter((_, i) => i !== index);
+    const updatedVideos = (formData.videos || []).filter((_, i) => i !== index);
     setFormData({
       ...formData,
       videos: updatedVideos.length ? updatedVideos : [{
         id: crypto.randomUUID(),
         url: '',
-        status: 'pending',
+        status: 'pending' as const,
         author_id: '',
         created_at: Date.now(),
         updated_at: Date.now()
@@ -162,11 +168,11 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
       setFormData({
         ...formData,
         videos: [
-          ...formData.videos.filter(video => video.url.trim() !== ''),
+          ...(formData.videos || []).filter(video => video.url.trim() !== ''),
           ...urls.map(url => ({
             id: crypto.randomUUID(),
             url,
-            status: 'pending',
+            status: 'pending' as const,
             author_id: '',
             created_at: Date.now(),
             updated_at: Date.now()
@@ -289,12 +295,21 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     
     const campaign: Campaign = {
       id: initialData?.id || '', // Let Firestore generate the ID
-      createdAt: initialData?.createdAt || new Date().toISOString(),
+      createdAt: initialData?.createdAt || Date.now(),
       ...formData,
       // Preserve the existing campaign_path if it exists
       campaign_path: initialData?.campaign_path || formData.campaign_path,
-      // Filter out empty video URLs
-      videos: formData.videos.filter(video => video.url.trim() !== ''),
+      // Filter out empty video URLs and ensure all required properties
+      videos: (formData.videos || [])
+        .filter(video => video.url.trim() !== '')
+        .map(video => ({
+          id: video.id || crypto.randomUUID(),
+          url: video.url,
+          status: video.status || 'pending' as const,
+          author_id: video.author_id || '',
+          created_at: video.created_at || Date.now(),
+          updated_at: video.updated_at || Date.now()
+        })),
       // Don't include owner_id here - it will be set by the parent component
       owner_id: initialData?.owner_id || ''  // Only include if editing
     };
@@ -471,41 +486,32 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
             
             {/* Bulk Import Section */}
             {showBulkImport && (
-              <div className="mb-4 p-3 border border-gray-200 rounded-md">
-                <div className="mb-2">
-                  <label className="block text-sm font-medium text-gray-900 mb-1">
-                    Paste comma-separated URLs
-                  </label>
-                  <textarea
-                    value={bulkImportText}
-                    onChange={handleBulkImportChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
-                    rows={3}
-                    placeholder="https://example.com/video1, https://example.com/video2, ..."
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label htmlFor="csv-upload" className="inline-block px-4 py-2 bg-gray-200 text-gray-900 rounded-md cursor-pointer hover:bg-gray-300 text-sm font-medium">
-                      Import from CSV
-                    </label>
-                    <input
-                      id="csv-upload"
-                      type="file"
-                      accept=".csv,.txt"
-                      onChange={handleFileInput}
-                      className="hidden"
-                    />
-                  </div>
-                  
+              <div className="mt-4 p-4 border rounded-lg bg-gray-50">
+                <h3 className="text-lg font-medium mb-2">Bulk Import Videos</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Enter multiple video URLs separated by commas
+                </p>
+                <textarea
+                  value={bulkImportText}
+                  onChange={(e) => setBulkImportText(e.target.value)}
+                  className="w-full p-2 border rounded mb-4"
+                  rows={4}
+                  placeholder="https://example.com/video1, https://example.com/video2, ..."
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowBulkImport(false)}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  >
+                    Cancel
+                  </button>
                   <button
                     type="button"
                     onClick={handleBulkImport}
-                    className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 text-sm font-medium"
-                    disabled={!bulkImportText.trim()}
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                   >
-                    Add URLs
+                    Import
                   </button>
                 </div>
               </div>
@@ -513,35 +519,29 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
             
             {/* Video URL List */}
             <div className="space-y-4">
-              {formData.videos.map((video, index) => (
-                <div key={index} className="flex gap-4 items-start">
-                  <div className="flex-grow">
-                    <input
-                      type="text"
-                      value={video.url}
-                      onChange={(e) => handleVideoUrlChange(index, e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
-                      placeholder="Enter video URL"
-                    />
-                  </div>
-                  <div className="flex-grow">
-                    <input
-                      type="text"
-                      value={video.author_id}
-                      onChange={(e) => handleVideoAuthorChange(index, e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
-                      placeholder="Author ID"
-                    />
-                  </div>
-                  {formData.videos.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeVideoUrl(index)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Remove
-                    </button>
-                  )}
+              {(formData.videos || []).map((video, index) => (
+                <div key={video.id} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={video.url}
+                    onChange={(e) => handleVideoUrlChange(index, e.target.value)}
+                    placeholder="Video URL"
+                    className="flex-1 p-2 border rounded"
+                  />
+                  <input
+                    type="text"
+                    value={video.author_id}
+                    onChange={(e) => handleVideoAuthorChange(index, e.target.value)}
+                    placeholder="Author ID"
+                    className="flex-1 p-2 border rounded"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeVideoUrl(index)}
+                    className="p-2 text-red-500 hover:text-red-700"
+                  >
+                    X
+                  </button>
                 </div>
               ))}
             </div>
