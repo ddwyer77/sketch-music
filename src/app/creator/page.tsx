@@ -8,15 +8,18 @@ import Image from 'next/image';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { User } from '@/types/user';
+import SubmitVideoModal from '@/components/SubmitVideoModal';
 
 type Tab = 'campaigns' | 'settings';
 
 export default function CreatorDashboard() {
   const { user } = useAuth();
-  const { documents: campaigns = [] } = useCollection<Campaign>('campaigns');
+  const { documents: campaigns = [], refresh } = useCollection<Campaign>('campaigns');
   const [myCampaigns, setMyCampaigns] = useState<Campaign[]>([]);
   const [activeTab, setActiveTab] = useState<Tab>('campaigns');
   const [userData, setUserData] = useState<User | null>(null);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -38,6 +41,11 @@ export default function CreatorDashboard() {
       setMyCampaigns(campaignsWithMe);
     }
   }, [user, campaigns]);
+
+  const handleSubmitVideo = (campaign: Campaign) => {
+    setSelectedCampaign(campaign);
+    setShowSubmitModal(true);
+  };
 
   if (!user) {
     return (
@@ -115,10 +123,16 @@ export default function CreatorDashboard() {
                       {campaign.description && (
                         <p className="text-gray-800 mb-4">{campaign.description}</p>
                       )}
-                      <div className="flex justify-between items-center text-sm text-gray-800">
+                      <div className="flex justify-between items-center text-sm text-gray-800 mb-4">
                         <span>Status: {campaign.status}</span>
                         <span>Created: {new Date(campaign.createdAt).toLocaleDateString()}</span>
                       </div>
+                      <button
+                        onClick={() => handleSubmitVideo(campaign)}
+                        className="w-full bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium transition-colors"
+                      >
+                        Submit Video
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -147,6 +161,17 @@ export default function CreatorDashboard() {
               )}
             </div>
           </div>
+        )}
+
+        {showSubmitModal && selectedCampaign && (
+          <SubmitVideoModal
+            campaignId={selectedCampaign.id}
+            onClose={() => {
+              setShowSubmitModal(false);
+              setSelectedCampaign(null);
+            }}
+            onVideosUpdated={refresh}
+          />
         )}
       </div>
     </div>
