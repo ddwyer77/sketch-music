@@ -136,14 +136,16 @@ export default function CampaignCreatorModal({ isOpen, onClose, selectedCampaign
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center">
-                        <span className="text-gray-800 font-medium">
+                        <span className="text-gray-800 font-medium ">
                           {campaign.name ? campaign.name.charAt(0) : 'C'}
                         </span>
                       </div>
                     )}
                     <div>
-                      <h4 className="font-medium text-gray-800">{campaign.name || 'Unnamed Campaign'}</h4>
-                      <p className="text-sm text-gray-800">
+                      <h4 className={`font-medium ${selectedCampaignId === campaign.id ? 'text-white' : 'text-gray-800'}`}>
+                        {campaign.name || 'Unnamed Campaign'}
+                      </h4>
+                      <p className={`text-sm ${selectedCampaignId === campaign.id ? 'text-white' : 'text-gray-800'}`}>
                         {campaign.creators?.length || 0} creators
                       </p>
                     </div>
