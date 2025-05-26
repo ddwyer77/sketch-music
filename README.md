@@ -56,19 +56,7 @@ yarn dev
 - Firestore integration for data storage
 
 ## Firebase Security Rules
-
-Add these security rules to your Firestore database:
-
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /campaigns/{campaignId} {
-      allow read, write: if true; // TODO: Change to proper authentication
-    }
-  }
-}
-```
+Add security rules. Get current rules from repo owner. 
 
 ## Technologies Used
 
@@ -92,3 +80,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Troubleshooting
+- Error response related to calculating views and campaign progress
+   - Check Apify credits
