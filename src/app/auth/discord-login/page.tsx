@@ -36,7 +36,7 @@ export default function DiscordLogin() {
 
         const tokenData = tokenDoc.data();
         
-        if (tokenData.used || tokenData.expiresAt < Date.now()) {
+        if (tokenData.used || tokenData.expires_at < Date.now()) {
           setError('Login token has expired or been used');
           setIsLoading(false);
           return;
@@ -67,7 +67,7 @@ export default function DiscordLogin() {
         
         // Update the user's document with their Discord ID
         await setDoc(doc(db, 'users', user.uid), {
-          discordId: tokenData.discordId
+          discord_id: tokenData.discord_id
         }, { merge: true });
 
         // Delete the used token

@@ -49,5 +49,11 @@ service cloud.firestore {
       allow update: if isCreator() || isManagerOrAdmin();
       allow delete: if isManagerOrAdmin();
     }
+
+    // Discord token rules
+    match /discord_login_tokens/{token} {
+      allow read: if true;  // Anyone can read tokens
+      allow write: if false; // Only the bot can write (through admin SDK)
+    }
   }
 } 
