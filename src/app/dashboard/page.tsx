@@ -112,7 +112,7 @@ export default function Dashboard() {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          if (userData.user_type !== 'manager') {
+          if (userData.user_type !== 'manager' && userData.user_type !== 'admin') {
             router.push('/');
           }
         }
