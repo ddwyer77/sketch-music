@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { ReactNode } from 'react';
 import { Campaign } from '@/types/campaign';
+import toast from 'react-hot-toast';
 
 type CampaignCardProps = {
   campaign: Campaign;
@@ -95,11 +96,29 @@ export default function CampaignCard({ campaign, onEdit, onDelete, onManageCreat
           <h3 className="font-bold text-lg text-gray-800">{campaign.name}</h3>
           <a 
             href={campaign.campaign_path} 
-            className="font-bold text-sm mb-4 text-primary underline" 
+            className="font-bold text-sm text-primary underline hover:cursor-pointer" 
             target="_blank"
           >
             Campaign URL
           </a>
+          
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-sm text-gray-600"><strong>Campaign ID: </strong>{campaign.id}</span>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(campaign.id);
+                toast.success('Campaign ID copied to clipboard', {
+                  duration: 2000,
+                  position: 'bottom-right',
+                });
+              }}
+              className="p-1 hover:bg-gray-100 rounded-full hover:cursor-pointer transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-4 h-4 text-gray-500">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+              </svg>
+            </button>
+          </div>
           
           {/* Campaign Stats */}
           <div className="flex-1 grid grid-cols-2 gap-4 text-sm">

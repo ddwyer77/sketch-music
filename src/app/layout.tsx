@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "../components/Navbar";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SignUpProvider } from '@/contexts/SignUpContext';
+import { Toaster } from 'react-hot-toast';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,6 +38,7 @@ export default function RootLayout({
             <main className="min-h-screen">
               {children}
             </main>
+            <Toaster />
           </SignUpProvider>
         </AuthProvider>
       </body>
