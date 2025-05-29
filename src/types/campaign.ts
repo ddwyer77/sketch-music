@@ -8,6 +8,7 @@ export interface Campaign {
   status: 'draft' | 'active' | 'completed' | 'archived';
   videos?: Video[];
   creators?: string[]; // Array of creator user IDs
+  serverIds?: string[]; // Array of Discord server IDs where this campaign is visible
   budget: number;
   budgetUsed: number;
   ratePerMillion: number;

@@ -25,10 +25,10 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
       id: crypto.randomUUID(),
       url: '',
       status: 'pending' as const,
-      author_id: '',
       created_at: Date.now(),
       updated_at: Date.now()
     }],
+    serverIds: [],
     views: 0,
     shares: 0,
     comments: 0,
@@ -60,10 +60,10 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
           id: crypto.randomUUID(),
           url: '',
           status: 'pending' as const,
-          author_id: '',
           created_at: Date.now(),
           updated_at: Date.now()
         }],
+        serverIds: initialData.serverIds || [],
         views: initialData.views,
         shares: initialData.shares,
         comments: initialData.comments,
@@ -112,13 +112,27 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     });
   };
   
-  const handleVideoAuthorChange = (index: number, value: string) => {
-    const updatedVideos = [...(formData.videos || [])];
-    updatedVideos[index] = { ...updatedVideos[index], author_id: value };
-    
+  const addServerId = () => {
     setFormData({
       ...formData,
-      videos: updatedVideos,
+      serverIds: [...(formData.serverIds || []), '']
+    });
+  };
+
+  const removeServerId = (index: number) => {
+    const updatedServerIds = (formData.serverIds || []).filter((_, i) => i !== index);
+    setFormData({
+      ...formData,
+      serverIds: updatedServerIds
+    });
+  };
+
+  const handleServerIdChange = (index: number, value: string) => {
+    const updatedServerIds = [...(formData.serverIds || [])];
+    updatedServerIds[index] = value;
+    setFormData({
+      ...formData,
+      serverIds: updatedServerIds
     });
   };
   
@@ -129,7 +143,6 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         id: crypto.randomUUID(),
         url: '',
         status: 'pending' as const,
-        author_id: '',
         created_at: Date.now(),
         updated_at: Date.now()
       }],
@@ -144,7 +157,6 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         id: crypto.randomUUID(),
         url: '',
         status: 'pending' as const,
-        author_id: '',
         created_at: Date.now(),
         updated_at: Date.now()
       }],
@@ -173,7 +185,6 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
             id: crypto.randomUUID(),
             url,
             status: 'pending' as const,
-            author_id: '',
             created_at: Date.now(),
             updated_at: Date.now()
           }))
@@ -307,7 +318,6 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
           id: video.id || crypto.randomUUID(),
           url: video.url,
           status: video.status || 'pending' as const,
-          author_id: video.author_id || '',
           created_at: video.created_at || Date.now(),
           updated_at: video.updated_at || Date.now()
         })),
@@ -461,6 +471,55 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
             )}
           </div>
           
+          {/* Server IDs */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <label className="block text-sm font-medium text-gray-900">
+                Discord Server IDs
+              </label>
+              <div className="relative group">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                  These server IDs determine which Discord servers can see this campaign when using the /campaigns command. Make sure to copy and paste the exact server ID.
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {(formData.serverIds || []).map((serverId, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={serverId}
+                    onChange={(e) => handleServerIdChange(index, e.target.value)}
+                    placeholder="Discord Server ID"
+                    className="flex-1 p-2 border rounded text-gray-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeServerId(index)}
+                    className="p-2 text-red-500 hover:text-red-700 hover:cursor-pointer"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addServerId}
+                className="flex items-center gap-1 text-primary hover:text-primary/90 hover:cursor-pointer"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                </svg>
+                Add Server ID
+              </button>
+            </div>
+          </div>
+          
           {/* Video URLs */}
           <div>
             <div className="flex justify-between items-center mb-2">
@@ -527,21 +586,16 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
                     value={video.url}
                     onChange={(e) => handleVideoUrlChange(index, e.target.value)}
                     placeholder="Video URL"
-                    className="flex-1 p-2 border rounded"
-                  />
-                  <input
-                    type="text"
-                    value={video.author_id}
-                    onChange={(e) => handleVideoAuthorChange(index, e.target.value)}
-                    placeholder="Author ID"
-                    className="flex-1 p-2 border rounded"
+                    className="flex-1 p-2 border rounded text-gray-600"
                   />
                   <button
                     type="button"
                     onClick={() => removeVideoUrl(index)}
-                    className="p-2 text-red-500 hover:text-red-700"
+                    className="p-2 text-red-500 hover:text-red-700 hover:cursor-pointer"
                   >
-                    X
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
                   </button>
                 </div>
               ))}
