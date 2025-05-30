@@ -39,6 +39,14 @@ export default function CreatorDashboard() {
     {
       name: 'Get Helpful Info',
       command: '/help'
+    },
+    {
+      name: 'Check Account Status',
+      command: '/status'
+    },
+    {
+      name: 'Unlink Discord Account',
+      command: '/logout'
     }
   ];
 
