@@ -39,10 +39,6 @@ export default function CreatorDashboard() {
       command: '/campaigns'
     },
     {
-      name: 'Get Helpful Info',
-      command: '/help'
-    },
-    {
       name: 'Check Account Status',
       command: '/status'
     },
