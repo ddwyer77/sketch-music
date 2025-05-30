@@ -79,7 +79,7 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
   };
 
   const handleDeleteVideo = async (indexToDelete: number) => {
-    if (window.confirm(&quot;Are you sure you want to delete this video?&quot;)) {
+    if (window.confirm("Are you sure you want to delete this video?")) {
       setLocalVideos(prevVideos => prevVideos.filter((_, index) => index !== indexToDelete));
       setHasChanges(true);
       
