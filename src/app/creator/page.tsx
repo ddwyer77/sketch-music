@@ -55,6 +55,8 @@ export default function CreatorDashboard() {
       question: 'Where do I get the server ID?',
       answer: (
         <div className="space-y-2">
+          <p className="text-gray-800">Use the command <i>/status</i></p>
+          <b>--OR--</b>
           <p className="text-gray-800">First, enable Developer Mode in Discord:</p>
           <ol className="list-decimal list-inside text-gray-800 space-y-1">
             <li>Open Discord Settings (⚙️)</li>
@@ -62,8 +64,6 @@ export default function CreatorDashboard() {
             <li>Enable "Developer Mode"</li>
           </ol>
           <p className="text-gray-800 mt-2">Then, right-click on your server icon and select "Copy Server ID"</p>
-          <b>--OR--</b>
-          <p className="text-gray-800">Use the command <i>/help</i></p>
         </div>
       )
     },
