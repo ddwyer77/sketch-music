@@ -216,7 +216,7 @@ export default function CreatorDashboard() {
                       <br />
                       --OR--
                       <br />
-                      Enable Developer Mode in Discord settings, then right-click your server icon and select "Copy Server ID"
+                      Enable Developer Mode in Discord settings, then right-click your server icon and select &quot;Copy Server ID&quot;
                     </div>
                   </div>
                 </span>
