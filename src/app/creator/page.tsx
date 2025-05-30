@@ -65,10 +65,10 @@ export default function CreatorDashboard() {
           <p className="text-gray-800">First, enable Developer Mode in Discord:</p>
           <ol className="list-decimal list-inside text-gray-800 space-y-1">
             <li>Open Discord Settings (⚙️)</li>
-            <li>Go to "App Settings" → "Advanced"</li>
-            <li>Enable "Developer Mode"</li>
+            <li>Go to &quot;App Settings&quot; → &quot;Advanced&quot;</li>
+            <li>Enable &quot;Developer Mode&quot;</li>
           </ol>
-          <p className="text-gray-800 mt-2">Then, right-click on your server icon and select "Copy Server ID"</p>
+          <p className="text-gray-800 mt-2">Then, right-click on your server icon and select &quot;Copy Server ID&quot;</p>
         </div>
       )
     },
