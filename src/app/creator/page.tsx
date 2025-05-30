@@ -23,6 +23,7 @@ export default function CreatorDashboard() {
   const [userData, setUserData] = useState<User | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [activeTooltip, setActiveTooltip] = useState<'campaign' | 'server' | null>(null);
 
   const discordCommands = [
     {
@@ -123,8 +124,8 @@ export default function CreatorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-6xl mx-auto p-6">
+    <div className="min-h-screen bg-white p-6">
+      <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Creator Dashboard</h1>
         </div>
@@ -181,7 +182,7 @@ export default function CreatorDashboard() {
                     setSearchQuery(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-gray-500"
+                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-gray-500 text-gray-800"
                 />
                 <div className="absolute left-3 top-2.5 text-gray-400">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -193,13 +194,20 @@ export default function CreatorDashboard() {
                 <span>Filter by:</span>
                 <span className="flex items-center gap-1">
                   Campaign ID
-                  <div className="relative group">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                    </svg>
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
-                      Use the /campaigns command in Discord to see campaign IDs
-                    </div>
+                  <div className="relative">
+                    <button
+                      onClick={() => setActiveTooltip(activeTooltip === 'campaign' ? null : 'campaign')}
+                      className="text-gray-400 hover:text-gray-600 hover:cursor-pointer"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    {activeTooltip === 'campaign' && (
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg z-10">
+                        Use the /campaigns command in Discord to see campaign IDs
+                      </div>
+                    )}
                   </div>
                 </span>
                 <span>•</span>
@@ -207,17 +215,24 @@ export default function CreatorDashboard() {
                 <span>•</span>
                 <span className="flex items-center gap-1">
                   Server ID
-                  <div className="relative group">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                    </svg>
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
-                      Use the /status command in your Discord server
-                      <br />
-                      --OR--
-                      <br />
-                      Enable Developer Mode in Discord settings, then right-click your server icon and select &quot;Copy Server ID&quot;
-                    </div>
+                  <div className="relative">
+                    <button
+                      onClick={() => setActiveTooltip(activeTooltip === 'server' ? null : 'server')}
+                      className="text-gray-400 hover:text-gray-600 hover:cursor-pointer"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    {activeTooltip === 'server' && (
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg z-10">
+                        Use the /status command in your Discord server
+                        <br />
+                        --OR--
+                        <br />
+                        Enable Developer Mode in Discord settings, then right-click your server icon and select &quot;Copy Server ID&quot;
+                      </div>
+                    )}
                   </div>
                 </span>
               </div>
