@@ -30,11 +30,11 @@ export default function CreatorDashboard() {
     },
     {
       name: 'Add Video To Campaign',
-      command: '/add <campaign ID> <url>'
+      command: '/submit <campaign ID> <url>'
     },
     {
       name: 'See Campaigns',
-      command: '/campaigns <server ID>'
+      command: '/campaigns'
     },
     {
       name: 'Get Helpful Info',

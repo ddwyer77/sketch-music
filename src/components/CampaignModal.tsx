@@ -284,6 +284,11 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
       newErrors.ratePerMillion = 'Rate per million views must be greater than 0';
     }
     
+    // Validate server IDs
+    if (!formData.serverIds || formData.serverIds.length === 0 || formData.serverIds.some(id => !id.trim())) {
+      newErrors.serverIds = 'At least one Discord server ID is required';
+    }
+    
     // Only require the first video URL if any are entered
     const videos = formData.videos || [];
     if (videos[0]?.url && !isValidUrl(videos[0].url)) {
@@ -481,7 +486,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
           <div>
             <div className="flex items-center gap-2 mb-2">
               <label className="block text-sm font-medium text-gray-900">
-                Discord Server IDs
+                Discord Server IDs*
               </label>
               <div className="relative group">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
@@ -492,6 +497,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
                 </div>
               </div>
             </div>
+            
             <div className="space-y-2">
               {(formData.serverIds || []).map((serverId, index) => (
                 <div key={index} className="flex items-center gap-2">
@@ -500,7 +506,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
                     value={serverId}
                     onChange={(e) => handleServerIdChange(index, e.target.value)}
                     placeholder="Discord Server ID"
-                    className="flex-1 p-2 border rounded text-gray-600"
+                    className={`flex-1 p-2 border rounded text-gray-600 ${errors.serverIds ? 'border-red-500' : 'border-gray-300'}`}
                   />
                   <button
                     type="button"
@@ -523,6 +529,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
                 </svg>
                 Add Server ID
               </button>
+              {errors.serverIds && <p className="mt-1 text-sm text-red-500">{errors.serverIds}</p>}
             </div>
           </div>
           
