@@ -25,6 +25,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
       id: crypto.randomUUID(),
       url: '',
       status: 'pending' as const,
+      author_id: '',
       created_at: Date.now(),
       updated_at: Date.now()
     }],
@@ -60,6 +61,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
           id: crypto.randomUUID(),
           url: '',
           status: 'pending' as const,
+          author_id: '',
           created_at: Date.now(),
           updated_at: Date.now()
         }],
@@ -143,6 +145,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         id: crypto.randomUUID(),
         url: '',
         status: 'pending' as const,
+        author_id: '',
         created_at: Date.now(),
         updated_at: Date.now()
       }],
@@ -157,6 +160,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         id: crypto.randomUUID(),
         url: '',
         status: 'pending' as const,
+        author_id: '',
         created_at: Date.now(),
         updated_at: Date.now()
       }],
@@ -185,6 +189,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
             id: crypto.randomUUID(),
             url,
             status: 'pending' as const,
+            author_id: '',
             created_at: Date.now(),
             updated_at: Date.now()
           }))
@@ -318,6 +323,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
           id: video.id || crypto.randomUUID(),
           url: video.url,
           status: video.status || 'pending' as const,
+          author_id: video.author_id || '',
           created_at: video.created_at || Date.now(),
           updated_at: video.updated_at || Date.now()
         })),
