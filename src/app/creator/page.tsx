@@ -131,7 +131,7 @@ export default function CreatorDashboard() {
           <nav className="-mb-px flex space-x-8">
             <button
               onClick={() => setActiveTab('campaigns')}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm hover:cursor-pointer ${
                 activeTab === 'campaigns'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -141,7 +141,7 @@ export default function CreatorDashboard() {
             </button>
             <button
               onClick={() => setActiveTab('settings')}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm hover:cursor-pointer ${
                 activeTab === 'settings'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -151,7 +151,7 @@ export default function CreatorDashboard() {
             </button>
             <button
               onClick={() => setActiveTab('discord')}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 hover:cursor-pointer ${
                 activeTab === 'discord'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
