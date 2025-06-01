@@ -29,11 +29,8 @@ export default function SignUp() {
     const defaultType = searchParams.get('type') as UserType;
     const referrer = document.referrer;
 
-    if (defaultType === 'manager' || defaultType === 'creator') {
-      setSelectedUserType(defaultType);
-    } else if (referrer.includes('/campaigns/')) {
-      setSelectedUserType('creator');
-    }
+    // Always set to creator regardless of URL params
+    setSelectedUserType('creator');
   }, []);
 
   useEffect(() => {
@@ -118,7 +115,7 @@ export default function SignUp() {
             Create your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Creating a {selectedUserType} account
+            Creating a creator account
           </p>
         </div>
 
@@ -130,7 +127,7 @@ export default function SignUp() {
 
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-900">How do you want to use the platform?</h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-1">
             <button
               type="button"
               onClick={() => setSelectedUserType('creator')}
@@ -143,20 +140,6 @@ export default function SignUp() {
               <span className="flex flex-col items-center">
                 <span className="text-sm font-medium text-gray-900">Creator</span>
                 <span className="mt-1 text-xs text-gray-500">Create and submit videos for campaigns</span>
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedUserType('manager')}
-              className={`relative rounded-lg border px-6 py-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary ${
-                selectedUserType === 'manager'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-gray-300 bg-white hover:border-primary'
-              }`}
-            >
-              <span className="flex flex-col items-center">
-                <span className="text-sm font-medium text-gray-900">Manager</span>
-                <span className="mt-1 text-xs text-gray-500">Create and manage marketing campaigns</span>
               </span>
             </button>
           </div>

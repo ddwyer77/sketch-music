@@ -13,14 +13,14 @@ import {
 import { FirebaseError } from 'firebase/app';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, googleProvider } from '@/lib/firebase';
-import { UserType } from '@/types/user';
+import { userRole } from '@/types/user';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signInWithGoogle: (userType: UserType) => Promise<User>;
+  signInWithGoogle: (userType: userRole) => Promise<User>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
-  signUpWithEmail: (email: string, password: string, firstName: string, lastName: string, paymentEmail?: string, userType?: UserType) => Promise<void>;
+  signUpWithEmail: (email: string, password: string, firstName: string, lastName: string, paymentEmail?: string, userType?: userRole) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const signInWithGoogle = async (userType: UserType) => {
+  const signInWithGoogle = async (userType: userRole) => {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           firstName: user.displayName?.split(' ')[0] || '',
           lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
           paymentEmail: user.email,
-          user_type: userType,
+          roles: [userType],
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     firstName: string, 
     lastName: string,
     paymentEmail?: string,
-    userType: UserType = 'creator'
+    userType: userRole = 'creator'
   ) => {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         first_name: firstName,
         last_name: lastName,
-        user_type: userType,
+        roles: [userType],
         groups: [],
         payment_info: paymentEmail ? [{ email: paymentEmail }] : []
       });

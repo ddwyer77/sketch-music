@@ -105,19 +105,19 @@ export default function Dashboard() {
     loading: operationLoading 
   } = useFirestoreOperations<Omit<Campaign, 'id'>>('campaigns');
   
-  // Redirect if not a manager
+  // Redirect if not an admin
   useEffect(() => {
     if (user) {
-      const checkManagerStatus = async () => {
+      const checkAdminStatus = async () => {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          if (userData.user_type !== 'manager' && userData.user_type !== 'admin') {
-            router.push('/');
+          if (!userData.roles?.includes('admin')) {
+            router.push('/creator');
           }
         }
       };
-      checkManagerStatus();
+      checkAdminStatus();
     }
   }, [user, router]);
   

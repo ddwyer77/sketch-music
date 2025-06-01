@@ -6,34 +6,35 @@ import { useAuth } from '@/contexts/AuthContext';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
+import { userRole } from '@/types/user';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const pathname = usePathname();
+  const pathname = usePathname() || '';
   const isDashboard = pathname.startsWith('/dashboard');
-  const [userType, setUserType] = useState<'creator' | 'manager' | 'admin' | null>(null);
+  const [userRoles, setUserRoles] = useState<userRole[]>([]);
   const [firstName, setFirstName] = useState<string>('');
   const { user, logout } = useAuth();
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const checkUserType = async () => {
+    const checkUserRoles = async () => {
       if (user) {
         try {
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            setUserType(userData.user_type);
+            setUserRoles(userData.roles || []);
             setFirstName(userData.first_name || userData.firstName || '');
           }
         } catch (error) {
-          console.error('Error checking user type:', error);
+          console.error('Error checking user roles:', error);
         }
       }
     };
 
-    checkUserType();
+    checkUserRoles();
   }, [user]);
 
   useEffect(() => {
@@ -48,10 +49,10 @@ export default function Navbar() {
   }, []);
 
   const handleDashboardClick = () => {
-    if (userType === 'creator') {
-      router.push('/creator');
-    } else {
+    if (userRoles.includes('admin')) {
       router.push('/dashboard');
+    } else {
+      router.push('/creator');
     }
     setIsMenuOpen(false);
   };
@@ -86,7 +87,7 @@ export default function Navbar() {
                   </svg>
                   <div className="text-left">
                     <div className="text-sm font-medium text-gray-900">{firstName}</div>
-                    <div className="text-xs text-gray-500 capitalize">{userType}</div>
+                    <div className="text-xs text-gray-500 capitalize">{userRoles.join(', ')}</div>
                   </div>
                 </button>
 

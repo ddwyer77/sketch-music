@@ -1,4 +1,4 @@
-export type UserType = 'creator' | 'manager' | 'admin';
+export type userRole = 'creator' | 'admin';
 
 export type CampaignContribution = {
   id: string;
@@ -10,7 +10,7 @@ export type User = {
   email: string;
   first_name: string;
   last_name: string;
-  user_type: UserType;
+  roles: userRole[];
   payment_info?: {
     email: string;
   }[];

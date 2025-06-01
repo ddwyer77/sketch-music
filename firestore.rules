@@ -7,23 +7,16 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Helper function to check if user is a manager or admin
-    function isManagerOrAdmin() {
-      return isAuthenticated() && 
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.user_type == 'manager' ||
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.user_type == 'admin');
-    }
-
     // Helper function to check if user is an admin
     function isAdmin() {
       return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.user_type == 'admin';
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['admin']);
     }
 
     // Helper function to check if user is a creator
     function isCreator() {
       return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.user_type == 'creator';
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['creator']);
     }
 
     // Campaign rules
@@ -44,8 +37,8 @@ service cloud.firestore {
     match /campaigns/{campaignId}/videos/{videoId} {
       allow read: if isAuthenticated();
       allow create: if isCreator();
-      allow update: if isCreator() || isManagerOrAdmin();
-      allow delete: if isManagerOrAdmin();
+      allow update: if isCreator() || isAdmin();
+      allow delete: if isAdmin();
     }
 
     // Discord token rules

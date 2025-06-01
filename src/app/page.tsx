@@ -19,18 +19,17 @@ export default function Home() {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          if (userData.user_type === 'manager' || userData.user_type === 'admin') {
+          if (userData.roles?.includes('admin')) {
             router.push('/dashboard');
           } else {
             router.push('/creator');
           }
         }
       } catch (error) {
-        console.error('Error checking user type:', error);
+        console.error('Error checking user roles:', error);
       }
     } else {
-      setSelectedUserType('manager');
-      router.push('/auth/signup?type=manager');
+      router.push('/auth/signup?type=creator');
     }
   };
 
@@ -40,17 +39,16 @@ export default function Home() {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          if (userData.user_type === 'creator') {
-            router.push('/creator');
-          } else {
+          if (userData.roles?.includes('admin')) {
             router.push('/dashboard');
+          } else {
+            router.push('/creator');
           }
         }
       } catch (error) {
-        console.error('Error checking user type:', error);
+        console.error('Error checking user roles:', error);
       }
     } else {
-      setSelectedUserType('creator');
       router.push('/auth/signup?type=creator');
     }
   };
@@ -75,7 +73,7 @@ export default function Home() {
             <p className="text-xl text-gray-600">
               Sketch Music turns passionate creators into a viral engine for brands—paying only for real views, real engagement, and real impact.
             </p>
-            <div className="flex flex-wrap gap-4 pt-2">
+            <div className="w-full">
               {user ? (
                 <button
                   onClick={async () => {
@@ -83,31 +81,23 @@ export default function Home() {
                       const userDoc = await getDoc(doc(db, 'users', user.uid));
                       if (userDoc.exists()) {
                         const userData = userDoc.data();
-                        router.push(userData.user_type === 'creator' ? '/creator' : '/dashboard');
+                        router.push(userData.roles?.includes('admin') ? '/dashboard' : '/creator');
                       }
                     } catch (error) {
-                      console.error('Error checking user type:', error);
+                      console.error('Error checking user roles:', error);
                     }
                   }}
-                  className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-md font-medium transition-colors cursor-pointer"
+                  className="w-full bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-md font-medium transition-colors cursor-pointer"
                 >
                   My Dashboard
                 </button>
               ) : (
-                <>
-                  <button
-                    onClick={handleStartManaging}
-                    className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-md font-medium transition-colors cursor-pointer"
-                  >
-                    Start Managing
-                  </button>
-                  <button
-                    onClick={handleEarnAsCreator}
-                    className="border border-primary text-primary hover:bg-primary/5 px-8 py-3 rounded-md font-medium transition-colors cursor-pointer"
-                  >
-                    🤑 Earn as Creator
-                  </button>
-                </>
+                <button
+                  onClick={handleEarnAsCreator}
+                  className="w-full bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-md font-medium transition-colors cursor-pointer"
+                >
+                  🤑 Earn as Creator
+                </button>
               )}
             </div>
           </div>
