@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { userRole } from '@/types/user';
+import React from 'react';
 
 // Simple icon components
 const DashboardIcon = () => (
@@ -73,6 +74,14 @@ const CreatorHubIcon = () => (
   </svg>
 );
 
+type NavItem = {
+  path: string;
+  label: string;
+  icon: () => React.ReactElement;
+  disabled?: boolean;
+  tooltip?: string;
+};
+
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -97,7 +106,7 @@ export default function Sidebar() {
     checkUserRoles();
   }, [user]);
   
-  const navItems = [
+  const navItems: NavItem[] = [
     { path: '/dashboard', label: 'Dashboard', icon: DashboardIcon },
     { path: '/dashboard/campaigns', label: 'Campaigns', icon: CampaignsIcon },
     { path: '/dashboard/analytics', label: 'Analytics', icon: AnalyticsIcon },
@@ -107,10 +116,16 @@ export default function Sidebar() {
     { path: '/dashboard/users', label: 'Users', icon: UsersIcon }
   ];
 
-  // Add Creator Hub tab if user has both admin and creator roles
-  if (userRoles.includes('admin') && userRoles.includes('creator')) {
-    navItems.push({ path: '/creator', label: 'Creator Hub', icon: CreatorHubIcon });
-  }
+  // Add Creator Hub tab - disabled if user doesn't have creator role
+  navItems.push({
+    path: '/creator',
+    label: 'Creator Hub',
+    icon: CreatorHubIcon,
+    disabled: !userRoles.includes('creator'),
+    tooltip: !userRoles.includes('creator') 
+      ? "You need creator permissions to access this feature. Visit the 'Users' panel or contact your admin to request creator access."
+      : undefined
+  });
 
   const handleLogout = () => {
     // TODO: Implement actual logout functionality
@@ -125,16 +140,35 @@ export default function Sidebar() {
         <ul className="space-y-2">
           {navItems.map((item) => {
             const isActive = pathname === item.path;
+            const isDisabled = item.disabled;
+            
             return (
-              <li key={item.path}>
-                <Link href={item.path} className={`flex items-center p-3 rounded-lg transition-colors ${
-                  isActive 
-                    ? 'bg-primary text-white' 
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}>
-                  <item.icon />
-                  <span className="ml-3 hidden lg:block">{item.label}</span>
-                </Link>
+              <li key={item.path} className="relative group">
+                {isDisabled ? (
+                  <div className="flex items-center p-3 rounded-lg text-gray-400 cursor-not-allowed">
+                    <item.icon />
+                    <span className="ml-3 hidden lg:block">{item.label}</span>
+                  </div>
+                ) : (
+                  <Link href={item.path} className={`flex items-center p-3 rounded-lg transition-colors ${
+                    isActive 
+                      ? 'bg-primary text-white' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}>
+                    <item.icon />
+                    <span className="ml-3 hidden lg:block">{item.label}</span>
+                  </Link>
+                )}
+                
+                {/* Tooltip */}
+                {isDisabled && item.tooltip && (
+                  <div className="fixed z-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="bg-gray-900 text-white text-sm rounded-lg py-2 px-3 whitespace-nowrap">
+                      You don't have creator access. Contact your admin to request this role.
+                      <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 transform rotate-45 w-2 h-2 bg-gray-900"></div>
+                    </div>
+                  </div>
+                )}
               </li>
             );
           })}

@@ -19,6 +19,12 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['creator']);
     }
 
+    // Helper function to check if user is an owner
+    function isOwner() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['owner']);
+    }
+
     // Campaign rules
     match /campaigns/{campaignId} {
       // Anyone can read campaigns
@@ -35,8 +41,19 @@ service cloud.firestore {
 
     // User rules
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      // Basic user data is readable by authenticated users
+      allow read: if isAuthenticated();
+      
+      // Only owners can read and write to the roles field
+      allow read: if isAuthenticated() && (
+        // If reading roles field, must be owner
+        !('roles' in request.resource.data) || isOwner()
+      );
+      
+      allow update: if isAuthenticated() && (
+        // If updating roles field, must be owner
+        !('roles' in request.resource.data) || isOwner()
+      );
     }
 
     // Videos subcollection rules

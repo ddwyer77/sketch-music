@@ -1,4 +1,4 @@
-export type userRole = 'creator' | 'admin';
+export type userRole = 'admin' | 'creator' | 'owner';
 
 export type CampaignContribution = {
   id: string;

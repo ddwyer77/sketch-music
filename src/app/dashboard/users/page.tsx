@@ -38,6 +38,7 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState<userRole | 'all'>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
 
   // Check if current user is admin
   useEffect(() => {
@@ -59,6 +60,24 @@ export default function UsersPage() {
     };
     checkAdminStatus();
   }, [user, router]);
+
+  useEffect(() => {
+    const checkUserRoles = async () => {
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setIsOwner(userData.roles?.includes('owner') || false);
+          }
+        } catch (error) {
+          console.error('Error checking user roles:', error);
+        }
+      }
+    };
+
+    checkUserRoles();
+  }, [user]);
 
   // Fetch all users
   useEffect(() => {
@@ -125,34 +144,38 @@ export default function UsersPage() {
   }, [searchQuery, roleFilter, users]);
 
   // Handle role update
-  const handleRoleUpdate = async (userId: string, role: userRole, isChecked: boolean) => {
+  const handleRoleChange = async (userId: string, role: userRole, checked: boolean) => {
+    if (!isOwner) {
+      alert('Only owners can modify user roles');
+      return;
+    }
+
     try {
       const userRef = doc(db, 'users', userId);
       const userDoc = await getDoc(userRef);
       
       if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const currentRoles = userData.roles || [];
+        const currentRoles = userDoc.data().roles || [];
+        let newRoles: userRole[];
         
-        // Add or remove the role based on checkbox state
-        const updatedRoles = isChecked
-          ? [...currentRoles, role]
-          : currentRoles.filter((r: userRole) => r !== role);
-
-        await updateDoc(userRef, { roles: updatedRoles });
-
-        // Update local state
-        setUsers(prevUsers => 
-          prevUsers.map(u => 
-            u.id === userId 
-              ? { ...u, roles: updatedRoles }
-              : u
-          )
-        );
+        if (checked) {
+          newRoles = [...currentRoles, role];
+        } else {
+          newRoles = currentRoles.filter((r: userRole) => r !== role);
+        }
+        
+        await updateDoc(userRef, { roles: newRoles });
+        // Refresh the users list
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const usersList = usersSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as User[];
+        setUsers(usersList);
       }
     } catch (error) {
       console.error('Error updating user role:', error);
-      setError('Failed to update user role');
+      alert('Failed to update user role');
     }
   };
 
@@ -182,8 +205,15 @@ export default function UsersPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Users</h1>
-      
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Users</h1>
+        {isOwner && (
+          <p className="mt-2 text-sm text-gray-600">
+            Only users with the 'owner' role can see and modify user roles
+          </p>
+        )}
+      </div>
+
       {/* Filters */}
       <div className="mb-6 space-y-4 sm:space-y-0 sm:flex sm:space-x-4">
         <div className="flex-1">
@@ -227,24 +257,41 @@ export default function UsersPage() {
                 </div>
                 <div className="ml-4 flex-shrink-0">
                   <div className="flex flex-col space-y-2">
-                    <label className="inline-flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={user.roles?.includes('admin')}
-                        onChange={(e) => handleRoleUpdate(user.id, 'admin', e.target.checked)}
-                        className="form-checkbox h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">Admin</span>
-                    </label>
-                    <label className="inline-flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={user.roles?.includes('creator')}
-                        onChange={(e) => handleRoleUpdate(user.id, 'creator', e.target.checked)}
-                        className="form-checkbox h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">Creator</span>
-                    </label>
+                    {isOwner ? (
+                      <>
+                        <label className="inline-flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={user.roles?.includes('admin')}
+                            onChange={(e) => handleRoleChange(user.id, 'admin', e.target.checked)}
+                            className="form-checkbox h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                          />
+                          <span className="ml-2 text-sm text-gray-700">Admin</span>
+                        </label>
+                        <label className="inline-flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={user.roles?.includes('creator')}
+                            onChange={(e) => handleRoleChange(user.id, 'creator', e.target.checked)}
+                            className="form-checkbox h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                          />
+                          <span className="ml-2 text-sm text-gray-700">Creator</span>
+                        </label>
+                        <label className="inline-flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={user.roles?.includes('owner')}
+                            onChange={(e) => handleRoleChange(user.id, 'owner', e.target.checked)}
+                            className="form-checkbox h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                          />
+                          <span className="ml-2 text-sm text-gray-700">Owner</span>
+                        </label>
+                      </>
+                    ) : (
+                      <div className="text-sm text-gray-500">
+                        {user.roles?.join(', ') || 'No roles'}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
