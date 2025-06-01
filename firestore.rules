@@ -27,6 +27,12 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
 
+    // Campaign archive rules
+    match /campaigns_archive/{campaignId} {
+      // Only admins can read and write to archived campaigns
+      allow read, write: if isAdmin();
+    }
+
     // User rules
     match /users/{userId} {
       allow read: if request.auth != null;

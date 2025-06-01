@@ -2,6 +2,11 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { userRole } from '@/types/user';
 
 // Simple icon components
 const DashboardIcon = () => (
@@ -60,11 +65,37 @@ const UsersIcon = () => (
     <path d="M2 20v-2a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v2" />
     <path d="M17 14a5 5 0 0 1 5 5v1" />
   </svg>
-)
+);
+
+const CreatorHubIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+  </svg>
+);
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useAuth();
+  const [userRoles, setUserRoles] = useState<userRole[]>([]);
+  
+  useEffect(() => {
+    const checkUserRoles = async () => {
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUserRoles(userData.roles || []);
+          }
+        } catch (error) {
+          console.error('Error checking user roles:', error);
+        }
+      }
+    };
+
+    checkUserRoles();
+  }, [user]);
   
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: DashboardIcon },
@@ -75,6 +106,11 @@ export default function Sidebar() {
     { path: '/dashboard/help', label: 'Help', icon: HelpIcon },
     { path: '/dashboard/users', label: 'Users', icon: UsersIcon }
   ];
+
+  // Add Creator Hub tab if user has both admin and creator roles
+  if (userRoles.includes('admin') && userRoles.includes('creator')) {
+    navItems.push({ path: '/creator', label: 'Creator Hub', icon: CreatorHubIcon });
+  }
 
   const handleLogout = () => {
     // TODO: Implement actual logout functionality

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import CampaignModal from '../../components/CampaignModal';
 import CampaignCard from '../../components/CampaignCard';
 import { useQuery, useFirestoreOperations } from '../../hooks';
-import { doc, updateDoc, where } from 'firebase/firestore';
+import { doc, updateDoc, where, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { fetchTikTokDataFromUrl, extractTikTokMetrics } from '../../lib/webScraper';
 import { Campaign } from '@/types/campaign';
@@ -88,10 +88,7 @@ export default function Dashboard() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   
   // Use a stable query reference
-  const queryConstraints = useMemo(() => 
-    user ? [where('owner_id', '==', user.uid)] : [], 
-    [user]
-  );
+  const queryConstraints = useMemo(() => [], []);
   
   const { documents: campaigns = [], loading, error, refresh } = useQuery<Campaign>(
     'campaigns',
@@ -210,9 +207,27 @@ export default function Dashboard() {
   };
   
   const handleDeleteCampaign = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this campaign?')) {
-      await deleteDocument(id);
-      refresh();
+    if (window.confirm('Are you sure you want to archive this campaign?')) {
+      try {
+        // Get the campaign document
+        const campaignRef = doc(db, 'campaigns', id);
+        const campaignDoc = await getDoc(campaignRef);
+        
+        if (campaignDoc.exists()) {
+          // Create the same document in the archive collection
+          const archiveRef = doc(db, 'campaigns_archive', id);
+          await setDoc(archiveRef, campaignDoc.data());
+          
+          // Delete from the original collection
+          await deleteDoc(campaignRef);
+          
+          // Refresh the campaigns list
+          await refresh();
+        }
+      } catch (error) {
+        console.error('Error archiving campaign:', error);
+        alert('Failed to archive campaign. Please try again.');
+      }
     }
   };
   

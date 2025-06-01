@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
-import { UserType } from '@/types/user';
+import { userRole } from '@/types/user';
 
 export default function SignUp() {
   const [email, setEmail] = useState('');
@@ -17,7 +17,7 @@ export default function SignUp() {
   const [paymentEmail, setPaymentEmail] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedUserType, setSelectedUserType] = useState<UserType>('creator');
+  const [selectedUserType, setSelectedUserType] = useState<userRole>('creator');
   
   const { signInWithGoogle, signUpWithEmail, user } = useAuth();
   const { clearSelectedUserType } = useSignUp();
@@ -26,7 +26,7 @@ export default function SignUp() {
   // Check URL parameters and referrer for default type
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
-    const defaultType = searchParams.get('type') as UserType;
+    const defaultType = searchParams.get('type') as userRole;
     const referrer = document.referrer;
 
     // Always set to creator regardless of URL params
