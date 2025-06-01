@@ -53,6 +53,15 @@ const LogoutIcon = () => (
   </svg>
 );
 
+const UsersIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="7" cy="8" r="4" />
+    <circle cx="17" cy="8" r="4" />
+    <path d="M2 20v-2a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v2" />
+    <path d="M17 14a5 5 0 0 1 5 5v1" />
+  </svg>
+)
+
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -64,6 +73,7 @@ export default function Sidebar() {
     { path: '/dashboard/payments', label: 'Payments', icon: PaymentsIcon },
     { path: '/dashboard/settings', label: 'Settings', icon: SettingsIcon },
     { path: '/dashboard/help', label: 'Help', icon: HelpIcon },
+    { path: '/dashboard/users', label: 'Users', icon: UsersIcon }
   ];
 
   const handleLogout = () => {
