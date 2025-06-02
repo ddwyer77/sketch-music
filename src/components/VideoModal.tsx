@@ -10,6 +10,7 @@ type Video = {
   url: string;
   status: 'pending' | 'approved' | 'denied';
   author_id: string;
+  soundIdMatch?: boolean;
 };
 
 type VideoModalProps = {
@@ -100,7 +101,8 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
     const newVideo = { 
       url: newVideoUrl.trim(), 
       status: 'pending' as const, 
-      author_id: user?.uid || '' 
+      author_id: user?.uid || '',
+      soundIdMatch: undefined
     };
 
     setLocalVideos(prevVideos => [...prevVideos, newVideo]);
@@ -137,12 +139,12 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
 
         <div className="flex flex-1 min-h-0">
           {/* Video List - Left Column */}
-          <div className="w-1/3 border-r border-gray-200 p-6 overflow-y-auto">
+          <div className="w-2/3 border-r border-gray-200 p-6 overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">Video List</h3>
               <button
                 onClick={() => setIsAddingVideo(true)}
-                className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+                className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover:cursor-pointer"
               >
                 Add Video
               </button>
@@ -161,7 +163,7 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
                   <button
                     onClick={handleAddVideo}
                     disabled={!newVideoUrl.trim()}
-                    className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                    className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-50 hover:cursor-pointer"
                   >
                     Add
                   </button>
@@ -170,7 +172,7 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
                       setIsAddingVideo(false);
                       setNewVideoUrl('');
                     }}
-                    className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover:cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -195,43 +197,63 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
                       className="flex-1 min-w-0 cursor-pointer"
                       onClick={() => setSelectedVideoIndex(index)}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-gray-900 truncate">Video {index + 1}</span>
-                        <div>
-                          <select
-                            value={video.status}
-                            onChange={(e) => handleStatusChange(index, e.target.value as 'pending' | 'approved' | 'denied')}
-                            className={`shrink-0 px-2 py-1 text-sm rounded-md ${
-                              video.status === 'approved' ? 'bg-green-50 text-green-700 border-green-200' :
-                              video.status === 'denied' ? 'bg-red-50 text-red-700 border-red-200' :
-                              'bg-yellow-50 text-yellow-700 border-yellow-200'
-                            }`}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <option value="pending" className="bg-yellow-50 text-gray-900">Pending</option>
-                            <option value="approved" className="bg-green-50 text-gray-900">Approved</option>
-                            <option value="denied" className="bg-red-50 text-gray-900">Denied</option>
-                          </select>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteVideo(index);
-                            }}
-                            className={`ml-2 shrink-0 p-1 rounded-full ${
-                              selectedVideoIndex === index 
-                                ? 'bg-gray-200 hover:bg-gray-300 text-red-500' 
-                                : 'bg-gray-200 hover:bg-gray-300 text-red-500'
-                            }`}
-                            title="Delete video"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
+                      <div className="flex flex-col">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-gray-900 truncate">{video.url.split('/').pop()?.split('?')[0] || `Video ${index + 1}`}</span>
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={video.status}
+                              onChange={(e) => handleStatusChange(index, e.target.value as 'pending' | 'approved' | 'denied')}
+                              className={`shrink-0 px-2 py-1 text-sm rounded-md ${
+                                video.status === 'approved' ? 'bg-green-50 text-green-700 border-green-200' :
+                                video.status === 'denied' ? 'bg-red-50 text-red-700 border-red-200' :
+                                'bg-yellow-50 text-yellow-700 border-yellow-200'
+                              }`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <option value="pending" className="bg-yellow-50 text-gray-900">Pending</option>
+                              <option value="approved" className="bg-green-50 text-gray-900">Approved</option>
+                              <option value="denied" className="bg-red-50 text-gray-900">Denied</option>
+                            </select>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteVideo(index);
+                              }}
+                              className={`ml-2 shrink-0 p-1 rounded-full ${
+                                selectedVideoIndex === index 
+                                  ? 'bg-gray-200 hover:bg-gray-300 text-red-500' 
+                                  : 'bg-gray-200 hover:bg-gray-300 text-red-500'
+                              } hover:cursor-pointer`}
+                              title="Delete video"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-xs text-gray-900 mt-1 truncate">
-                        {video.url}
+                        <div className="flex items-center gap-1 mt-1">
+                          {video.soundIdMatch ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                          <span className="text-sm text-gray-600">Sound ID Match</span>
+                        </div>
+                        <a 
+                          href={video.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:text-primary/90 hover:cursor-pointer mt-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Video URL
+                        </a>
                       </div>
                     </div>
                   </li>
@@ -241,7 +263,7 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
           </div>
 
           {/* Video Preview - Right Column */}
-          <div className="flex-1 p-6 flex flex-col">
+          <div className="w-1/3 p-6 flex flex-col">
             <h3 className="text-lg font-medium mb-4 text-gray-900">Video Preview</h3>
             
             {localVideos.length > 0 ? (
@@ -266,9 +288,14 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
             
             {localVideos.length > 0 && (
               <div className="mt-4">
-                <p className="text-sm text-gray-500 break-all">
-                  {localVideos[selectedVideoIndex].url}
-                </p>
+                <a 
+                  href={localVideos[selectedVideoIndex].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:text-primary/90 hover:cursor-pointer"
+                >
+                  Video URL
+                </a>
               </div>
             )}
           </div>

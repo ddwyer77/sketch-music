@@ -3,6 +3,7 @@ export interface Campaign {
   name: string;
   description?: string;
   imageUrl?: string;
+  soundId?: string;
   createdAt: number;
   updatedAt: number;
   status: 'draft' | 'active' | 'completed' | 'archived';
@@ -28,4 +29,5 @@ export interface Video {
   status: 'pending' | 'approved' | 'denied';
   created_at: number;
   updated_at: number;
+  soundIdMatch?: boolean;
 } 

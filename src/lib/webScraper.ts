@@ -144,6 +144,7 @@ export async function fetchTikTokDataFromUrl(url: string): Promise<TikTokPostDat
  */
 export function extractTikTokMetrics(data: TikTokPostData) {
   const stats = data?.itemInfo?.itemStruct?.stats;
+  const music = data?.itemInfo?.itemStruct?.music;
   
   return {
     views: stats?.playCount || 0,
@@ -155,7 +156,8 @@ export function extractTikTokMetrics(data: TikTokPostData) {
     createdAt: data?.itemInfo?.itemStruct?.createTime 
       ? new Date(data.itemInfo.itemStruct.createTime * 1000).toISOString() 
       : '',
-    musicTitle: data?.itemInfo?.itemStruct?.music?.title || '',
-    musicAuthor: data?.itemInfo?.itemStruct?.music?.authorName || '',
+    musicTitle: music?.title || '',
+    musicAuthor: music?.authorName || '',
+    musicId: music?.id || '',
   };
 }

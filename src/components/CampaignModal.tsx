@@ -20,6 +20,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     budgetUsed: 0,
     ratePerMillion: 0,
     imageUrl: '',
+    soundId: '',
     campaign_path: '',
     videos: [{
       id: crypto.randomUUID(),
@@ -56,6 +57,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         budgetUsed: initialData.budgetUsed,
         ratePerMillion: initialData.ratePerMillion,
         imageUrl: initialData.imageUrl,
+        soundId: initialData.soundId || '',
         campaign_path: initialData.campaign_path,
         videos: initialData.videos?.length ? initialData.videos : [{
           id: crypto.randomUUID(),
@@ -365,6 +367,22 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
               placeholder="Enter campaign name"
             />
             {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
+          </div>
+          
+          {/* Sound ID */}
+          <div>
+            <label htmlFor="soundId" className="block text-sm font-medium text-gray-900 mb-1">
+              Sound ID
+            </label>
+            <input
+              type="text"
+              id="soundId"
+              name="soundId"
+              value={formData.soundId}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
+              placeholder="Enter sound ID"
+            />
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

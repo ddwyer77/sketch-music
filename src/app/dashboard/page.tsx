@@ -23,7 +23,13 @@ const generateMetrics = async(url: string) => {
       views: 0,
       shares: 0,
       comments: 0,
-      likes: 0
+      likes: 0,
+      author: '',
+      description: '',
+      createdAt: '',
+      musicTitle: '',
+      musicAuthor: '',
+      musicId: ''
     };
   }
 };
@@ -36,7 +42,13 @@ const updateCampaignMetrics = async (campaign: Campaign): Promise<Campaign> => {
 
   try {
     // Fetch metrics for each video URL in the campaign
-    const metricsPromises = campaign.videos.map(video => generateMetrics(video.url));
+    const metricsPromises = campaign.videos.map(async video => {
+      const metrics = await generateMetrics(video.url);
+      // Check if the video's music ID matches the campaign's sound ID
+      // If no soundId is set, it's automatically not a match (false)
+      const soundIdMatch = campaign.soundId ? metrics.musicId === campaign.soundId : false;
+      return { ...metrics, soundIdMatch };
+    });
     const metricsArray = await Promise.all(metricsPromises);
     
     // Aggregate metrics across all videos
@@ -52,6 +64,12 @@ const updateCampaignMetrics = async (campaign: Campaign): Promise<Campaign> => {
     // Calculate budget used based on views and campaign rate
     const budgetUsed = (aggregatedMetrics.views / 1000000) * campaign.ratePerMillion;
 
+    // Update videos with sound ID match information
+    const updatedVideos = campaign.videos.map((video, index) => ({
+      ...video,
+      soundIdMatch: metricsArray[index].soundIdMatch
+    }));
+
     // Include additional metrics in the update
     const campaignUpdate = {
       views: aggregatedMetrics.views,
@@ -59,7 +77,8 @@ const updateCampaignMetrics = async (campaign: Campaign): Promise<Campaign> => {
       comments: aggregatedMetrics.comments,
       likes: aggregatedMetrics.likes,
       budgetUsed,
-      lastUpdated: Date.now()
+      lastUpdated: Date.now(),
+      videos: updatedVideos
     };
 
     // Update campaign in Firestore

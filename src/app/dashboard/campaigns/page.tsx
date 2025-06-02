@@ -19,10 +19,7 @@ export default function CampaignsPage() {
   const [showCreatorModal, setShowCreatorModal] = useState(false);
 
   // Use a stable query reference
-  const queryConstraints = useMemo(() => 
-    user ? [where('owner_id', '==', user.uid)] : [], 
-    [user]
-  );
+  const queryConstraints = useMemo(() => [], []);
 
   const {
     documents: campaigns,
