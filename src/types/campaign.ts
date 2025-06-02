@@ -4,6 +4,8 @@ export interface Campaign {
   description?: string;
   imageUrl?: string;
   soundId?: string;
+  soundUrl?: string;
+  notes?: string;
   createdAt: number;
   updatedAt: number;
   status: 'draft' | 'active' | 'completed' | 'archived';

@@ -21,6 +21,8 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     ratePerMillion: 0,
     imageUrl: '',
     soundId: '',
+    soundUrl: '',
+    notes: '',
     campaign_path: '',
     videos: [{
       id: crypto.randomUUID(),
@@ -58,6 +60,8 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         ratePerMillion: initialData.ratePerMillion,
         imageUrl: initialData.imageUrl,
         soundId: initialData.soundId || '',
+        soundUrl: initialData.soundUrl || '',
+        notes: initialData.notes || '',
         campaign_path: initialData.campaign_path,
         videos: initialData.videos?.length ? initialData.videos : [{
           id: crypto.randomUUID(),
@@ -371,9 +375,19 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
           
           {/* Sound ID */}
           <div>
-            <label htmlFor="soundId" className="block text-sm font-medium text-gray-900 mb-1">
-              Sound ID
-            </label>
+            <div className="flex items-center gap-2 mb-1">
+              <label htmlFor="soundId" className="block text-sm font-medium text-gray-900">
+                Sound ID
+              </label>
+              <div className="relative group" key="soundId-tooltip">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+                <div className="absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                  Example: 7462880899001616400
+                </div>
+              </div>
+            </div>
             <input
               type="text"
               id="soundId"
@@ -382,6 +396,57 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
               placeholder="Enter sound ID"
+            />
+          </div>
+          
+          {/* Sound URL */}
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <label htmlFor="soundUrl" className="block text-sm font-medium text-gray-900">
+                Sound URL
+              </label>
+              <div className="relative group" key="soundUrl-tooltip">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+                <div className="absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                  Example: https://www.tiktok.com/music/Die-With-A-Smile-7403588534353528848
+                </div>
+              </div>
+            </div>
+            <input
+              type="text"
+              id="soundUrl"
+              name="soundUrl"
+              value={formData.soundUrl}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
+              placeholder="Enter sound URL"
+            />
+          </div>
+          
+          {/* Notes */}
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <label htmlFor="notes" className="block text-sm font-medium text-gray-900">
+                Notes
+              </label>
+              <div className="relative group" key="notes-tooltip">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+                <div className="absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                  This field supports markdown formatting. You can use **bold**, *italic*, [links](url), and more.
+                </div>
+              </div>
+            </div>
+            <textarea
+              id="notes"
+              name="notes"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 min-h-[100px] resize-y"
+              placeholder="Add any additional notes about this campaign..."
             />
           </div>
           
@@ -510,7 +575,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                 </svg>
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                <div className="absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
                   These server IDs determine which Discord servers can see this campaign when using the /campaigns command. Make sure to copy and paste the exact server ID.
                 </div>
               </div>
