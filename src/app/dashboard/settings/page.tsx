@@ -34,6 +34,10 @@ export default function SettingsPage() {
         <h1 className="text-3xl font-bold text-gray-800">Settings</h1>
       </div>
       
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
+        <span className="block sm:inline">Page Under Maintenance</span>
+      </div>
+      
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         {/* Tabs Navigation */}
         <div className="border-b border-gray-200">

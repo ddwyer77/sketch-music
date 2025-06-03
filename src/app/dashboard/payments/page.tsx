@@ -81,6 +81,10 @@ export default function PaymentsPage() {
         </button>
       </div>
       
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
+        <span className="block sm:inline">Page Under Maintenance</span>
+      </div>
+      
       {/* Balance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white rounded-xl shadow-sm p-6">
