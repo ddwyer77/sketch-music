@@ -19,7 +19,8 @@ type User = {
 const RoleBadge = ({ role }: { role: userRole }) => {
   const colors = {
     admin: 'bg-orange-100 text-orange-800',
-    creator: 'bg-green-100 text-green-800'
+    creator: 'bg-green-100 text-green-800',
+    owner: 'bg-blue-100 text-blue-800'
   };
 
   return (
