@@ -22,6 +22,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     imageUrl: '',
     soundId: '',
     soundUrl: '',
+    requireSound: false,
     notes: '',
     campaign_path: '',
     videos: [{
@@ -61,6 +62,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         imageUrl: initialData.imageUrl,
         soundId: initialData.soundId || '',
         soundUrl: initialData.soundUrl || '',
+        requireSound: initialData.requireSound || false,
         notes: initialData.notes || '',
         campaign_path: initialData.campaign_path,
         videos: initialData.videos?.length ? initialData.videos : [{
@@ -373,56 +375,76 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
             {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
           </div>
           
-          {/* Sound ID */}
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <label htmlFor="soundId" className="block text-sm font-medium text-gray-900">
-                Sound ID
-              </label>
-              <div className="relative group" key="soundId-tooltip">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                </svg>
-                <div className="absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-                  Example: 7462880899001616400
+          {/* Sound Settings Group */}
+          <div className="space-y-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+            <h3 className="text-lg font-medium text-gray-900">Sound Settings</h3>
+            
+            {/* Sound ID */}
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <label htmlFor="soundId" className="block text-sm font-medium text-gray-900">
+                  Sound ID
+                </label>
+                <div className="relative group" key="soundId-tooltip">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  <div className="absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                    Example: 7462880899001616400
+                  </div>
                 </div>
               </div>
+              <input
+                type="text"
+                id="soundId"
+                name="soundId"
+                value={formData.soundId}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
+                placeholder="Enter sound ID"
+              />
             </div>
-            <input
-              type="text"
-              id="soundId"
-              name="soundId"
-              value={formData.soundId}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
-              placeholder="Enter sound ID"
-            />
-          </div>
-          
-          {/* Sound URL */}
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <label htmlFor="soundUrl" className="block text-sm font-medium text-gray-900">
-                Sound URL
-              </label>
-              <div className="relative group" key="soundUrl-tooltip">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                </svg>
-                <div className="absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-                  Example: https://www.tiktok.com/music/Die-With-A-Smile-7403588534353528848
+            
+            {/* Sound URL */}
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <label htmlFor="soundUrl" className="block text-sm font-medium text-gray-900">
+                  Sound URL
+                </label>
+                <div className="relative group" key="soundUrl-tooltip">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  <div className="absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                    Example: https://www.tiktok.com/music/Die-With-A-Smile-7403588534353528848
+                  </div>
                 </div>
               </div>
+              <input
+                type="text"
+                id="soundUrl"
+                name="soundUrl"
+                value={formData.soundUrl}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
+                placeholder="Enter sound URL"
+              />
             </div>
-            <input
-              type="text"
-              id="soundUrl"
-              name="soundUrl"
-              value={formData.soundUrl}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
-              placeholder="Enter sound URL"
-            />
+
+            {/* Require Sound Checkbox */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="requireSound"
+                name="requireSound"
+                checked={formData.requireSound}
+                onChange={(e) => setFormData({ ...formData, requireSound: e.target.checked })}
+                className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary"
+              />
+              <label htmlFor="requireSound" className="ml-2 block text-sm text-gray-900">
+                Require users to submit content with this sound
+              </label>
+            </div>
           </div>
           
           {/* Notes */}

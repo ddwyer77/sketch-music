@@ -5,6 +5,7 @@ export interface Campaign {
   imageUrl?: string;
   soundId?: string;
   soundUrl?: string;
+  requireSound?: boolean;
   notes?: string;
   createdAt: number;
   updatedAt: number;
