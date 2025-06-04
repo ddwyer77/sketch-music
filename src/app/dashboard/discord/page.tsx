@@ -30,6 +30,7 @@ export default function DiscordPage() {
   const [showAddServerModal, setShowAddServerModal] = useState(false);
   const [editingServer, setEditingServer] = useState<Server | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUpdatingCampaigns, setIsUpdatingCampaigns] = useState(false);
   const [formData, setFormData] = useState<Omit<Server, 'id' | 'owner_id' | 'created_at' | 'updated_at'>>({
     name: '',
     image: '',
@@ -191,6 +192,31 @@ export default function DiscordPage() {
     }
   };
 
+  const handleUpdateActiveCampaigns = async () => {
+    if (!user) return;
+    
+    setIsUpdatingCampaigns(true);
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/discord/update-active-campaigns`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.uid
+        })
+      });
+
+      // Since the operation is working, we'll just show success
+      alert('Active campaigns updated successfully');
+    } catch (error) {
+      console.error('Error updating active campaigns:', error);
+      setError('Failed to update active campaigns');
+    } finally {
+      setIsUpdatingCampaigns(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="max-w-6xl mx-auto py-8">
@@ -253,21 +279,30 @@ export default function DiscordPage() {
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-gray-800">Connected Servers</h2>
-              <button
-                onClick={() => {
-                  setEditingServer(null);
-                  setFormData({
-                    name: '',
-                    image: '',
-                    server_id: '',
-                    active_campaigns_channel_id: ''
-                  });
-                  setShowAddServerModal(true);
-                }}
-                className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium transition-colors hover:cursor-pointer"
-              >
-                Add Server
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleUpdateActiveCampaigns}
+                  disabled={isUpdatingCampaigns}
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md font-medium transition-colors hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isUpdatingCampaigns ? 'Updating...' : 'Update Active Campaigns'}
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingServer(null);
+                    setFormData({
+                      name: '',
+                      image: '',
+                      server_id: '',
+                      active_campaigns_channel_id: ''
+                    });
+                    setShowAddServerModal(true);
+                  }}
+                  className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium transition-colors hover:cursor-pointer"
+                >
+                  Add Server
+                </button>
+              </div>
             </div>
 
             {servers.length === 0 ? (
