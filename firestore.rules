@@ -41,8 +41,14 @@ service cloud.firestore {
 
     // User rules
     match /users/{userId} {
+      // Allow users to create their own document during signup
+      allow create: if request.auth != null && request.auth.uid == userId;
+      
       // Basic user data is readable by authenticated users
       allow read: if isAuthenticated();
+      
+      // Users can update their own document
+      allow update: if request.auth != null && request.auth.uid == userId;
       
       // Only owners can read and write to the roles field
       allow read: if isAuthenticated() && (

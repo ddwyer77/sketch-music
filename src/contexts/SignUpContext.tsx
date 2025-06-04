@@ -1,18 +1,18 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from 'react';
-import { UserType } from '@/types/user';
+import { userRole } from '@/types/user';
 
 interface SignUpContextType {
-  selectedUserType: UserType | null;
-  setSelectedUserType: (type: UserType) => void;
+  selectedUserType: userRole | null;
+  setSelectedUserType: (type: userRole) => void;
   clearSelectedUserType: () => void;
 }
 
 const SignUpContext = createContext<SignUpContextType | undefined>(undefined);
 
 export function SignUpProvider({ children }: { children: ReactNode }) {
-  const [selectedUserType, setSelectedUserType] = useState<UserType | null>(null);
+  const [selectedUserType, setSelectedUserType] = useState<userRole | null>(null);
 
   const clearSelectedUserType = () => {
     setSelectedUserType(null);

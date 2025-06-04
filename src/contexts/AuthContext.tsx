@@ -88,14 +88,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       
-      // Create user document
+      // Create user document with all required fields
       await setDoc(doc(db, 'users', result.user.uid), {
+        id: result.user.uid,
         email,
         first_name: firstName,
         last_name: lastName,
         roles: [userType],
         groups: [],
-        payment_info: paymentEmail ? [{ email: paymentEmail }] : []
+        campaign_contributions: [],
+        payment_info: paymentEmail ? [{ email: paymentEmail }] : [],
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp()
       });
     } catch (error: unknown) {
       console.error('Error signing up with email:', error);
