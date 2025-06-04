@@ -70,5 +70,16 @@ service cloud.firestore {
       allow delete, update: if request.auth != null;
       allow create: if false;
     }
+
+    // Server rules
+    match /servers/{serverId} {
+      // Allow admins to read and write their own servers
+      allow read: if isAuthenticated() && (
+        isAdmin() && resource.data.owner_id == request.auth.uid
+      );
+      allow create: if isAuthenticated() && isAdmin();
+      allow update: if isAuthenticated() && isAdmin() && resource.data.owner_id == request.auth.uid;
+      allow delete: if isAuthenticated() && isAdmin() && resource.data.owner_id == request.auth.uid;
+    }
   }
 } 

@@ -5,6 +5,9 @@ import { storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Image from 'next/image';
 import { Campaign } from '@/types/campaign';
+import { useAuth } from '@/contexts/AuthContext';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 type CampaignModalProps = {
   onClose: () => void;
@@ -13,7 +16,19 @@ type CampaignModalProps = {
   isLoading?: boolean;
 };
 
+type Server = {
+  id: string;
+  name: string;
+  image: string;
+  server_id: string;
+  active_campaigns_channel_id: string;
+  owner_id: string;
+  created_at: number;
+  updated_at: number;
+};
+
 export default function CampaignModal({ onClose, onSave, initialData, isLoading = false }: CampaignModalProps) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState<Omit<Campaign, 'id' | 'createdAt'>>({
     name: '',
     budget: 0,
@@ -50,6 +65,8 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [servers, setServers] = useState<Server[]>([]);
+  const [selectedServerId, setSelectedServerId] = useState<string>('');
   
   // Initialize form with editing data if available
   useEffect(() => {
@@ -85,6 +102,32 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
       });
     }
   }, [initialData]);
+  
+  // Fetch servers
+  useEffect(() => {
+    const fetchServers = async () => {
+      if (!user) return;
+      
+      try {
+        const serversQuery = query(
+          collection(db, 'servers'),
+          where('owner_id', '==', user.uid)
+        );
+        
+        const querySnapshot = await getDocs(serversQuery);
+        const serversData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Server[];
+        
+        setServers(serversData);
+      } catch (error) {
+        console.error('Error fetching servers:', error);
+      }
+    };
+
+    fetchServers();
+  }, [user]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
@@ -122,11 +165,44 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     });
   };
   
-  const addServerId = () => {
+  const addVideoUrl = () => {
     setFormData({
       ...formData,
-      serverIds: [...(formData.serverIds || []), '']
+      videos: [
+        ...(formData.videos || []),
+        {
+          id: crypto.randomUUID(),
+          url: '',
+          status: 'pending' as const,
+          author_id: '',
+          created_at: Date.now(),
+          updated_at: Date.now()
+        }
+      ]
     });
+  };
+
+  const removeVideoUrl = (index: number) => {
+    const updatedVideos = (formData.videos || []).filter((_, i) => i !== index);
+    setFormData({
+      ...formData,
+      videos: updatedVideos
+    });
+  };
+  
+  const addServerId = () => {
+    if (!selectedServerId) return;
+    
+    // Check if server is already added
+    if (formData.serverIds?.includes(selectedServerId)) {
+      return;
+    }
+    
+    setFormData({
+      ...formData,
+      serverIds: [...(formData.serverIds || []), selectedServerId]
+    });
+    setSelectedServerId(''); // Reset selection
   };
 
   const removeServerId = (index: number) => {
@@ -137,44 +213,6 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     });
   };
 
-  const handleServerIdChange = (index: number, value: string) => {
-    const updatedServerIds = [...(formData.serverIds || [])];
-    updatedServerIds[index] = value;
-    setFormData({
-      ...formData,
-      serverIds: updatedServerIds
-    });
-  };
-  
-  const addVideoUrl = () => {
-    setFormData({
-      ...formData,
-      videos: [...(formData.videos || []), {
-        id: crypto.randomUUID(),
-        url: '',
-        status: 'pending' as const,
-        author_id: '',
-        created_at: Date.now(),
-        updated_at: Date.now()
-      }],
-    });
-  };
-  
-  const removeVideoUrl = (index: number) => {
-    const updatedVideos = (formData.videos || []).filter((_, i) => i !== index);
-    setFormData({
-      ...formData,
-      videos: updatedVideos.length ? updatedVideos : [{
-        id: crypto.randomUUID(),
-        url: '',
-        status: 'pending' as const,
-        author_id: '',
-        created_at: Date.now(),
-        updated_at: Date.now()
-      }],
-    });
-  };
-  
   const handleBulkImportChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setBulkImportText(e.target.value);
   };
@@ -591,49 +629,77 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
           <div>
             <div className="flex items-center gap-2 mb-2">
               <label className="block text-sm font-medium text-gray-900">
-                Discord Server IDs*
+                Discord Servers*
               </label>
               <div className="relative group">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                 </svg>
                 <div className="absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-                  These server IDs determine which Discord servers can see this campaign when using the /campaigns command. Make sure to copy and paste the exact server ID.
+                  Select the Discord servers where this campaign should be visible. You can add multiple servers.
                 </div>
               </div>
             </div>
             
-            <div className="space-y-2">
-              {(formData.serverIds || []).map((serverId, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={serverId}
-                    onChange={(e) => handleServerIdChange(index, e.target.value)}
-                    placeholder="Discord Server ID"
-                    className={`flex-1 p-2 border rounded text-gray-600 ${errors.serverIds ? 'border-red-500' : 'border-gray-300'}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeServerId(index)}
-                    className="p-2 text-red-500 hover:text-red-700 hover:cursor-pointer"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addServerId}
-                className="flex items-center gap-1 text-primary hover:text-primary/90 hover:cursor-pointer"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                </svg>
-                Add Server ID
-              </button>
+            <div className="space-y-4">
+              {/* Server Selection */}
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedServerId}
+                  onChange={(e) => setSelectedServerId(e.target.value)}
+                  className="flex-1 p-2 border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                >
+                  <option value="">Select a server</option>
+                  {servers.map((server) => (
+                    <option key={server.id} value={server.server_id}>
+                      {server.name} ({server.server_id})
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={addServerId}
+                  disabled={!selectedServerId}
+                  className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer"
+                >
+                  Add
+                </button>
+              </div>
+
+              {/* Selected Servers */}
+              <div className="space-y-2">
+                {(formData.serverIds || []).map((serverId, index) => {
+                  const server = servers.find(s => s.server_id === serverId);
+                  return (
+                    <div key={serverId} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                      <div className="flex items-center space-x-3">
+                        {server?.image ? (
+                          <img src={server.image} alt={server.name} className="w-8 h-8 rounded-full" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{server?.name || 'Unknown Server'}</p>
+                          <p className="text-xs text-gray-500">ID: {serverId}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeServerId(index)}
+                        className="text-red-500 hover:text-red-700 hover:cursor-pointer"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
               {errors.serverIds && <p className="mt-1 text-sm text-red-500">{errors.serverIds}</p>}
             </div>
           </div>
