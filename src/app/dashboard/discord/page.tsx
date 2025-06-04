@@ -38,6 +38,23 @@ export default function DiscordPage() {
     active_campaigns_channel_id: ''
   });
   const { addDocument, updateDocument, deleteDocument } = useFirestoreOperations<Omit<Server, 'id'>>('servers');
+  const [visibleTooltip, setVisibleTooltip] = useState<string | null>(null);
+
+  const toggleTooltip = (tooltipId: string) => {
+    setVisibleTooltip(visibleTooltip === tooltipId ? null : tooltipId);
+  };
+
+  // Add click handler to close tooltips when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (visibleTooltip && !(event.target as Element).closest('.tooltip-container')) {
+        setVisibleTooltip(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [visibleTooltip]);
 
   // Check if user is admin
   useEffect(() => {
@@ -412,11 +429,17 @@ export default function DiscordPage() {
                     <label htmlFor="server-name" className="block text-sm font-medium text-gray-900">
                       Server Name
                     </label>
-                    <div className="relative group">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
+                    <div className="relative tooltip-container">
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" 
+                        viewBox="0 0 20 20" 
+                        fill="currentColor"
+                        onClick={() => toggleTooltip('server-name')}
+                      >
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                       </svg>
-                      <div className="absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                      <div className={`absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg transition-opacity duration-200 z-50 ${visibleTooltip === 'server-name' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                         Name of the server. This can be a nickname and doesn't have to match the server name exactly.
                       </div>
                     </div>
@@ -437,11 +460,17 @@ export default function DiscordPage() {
                     <label htmlFor="server-image" className="block text-sm font-medium text-gray-900">
                       Server Image
                     </label>
-                    <div className="relative group">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
+                    <div className="relative tooltip-container">
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" 
+                        viewBox="0 0 20 20" 
+                        fill="currentColor"
+                        onClick={() => toggleTooltip('server-image')}
+                      >
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                       </svg>
-                      <div className="absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                      <div className={`absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg transition-opacity duration-200 z-50 ${visibleTooltip === 'server-image' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                         Add an image to quickly identify your server
                       </div>
                     </div>
@@ -493,11 +522,17 @@ export default function DiscordPage() {
                     <label htmlFor="server-id" className="block text-sm font-medium text-gray-900">
                       Server ID
                     </label>
-                    <div className="relative group">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
+                    <div className="relative tooltip-container">
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" 
+                        viewBox="0 0 20 20" 
+                        fill="currentColor"
+                        onClick={() => toggleTooltip('server-id')}
+                      >
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                       </svg>
-                      <div className="absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                      <div className={`absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg transition-opacity duration-200 z-50 ${visibleTooltip === 'server-id' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                         The id of your server. To find this ID ensure dev tools is enabled and right click your server.
                       </div>
                     </div>
@@ -518,11 +553,17 @@ export default function DiscordPage() {
                     <label htmlFor="campaigns-channel-id" className="block text-sm font-medium text-gray-900">
                       Active Campaigns Channel ID
                     </label>
-                    <div className="relative group">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
+                    <div className="relative tooltip-container">
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" 
+                        viewBox="0 0 20 20" 
+                        fill="currentColor"
+                        onClick={() => toggleTooltip('campaigns-channel-id')}
+                      >
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                       </svg>
-                      <div className="absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                      <div className={`absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg transition-opacity duration-200 z-50 ${visibleTooltip === 'campaigns-channel-id' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                         The id of the channel within your server where campaign information will be listed.
                       </div>
                     </div>
