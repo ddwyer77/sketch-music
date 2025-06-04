@@ -56,7 +56,8 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     status: 'draft',
     updatedAt: Date.now(),
     lastUpdated: Date.now(),
-    owner_id: ''
+    owner_id: '',
+    maxSubmissions: 0
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -98,7 +99,8 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         status: initialData.status,
         updatedAt: initialData.updatedAt,
         lastUpdated: initialData.lastUpdated,
-        owner_id: initialData.owner_id
+        owner_id: initialData.owner_id,
+        maxSubmissions: initialData.maxSubmissions || 0
       });
     }
   }, [initialData]);
@@ -547,6 +549,23 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
                 placeholder="0.00"
               />
               {errors.ratePerMillion && <p className="mt-1 text-sm text-red-500">{errors.ratePerMillion}</p>}
+            </div>
+
+            {/* Max Submissions */}
+            <div>
+              <label htmlFor="maxSubmissions" className="block text-sm font-medium text-gray-900 mb-1">
+                Max Submissions
+              </label>
+              <input
+                type="number"
+                id="maxSubmissions"
+                name="maxSubmissions"
+                min="0"
+                value={formData.maxSubmissions}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
+                placeholder="0"
+              />
             </div>
           </div>
           

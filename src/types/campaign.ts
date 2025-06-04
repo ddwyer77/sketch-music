@@ -23,6 +23,7 @@ export interface Campaign {
   lastUpdated: number;
   campaign_path?: string;
   owner_id: string;
+  maxSubmissions?: number; // Maximum number of video submissions allowed
 }
 
 export interface Video {

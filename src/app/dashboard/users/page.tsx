@@ -210,7 +210,7 @@ export default function UsersPage() {
         <h1 className="text-2xl font-bold text-gray-800">Users</h1>
         {isOwner && (
           <p className="mt-2 text-sm text-gray-600">
-            Only users with the 'owner' role can see and modify user roles
+            Only users with the &apos;owner&apos; role can see and modify user roles
           </p>
         )}
       </div>

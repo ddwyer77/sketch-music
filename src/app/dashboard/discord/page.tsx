@@ -8,6 +8,7 @@ import { db } from '@/lib/firebase';
 import { useFirestoreOperations } from '@/hooks';
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import Image from 'next/image';
 
 type Server = {
   id: string;
@@ -351,7 +352,13 @@ export default function DiscordPage() {
                   <div key={server.id} className="bg-white rounded-xl shadow-sm p-6">
                     <div className="flex items-center space-x-4 mb-4">
                       {server.image ? (
-                        <img src={server.image} alt={server.name} className="w-12 h-12 rounded-full" />
+                        <Image 
+                          src={server.image} 
+                          alt={server.name} 
+                          width={48} 
+                          height={48} 
+                          className="w-12 h-12 rounded-full object-cover" 
+                        />
                       ) : (
                         <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -478,7 +485,13 @@ export default function DiscordPage() {
                   <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
                     {formData.image ? (
                       <div className="relative">
-                        <img src={formData.image} alt="Server" className="h-32 w-32 rounded-full object-cover" />
+                        <Image 
+                          src={formData.image} 
+                          alt="Server" 
+                          width={128} 
+                          height={128} 
+                          className="h-32 w-32 rounded-full object-cover" 
+                        />
                         <button
                           type="button"
                           onClick={() => setFormData(prev => ({ ...prev, image: '' }))}
