@@ -77,7 +77,7 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
   useEffect(() => {
     setLocalVideos(videoUrls);
     setHasChanges(false);
-  }, [videoUrls]);
+  }, [videoUrls, localVideos]);
 
   useEffect(() => {
     if (localVideos.length > 0) {

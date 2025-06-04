@@ -693,7 +693,13 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
                     <div key={serverId} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
                       <div className="flex items-center space-x-3">
                         {server?.image ? (
-                          <img src={server.image} alt={server.name} className="w-8 h-8 rounded-full" />
+                          <Image 
+                            src={server.image} 
+                            alt={server.name} 
+                            width={32} 
+                            height={32} 
+                            className="w-8 h-8 rounded-full object-cover" 
+                          />
                         ) : (
                           <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

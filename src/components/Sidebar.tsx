@@ -130,7 +130,7 @@ export default function Sidebar() {
     icon: CreatorHubIcon,
     disabled: !userRoles.includes('creator'),
     tooltip: !userRoles.includes('creator') 
-      ? "You need creator permissions to access this feature. Visit the 'Users' panel or contact your admin to request creator access."
+      ? "You don&apos;t have creator access. Contact your admin to request this role."
       : undefined
   });
 
@@ -171,7 +171,7 @@ export default function Sidebar() {
                 {isDisabled && item.tooltip && (
                   <div className="fixed z-50 opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="bg-gray-900 text-white text-sm rounded-lg py-2 px-3 whitespace-nowrap">
-                      You don't have creator access. Contact your admin to request this role.
+                      {item.tooltip}
                       <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 transform rotate-45 w-2 h-2 bg-gray-900"></div>
                     </div>
                   </div>
