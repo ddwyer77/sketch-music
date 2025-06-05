@@ -84,3 +84,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## Troubleshooting
 - Error response related to calculating views and campaign progress
    - Check Apify credits
+   - Check server scaling and other app.yaml settings

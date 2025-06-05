@@ -5,6 +5,7 @@ import Navbar from "../components/Navbar";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SignUpProvider } from '@/contexts/SignUpContext';
 import { Toaster } from 'react-hot-toast';
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,6 +40,7 @@ export default function RootLayout({
               {children}
             </main>
             <Toaster />
+            <GoogleAnalytics />
           </SignUpProvider>
         </AuthProvider>
       </body>

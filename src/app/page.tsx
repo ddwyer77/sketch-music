@@ -7,6 +7,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import ContactForm from '../components/ContactForm';
+import { trackEvent } from '@/utils/analytics';
 
 export default function Home() {
   const router = useRouter();
@@ -34,6 +35,11 @@ export default function Home() {
   };
 
   const handleEarnAsCreator = async () => {
+    trackEvent('earn_creator_click', {
+      button_location: 'hero_section',
+      button_type: 'primary_cta'
+    });
+    
     if (user) {
       try {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
