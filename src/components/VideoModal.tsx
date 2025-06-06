@@ -12,6 +12,11 @@ type Video = {
   status: 'pending' | 'approved' | 'denied';
   author_id: string;
   soundIdMatch?: boolean;
+  title?: string;
+  author?: {
+    nickname: string;
+    uniqueId: string;
+  };
 };
 
 type VideoModalProps = {
@@ -32,9 +37,9 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
   const { user } = useAuth();
   const { updateDocument, loading } = useFirestoreOperations('campaigns');
 
-  // Check sound ID matches when modal opens
+  // Initial setup of videos with titles and sound ID check
   useEffect(() => {
-    const checkSoundIdMatches = async () => {
+    const setupVideos = async () => {
       setIsCheckingSoundIds(true);
       try {
         // Get campaign to check soundId
@@ -43,17 +48,25 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
         const campaign = campaignDoc.data();
         const soundId = campaign?.soundId;
 
-        // Check each video
+        // Process all videos at once
         const updatedVideos = await Promise.all(
-          localVideos.map(async (video) => {
+          videoUrls.map(async (video) => {
             try {
-              const metrics = await extractTikTokMetrics(await fetchTikTokDataFromUrl(video.url));
+              // Get video data
+              const data = await fetchTikTokDataFromUrl(video.url);
+              const metrics = await extractTikTokMetrics(data);
+              
               return {
                 ...video,
+                title: data.shareMeta?.title || '',
+                author: data.itemInfo?.itemStruct?.author ? {
+                  nickname: data.itemInfo.itemStruct.author.nickname,
+                  uniqueId: data.itemInfo.itemStruct.author.uniqueId
+                } : undefined,
                 soundIdMatch: soundId ? metrics.musicId === soundId : false
               };
             } catch (error) {
-              console.error(`Error checking sound ID match for video ${video.url}:`, error);
+              console.error(`Could not verify sound ID match for video ${video.url}`);
               return {
                 ...video,
                 soundIdMatch: false
@@ -64,34 +77,25 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
 
         setLocalVideos(updatedVideos);
       } catch (error) {
-        console.error('Error checking sound ID matches:', error);
+        console.error('Error setting up videos:', error);
       } finally {
         setIsCheckingSoundIds(false);
       }
     };
 
-    checkSoundIdMatches();
+    setupVideos();
   }, [campaignId, videoUrls]);
 
-  // Update local videos when prop changes
-  useEffect(() => {
-    setLocalVideos(videoUrls);
-    setHasChanges(false);
-  }, [videoUrls, localVideos]);
-
+  // Update embed URL when selected video changes
   useEffect(() => {
     if (localVideos.length > 0) {
       const url = localVideos[selectedVideoIndex].url;
-      // Convert TikTok URL to embed URL
       try {
-        // Extract video ID from TikTok URL format
-        // Example: https://www.tiktok.com/@username/video/1234567890123456789
         const match = url.match(/\/video\/(\d+)/);
         if (match && match[1]) {
           const videoId = match[1];
           setEmbedUrl(`https://www.tiktok.com/embed/v2/${videoId}`);
         } else {
-          // If we can't parse it, just use the original URL
           setEmbedUrl(url);
         }
       } catch (error) {
@@ -223,11 +227,11 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
             {localVideos.length === 0 ? (
               <p className="text-gray-500">No videos in this campaign.</p>
             ) : (
-              <ul className="space-y-3">
+              <ul className="space-y-2">
                 {localVideos.map((video, index) => (
                   <li 
                     key={index} 
-                    className={`flex justify-between items-center p-3 rounded-lg ${
+                    className={`flex justify-between items-center p-2 rounded-lg ${
                       selectedVideoIndex === index 
                         ? 'bg-primary/10 outline-primary outline-2' 
                         : 'bg-gray-50 hover:bg-gray-100'
@@ -238,9 +242,30 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
                       onClick={() => setSelectedVideoIndex(index)}
                     >
                       <div className="flex flex-col">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium text-gray-900 truncate">{video.url.split('/').pop()?.split('?')[0] || `Video ${index + 1}`}</span>
-                          <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                              <a 
+                                href={video.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-bold text-gray-900 hover:text-primary hover:cursor-pointer truncate block"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {video.title ? (
+                                  video.title.length > 50 ? `${video.title.substring(0, 50)}...` : video.title
+                                ) : (
+                                  `Video ${index + 1}`
+                                )}
+                              </a>
+                              {video.author && (
+                                <span className="text-sm text-gray-600 whitespace-nowrap">
+                                  @{video.author.uniqueId} • {video.author.nickname}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
                             <select
                               value={video.status}
                               onChange={(e) => handleStatusChange(index, e.target.value as 'pending' | 'approved' | 'denied')}
@@ -260,7 +285,7 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
                                 e.stopPropagation();
                                 handleDeleteVideo(index);
                               }}
-                              className={`ml-2 shrink-0 p-1 rounded-full ${
+                              className={`shrink-0 p-1 rounded-full ${
                                 selectedVideoIndex === index 
                                   ? 'bg-gray-200 hover:bg-gray-300 text-red-500' 
                                   : 'bg-gray-200 hover:bg-gray-300 text-red-500'
@@ -275,30 +300,21 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
                         </div>
                         <div className="flex items-center gap-1 mt-1">
                           {isCheckingSoundIds ? (
-                            <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <svg className="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                           ) : video.soundIdMatch ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
                               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                             </svg>
                           ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-500" viewBox="0 0 20 20" fill="currentColor">
                               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                             </svg>
                           )}
-                          <span className="text-sm text-gray-600">Sound ID Match</span>
+                          <span className="text-xs text-gray-600">Sound ID Match</span>
                         </div>
-                        <a 
-                          href={video.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-primary hover:text-primary/90 hover:cursor-pointer mt-1"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          Video URL
-                        </a>
                       </div>
                     </div>
                   </li>

@@ -54,11 +54,17 @@ interface TikTokItemStruct {
   shareUrl: string;
 }
 
+interface TikTokShareMeta {
+  title: string;
+  desc: string;
+}
+
 // Define interface for TikTok API response
 export interface TikTokPostData {
   itemInfo?: {
     itemStruct?: TikTokItemStruct;
   };
+  shareMeta?: TikTokShareMeta;
   statusCode?: number;
   statusMessage?: string;
 }
