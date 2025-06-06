@@ -167,9 +167,6 @@ export default function CampaignsPage() {
                   Videos
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                  Contributions
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Creators
                 </th>
               </tr>
@@ -229,11 +226,8 @@ export default function CampaignsPage() {
                   
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <div className="text-sm text-gray-900">{campaign.videos?.length || 0} videos</div>
-                  </td>
-                  
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                     <button 
-                      className="text-indigo-600 hover:text-indigo-900 hover:cursor-pointer"
+                      className="text-primary hover:text-primary/90 hover:cursor-pointer text-sm"
                       onClick={() => handleViewVideos(campaign)}
                     >
                       Manage
