@@ -13,11 +13,102 @@ type Video = {
   author_id: string;
   soundIdMatch?: boolean;
   title?: string;
+  reasonForDenial?: string | null;
   author?: {
     nickname: string;
     uniqueId: string;
   };
 };
+
+type DenialModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (reason: string | null) => void;
+};
+
+type ConfirmationModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+  confirmText: string;
+  cancelText: string;
+};
+
+function ConfirmationModal({ isOpen, onClose, onConfirm, title, message, confirmText, cancelText }: ConfirmationModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-[70] p-4">
+      <div className="bg-white rounded-lg w-full max-w-md p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
+        <p className="text-gray-600 mb-6">{message}</p>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 hover:cursor-pointer"
+          >
+            {cancelText}
+          </button>
+          <button
+            onClick={onConfirm}
+            className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors hover:cursor-pointer"
+          >
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DenialModal({ isOpen, onClose, onSave }: DenialModalProps) {
+  const [reason, setReason] = useState('');
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-[60] p-4">
+      <div className="bg-white rounded-lg w-full max-w-lg p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Deny Video</h3>
+        <div className="mb-4">
+          <label htmlFor="denialReason" className="block text-sm font-medium text-gray-700 mb-2">
+            Let the user know why their video was denied
+          </label>
+          <textarea
+            id="denialReason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-800"
+            rows={4}
+            placeholder="Enter reason for denial..."
+          />
+        </div>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={() => onSave(null)}
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 hover:cursor-pointer"
+          >
+            Continue without message
+          </button>
+          <button
+            onClick={() => onClose()}
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 hover:cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onSave(reason.trim() || null)}
+            className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors hover:cursor-pointer"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 type VideoModalProps = {
   campaignId: string;
@@ -34,8 +125,15 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
   const [localVideos, setLocalVideos] = useState<Video[]>(videoUrls);
   const [hasChanges, setHasChanges] = useState(false);
   const [isCheckingSoundIds, setIsCheckingSoundIds] = useState(true);
+  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'denied'>('pending');
+  const [isDenialModalOpen, setIsDenialModalOpen] = useState(false);
+  const [pendingDenialIndex, setPendingDenialIndex] = useState<number | null>(null);
+  const [isCloseConfirmationOpen, setIsCloseConfirmationOpen] = useState(false);
   const { user } = useAuth();
   const { updateDocument, loading } = useFirestoreOperations('campaigns');
+
+  // Filter videos based on active tab
+  const filteredVideos = localVideos.filter(video => video.status === activeTab);
 
   // Initial setup of videos with titles and sound ID check
   useEffect(() => {
@@ -106,12 +204,30 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
   }, [localVideos, selectedVideoIndex]);
 
   const handleStatusChange = (index: number, newStatus: 'pending' | 'approved' | 'denied') => {
-    setLocalVideos(prevVideos => 
-      prevVideos.map((video, i) => 
-        i === index ? { ...video, status: newStatus } : video
-      )
-    );
-    setHasChanges(true);
+    if (newStatus === 'denied') {
+      setPendingDenialIndex(index);
+      setIsDenialModalOpen(true);
+    } else {
+      setLocalVideos(prevVideos => 
+        prevVideos.map((video, i) => 
+          i === index ? { ...video, status: newStatus } : video
+        )
+      );
+      setHasChanges(true);
+    }
+  };
+
+  const handleDenialSave = (reason: string | null) => {
+    if (pendingDenialIndex !== null) {
+      setLocalVideos(prevVideos => 
+        prevVideos.map((video, i) => 
+          i === pendingDenialIndex ? { ...video, status: 'denied', reasonForDenial: reason } : video
+        )
+      );
+      setHasChanges(true);
+    }
+    setIsDenialModalOpen(false);
+    setPendingDenialIndex(null);
   };
 
   const handleSaveChanges = async () => {
@@ -166,14 +282,22 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
     }
   };
 
+  const handleCloseAttempt = () => {
+    if (hasChanges) {
+      setIsCloseConfirmationOpen(true);
+    } else {
+      onClose();
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-6xl h-[80vh] flex flex-col">
         <div className="p-6 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-xl font-bold text-gray-900">Campaign Videos</h2>
           <button 
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            onClick={handleCloseAttempt}
+            className="text-gray-500 hover:text-gray-700 hover:cursor-pointer"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -185,7 +309,38 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
           {/* Video List - Left Column */}
           <div className="w-2/3 border-r border-gray-200 p-6 overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Video List</h3>
+              <div className="flex space-x-4">
+                <button
+                  onClick={() => setActiveTab('pending')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover:cursor-pointer ${
+                    activeTab === 'pending'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  Pending
+                </button>
+                <button
+                  onClick={() => setActiveTab('approved')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover:cursor-pointer ${
+                    activeTab === 'approved'
+                      ? 'bg-green-100 text-green-800'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  Approved
+                </button>
+                <button
+                  onClick={() => setActiveTab('denied')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover:cursor-pointer ${
+                    activeTab === 'denied'
+                      ? 'bg-red-100 text-red-800'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  Denied
+                </button>
+              </div>
               <button
                 onClick={() => setIsAddingVideo(true)}
                 className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover:cursor-pointer"
@@ -224,101 +379,109 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
               </div>
             )}
 
-            {localVideos.length === 0 ? (
-              <p className="text-gray-500">No videos in this campaign.</p>
+            {filteredVideos.length === 0 ? (
+              <p className="text-gray-500">No {activeTab} videos in this campaign.</p>
             ) : (
               <ul className="space-y-2">
-                {localVideos.map((video, index) => (
-                  <li 
-                    key={index} 
-                    className={`flex justify-between items-center p-2 rounded-lg ${
-                      selectedVideoIndex === index 
-                        ? 'bg-primary/10 outline-primary outline-2' 
-                        : 'bg-gray-50 hover:bg-gray-100'
-                    }`}
-                  >
-                    <div 
-                      className="flex-1 min-w-0 cursor-pointer"
-                      onClick={() => setSelectedVideoIndex(index)}
+                {filteredVideos.map((video, index) => {
+                  const originalIndex = localVideos.findIndex(v => v.url === video.url);
+                  return (
+                    <li 
+                      key={originalIndex} 
+                      className={`flex justify-between items-center p-2 rounded-lg ${
+                        selectedVideoIndex === originalIndex 
+                          ? 'bg-primary/10 outline-primary outline-2' 
+                          : 'bg-gray-50 hover:bg-gray-100'
+                      }`}
                     >
-                      <div className="flex flex-col">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-                              <a 
-                                href={video.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-bold text-gray-900 hover:text-primary hover:cursor-pointer truncate block"
+                      <div 
+                        className="flex-1 min-w-0 cursor-pointer"
+                        onClick={() => setSelectedVideoIndex(originalIndex)}
+                      >
+                        <div className="flex flex-col">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                                <a 
+                                  href={video.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-bold text-gray-900 hover:text-primary hover:cursor-pointer truncate block"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {video.title ? (
+                                    video.title.length > 50 ? `${video.title.substring(0, 50)}...` : video.title
+                                  ) : (
+                                    `Video ${originalIndex + 1}`
+                                  )}
+                                </a>
+                                {video.author && (
+                                  <span className="text-sm text-gray-600 whitespace-nowrap">
+                                    @{video.author.uniqueId} • {video.author.nickname}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <select
+                                value={video.status}
+                                onChange={(e) => handleStatusChange(originalIndex, e.target.value as 'pending' | 'approved' | 'denied')}
+                                className={`shrink-0 px-2 py-1 text-sm rounded-md ${
+                                  video.status === 'approved' ? 'bg-green-50 text-green-700 border-green-200' :
+                                  video.status === 'denied' ? 'bg-red-50 text-red-700 border-red-200' :
+                                  'bg-yellow-50 text-yellow-700 border-yellow-200'
+                                }`}
                                 onClick={(e) => e.stopPropagation()}
                               >
-                                {video.title ? (
-                                  video.title.length > 50 ? `${video.title.substring(0, 50)}...` : video.title
-                                ) : (
-                                  `Video ${index + 1}`
-                                )}
-                              </a>
-                              {video.author && (
-                                <span className="text-sm text-gray-600 whitespace-nowrap">
-                                  @{video.author.uniqueId} • {video.author.nickname}
-                                </span>
-                              )}
+                                <option value="pending" className="bg-yellow-50 text-gray-900">Pending</option>
+                                <option value="approved" className="bg-green-50 text-gray-900">Approved</option>
+                                <option value="denied" className="bg-red-50 text-gray-900">Denied</option>
+                              </select>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteVideo(originalIndex);
+                                }}
+                                className={`shrink-0 p-1 rounded-full ${
+                                  selectedVideoIndex === originalIndex 
+                                    ? 'bg-gray-200 hover:bg-gray-300 text-red-500' 
+                                    : 'bg-gray-200 hover:bg-gray-300 text-red-500'
+                                } hover:cursor-pointer`}
+                                title="Delete video"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <select
-                              value={video.status}
-                              onChange={(e) => handleStatusChange(index, e.target.value as 'pending' | 'approved' | 'denied')}
-                              className={`shrink-0 px-2 py-1 text-sm rounded-md ${
-                                video.status === 'approved' ? 'bg-green-50 text-green-700 border-green-200' :
-                                video.status === 'denied' ? 'bg-red-50 text-red-700 border-red-200' :
-                                'bg-yellow-50 text-yellow-700 border-yellow-200'
-                              }`}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <option value="pending" className="bg-yellow-50 text-gray-900">Pending</option>
-                              <option value="approved" className="bg-green-50 text-gray-900">Approved</option>
-                              <option value="denied" className="bg-red-50 text-gray-900">Denied</option>
-                            </select>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteVideo(index);
-                              }}
-                              className={`shrink-0 p-1 rounded-full ${
-                                selectedVideoIndex === index 
-                                  ? 'bg-gray-200 hover:bg-gray-300 text-red-500' 
-                                  : 'bg-gray-200 hover:bg-gray-300 text-red-500'
-                              } hover:cursor-pointer`}
-                              title="Delete video"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          {video.status === 'denied' && video.reasonForDenial && (
+                            <div className="mt-1 text-sm text-red-600">
+                              Reason: {video.reasonForDenial}
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1 mt-1">
+                            {isCheckingSoundIds ? (
+                              <svg className="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                               </svg>
-                            </button>
+                            ) : video.soundIdMatch ? (
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            ) : (
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                            <span className="text-xs text-gray-600">Sound ID Match</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 mt-1">
-                          {isCheckingSoundIds ? (
-                            <svg className="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                          ) : video.soundIdMatch ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                          ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                          <span className="text-xs text-gray-600">Sound ID Match</span>
-                        </div>
                       </div>
-                    </div>
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
@@ -373,13 +536,32 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
             </button>
           )}
           <button
-            onClick={onClose}
+            onClick={handleCloseAttempt}
             className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 hover:cursor-pointer"
           >
             Close
           </button>
         </div>
       </div>
+
+      <DenialModal
+        isOpen={isDenialModalOpen}
+        onClose={() => {
+          setIsDenialModalOpen(false);
+          setPendingDenialIndex(null);
+        }}
+        onSave={handleDenialSave}
+      />
+
+      <ConfirmationModal
+        isOpen={isCloseConfirmationOpen}
+        onClose={() => setIsCloseConfirmationOpen(false)}
+        onConfirm={onClose}
+        title="Unsaved Changes"
+        message="You have unsaved changes. Are you sure you want to close without saving?"
+        confirmText="Close Without Saving"
+        cancelText="Go Back"
+      />
     </div>
   );
 }

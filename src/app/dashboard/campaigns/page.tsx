@@ -225,13 +225,22 @@ export default function CampaignsPage() {
                   </td>
                   
                   <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <div className="text-sm text-gray-900">{campaign.videos?.length || 0} videos</div>
-                    <button 
-                      className="text-primary hover:text-primary/90 hover:cursor-pointer text-sm"
-                      onClick={() => handleViewVideos(campaign)}
-                    >
-                      Manage
-                    </button>
+                    <div className="flex flex-col items-center">
+                      <div className="text-sm text-gray-900 relative">
+                        {campaign.videos?.length || 0} videos
+                        {(campaign.videos?.filter(v => v.status === 'pending') || []).length > 0 && (
+                          <span className="absolute -top-2 -right-6 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+                            {(campaign.videos?.filter(v => v.status === 'pending') || []).length}
+                          </span>
+                        )}
+                      </div>
+                      <button 
+                        className="text-primary hover:text-primary/90 hover:cursor-pointer text-sm"
+                        onClick={() => handleViewVideos(campaign)}
+                      >
+                        Manage
+                      </button>
+                    </div>
                   </td>
                   
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
