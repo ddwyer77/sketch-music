@@ -77,17 +77,12 @@ export default function DiscordPage() {
       if (!user) return;
       
       try {
-        const serversQuery = query(
-          collection(db, 'servers'),
-          where('owner_id', '==', user.uid)
-        );
-        
+        const serversQuery = collection(db, 'servers');
         const querySnapshot = await getDocs(serversQuery);
         const serversData = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Server[];
-        
         setServers(serversData);
       } catch (error) {
         console.error('Error fetching servers:', error);
@@ -154,10 +149,7 @@ export default function DiscordPage() {
       }
       
       // Refresh servers list
-      const serversQuery = query(
-        collection(db, 'servers'),
-        where('owner_id', '==', user.uid)
-      );
+      const serversQuery = collection(db, 'servers');
       const querySnapshot = await getDocs(serversQuery);
       const serversData = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -209,16 +201,19 @@ export default function DiscordPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          userId: user.uid
-        })
       });
 
-      // Since the operation is working, we'll just show success
-      alert('Active campaigns updated successfully');
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update active campaigns');
+      }
+
+      // Show success message with any returned data
+      alert(data.message || 'Active campaigns updated successfully');
     } catch (error) {
       console.error('Error updating active campaigns:', error);
-      setError('Failed to update active campaigns');
+      setError(error instanceof Error ? error.message : 'Failed to update active campaigns');
     } finally {
       setIsUpdatingCampaigns(false);
     }

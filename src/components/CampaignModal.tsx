@@ -779,7 +779,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
             {/* Video URL List */}
             <div className="space-y-4">
               {(formData.videos || []).map((video, index) => (
-                <div key={video.id} className="flex items-center gap-2">
+                <div key={video.id || index} className="flex items-center gap-2">
                   <input
                     type="text"
                     value={video.url}
