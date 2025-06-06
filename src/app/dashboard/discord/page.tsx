@@ -9,16 +9,14 @@ import { useFirestoreOperations } from '@/hooks';
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Image from 'next/image';
+import { Server } from '@/types/server';
 
-type Server = {
-  id: string;
-  name: string;
-  image: string;
-  server_id: string;
-  active_campaigns_channel_id: string;
-  owner_id: string;
-  created_at: number;
-  updated_at: number;
+const DEFAULT_FORM_DATA: Omit<Server, 'id' | 'owner_id' | 'created_at' | 'updated_at'> = {
+  name: '',
+  image: '',
+  server_id: '',
+  active_campaigns_channel_id: '',
+  isProductionServer: true
 };
 
 export default function DiscordPage() {
@@ -32,12 +30,7 @@ export default function DiscordPage() {
   const [editingServer, setEditingServer] = useState<Server | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isUpdatingCampaigns, setIsUpdatingCampaigns] = useState(false);
-  const [formData, setFormData] = useState<Omit<Server, 'id' | 'owner_id' | 'created_at' | 'updated_at'>>({
-    name: '',
-    image: '',
-    server_id: '',
-    active_campaigns_channel_id: ''
-  });
+  const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
   const { addDocument, updateDocument, deleteDocument } = useFirestoreOperations<Omit<Server, 'id'>>('servers');
   const [visibleTooltip, setVisibleTooltip] = useState<string | null>(null);
 
@@ -173,12 +166,7 @@ export default function DiscordPage() {
       setServers(serversData);
       
       // Reset form and close modal
-      setFormData({
-        name: '',
-        image: '',
-        server_id: '',
-        active_campaigns_channel_id: ''
-      });
+      setFormData(DEFAULT_FORM_DATA);
       setEditingServer(null);
       setShowAddServerModal(false);
     } catch (error) {
@@ -190,6 +178,7 @@ export default function DiscordPage() {
   const handleEdit = (server: Server) => {
     setEditingServer(server);
     setFormData({
+      ...DEFAULT_FORM_DATA,
       name: server.name,
       image: server.image,
       server_id: server.server_id,
@@ -308,12 +297,7 @@ export default function DiscordPage() {
                 <button
                   onClick={() => {
                     setEditingServer(null);
-                    setFormData({
-                      name: '',
-                      image: '',
-                      server_id: '',
-                      active_campaigns_channel_id: ''
-                    });
+                    setFormData(DEFAULT_FORM_DATA);
                     setShowAddServerModal(true);
                   }}
                   className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium transition-colors hover:cursor-pointer"
@@ -333,12 +317,7 @@ export default function DiscordPage() {
                 <button
                   onClick={() => {
                     setEditingServer(null);
-                    setFormData({
-                      name: '',
-                      image: '',
-                      server_id: '',
-                      active_campaigns_channel_id: ''
-                    });
+                    setFormData(DEFAULT_FORM_DATA);
                     setShowAddServerModal(true);
                   }}
                   className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-md font-medium transition-colors hover:cursor-pointer"
@@ -414,12 +393,7 @@ export default function DiscordPage() {
                 onClick={() => {
                   setShowAddServerModal(false);
                   setEditingServer(null);
-                  setFormData({
-                    name: '',
-                    image: '',
-                    server_id: '',
-                    active_campaigns_channel_id: ''
-                  });
+                  setFormData(DEFAULT_FORM_DATA);
                 }}
                 className="text-gray-500 hover:text-gray-700 hover:cursor-pointer"
               >
@@ -598,12 +572,7 @@ export default function DiscordPage() {
                     onClick={() => {
                       setShowAddServerModal(false);
                       setEditingServer(null);
-                      setFormData({
-                        name: '',
-                        image: '',
-                        server_id: '',
-                        active_campaigns_channel_id: ''
-                      });
+                      setFormData(DEFAULT_FORM_DATA);
                     }}
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                   >

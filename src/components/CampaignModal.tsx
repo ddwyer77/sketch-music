@@ -8,23 +8,13 @@ import { Campaign } from '@/types/campaign';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { Server } from '@/types/server';
 
 type CampaignModalProps = {
   onClose: () => void;
   onSave: (campaign: Campaign) => void;
   initialData: Campaign | null;
   isLoading?: boolean;
-};
-
-type Server = {
-  id: string;
-  name: string;
-  image: string;
-  server_id: string;
-  active_campaigns_channel_id: string;
-  owner_id: string;
-  created_at: number;
-  updated_at: number;
 };
 
 export default function CampaignModal({ onClose, onSave, initialData, isLoading = false }: CampaignModalProps) {
