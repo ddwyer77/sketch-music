@@ -8,12 +8,14 @@ import { db } from '@/lib/firebase';
 import { fetchTikTokDataFromUrl, extractTikTokMetrics } from '@/lib/webScraper';
 
 type Video = {
+  id: string;
   url: string;
   status: 'pending' | 'approved' | 'denied';
   author_id: string;
   soundIdMatch?: boolean;
   title?: string;
   reasonForDenial?: string | null;
+  markedForDeletion?: boolean;
   author?: {
     nickname: string;
     uniqueId: string;
@@ -129,6 +131,8 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
   const [isDenialModalOpen, setIsDenialModalOpen] = useState(false);
   const [pendingDenialIndex, setPendingDenialIndex] = useState<number | null>(null);
   const [isCloseConfirmationOpen, setIsCloseConfirmationOpen] = useState(false);
+  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
+  const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
   const { user } = useAuth();
   const { updateDocument, loading } = useFirestoreOperations('campaigns');
 
@@ -156,6 +160,7 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
               
               return {
                 ...video,
+                id: video.id || crypto.randomUUID(),
                 title: data.shareMeta?.title || '',
                 author: data.itemInfo?.itemStruct?.author ? {
                   nickname: data.itemInfo.itemStruct.author.nickname,
@@ -164,9 +169,10 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
                 soundIdMatch: soundId ? metrics.musicId === soundId : false
               };
             } catch (error) {
-              console.error(`Could not verify sound ID match for video ${video.url}`);
+              // Silently handle the error and continue
               return {
                 ...video,
+                id: video.id || crypto.randomUUID(),
                 soundIdMatch: false
               };
             }
@@ -175,7 +181,13 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
 
         setLocalVideos(updatedVideos);
       } catch (error) {
-        console.error('Error setting up videos:', error);
+        // If there's an error with the campaign fetch, just set the videos without sound ID check
+        const updatedVideos = videoUrls.map(video => ({
+          ...video,
+          id: video.id || crypto.randomUUID(),
+          soundIdMatch: false
+        }));
+        setLocalVideos(updatedVideos);
       } finally {
         setIsCheckingSoundIds(false);
       }
@@ -230,9 +242,28 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
     setPendingDenialIndex(null);
   };
 
+  const handleDeleteVideo = (indexToDelete: number) => {
+    setLocalVideos(prevVideos => 
+      prevVideos.map((video, index) => 
+        index === indexToDelete ? { ...video, markedForDeletion: true } : video
+      )
+    );
+    setHasChanges(true);
+  };
+
+  const handleUndoDelete = (indexToUndo: number) => {
+    setLocalVideos(prevVideos => 
+      prevVideos.map((video, index) => 
+        index === indexToUndo ? { ...video, markedForDeletion: false } : video
+      )
+    );
+  };
+
   const handleSaveChanges = async () => {
     try {
-      await updateDocument(campaignId, { videos: localVideos });
+      // Filter out videos marked for deletion before saving
+      const videosToSave = localVideos.filter(video => !video.markedForDeletion);
+      await updateDocument(campaignId, { videos: videosToSave });
       setHasChanges(false);
       onVideosUpdated();
       onClose();
@@ -242,21 +273,8 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
     }
   };
 
-  const handleDeleteVideo = async (indexToDelete: number) => {
-    if (window.confirm("Are you sure you want to delete this video?")) {
-      setLocalVideos(prevVideos => prevVideos.filter((_, index) => index !== indexToDelete));
-      setHasChanges(true);
-      
-      // If we deleted the currently selected video, select the first one
-      if (indexToDelete === selectedVideoIndex) {
-        setSelectedVideoIndex(0);
-      }
-      // If we deleted a video before the currently selected one, adjust the index
-      else if (indexToDelete < selectedVideoIndex) {
-        setSelectedVideoIndex(selectedVideoIndex - 1);
-      }
-    }
-  };
+  // Count videos marked for deletion
+  const deletedVideosCount = localVideos.filter(v => v.markedForDeletion).length;
 
   const handleAddVideo = async () => {
     if (!newVideoUrl.trim()) return;
@@ -266,6 +284,7 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
       const metrics = await extractTikTokMetrics(await fetchTikTokDataFromUrl(newVideoUrl.trim()));
       
       const newVideo = { 
+        id: crypto.randomUUID(),
         url: newVideoUrl.trim(), 
         status: 'pending' as const, 
         author_id: user?.uid || '',
@@ -304,6 +323,16 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
             </svg>
           </button>
         </div>
+
+        {deletedVideosCount > 0 && (
+          <div className="bg-red-50 border-b border-red-200 px-6 py-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-red-800">
+                {deletedVideosCount} video{deletedVideosCount === 1 ? '' : 's'} marked for deletion. Press save to confirm.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-1 min-h-0">
           {/* Video List - Left Column */}
@@ -387,13 +416,26 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
                   const originalIndex = localVideos.findIndex(v => v.url === video.url);
                   return (
                     <li 
-                      key={originalIndex} 
-                      className={`flex justify-between items-center p-2 rounded-lg ${
+                      key={video.id} 
+                      className={`flex justify-between items-center p-2 rounded-lg relative ${
                         selectedVideoIndex === originalIndex 
                           ? 'bg-primary/10 outline-primary outline-2' 
                           : 'bg-gray-50 hover:bg-gray-100'
-                      }`}
+                      } ${video.markedForDeletion ? 'opacity-50' : ''}`}
                     >
+                      {video.markedForDeletion && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-red-50/80 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <span className="text-red-600 font-medium">Video Marked for Deletion</span>
+                            <button
+                              onClick={() => handleUndoDelete(originalIndex)}
+                              className="text-sm text-red-600 hover:text-red-800 hover:cursor-pointer font-medium"
+                            >
+                              Undo
+                            </button>
+                          </div>
+                        </div>
+                      )}
                       <div 
                         className="flex-1 min-w-0 cursor-pointer"
                         onClick={() => setSelectedVideoIndex(originalIndex)}
