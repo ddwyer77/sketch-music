@@ -11,6 +11,7 @@ import { User } from '@/types/user';
 import DiscordCommandTable from '@/components/DiscordCommandTable';
 import FAQTable from '@/components/FAQTable';
 import Link from 'next/link';
+import CampaignCardReadOnly from '@/components/CampaignCardReadOnly';
 
 type Tab = 'campaigns' | 'settings' | 'discord' | 'submissions';
 
@@ -266,43 +267,28 @@ export default function CreatorDashboard() {
               </div>
             ) : (
               <>
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {paginatedCampaigns.map((campaign) => (
-                    <Link 
-                      href={`/campaigns/${campaign.id}`}
+                    <div 
                       key={campaign.id}
-                      className="block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200"
+                      className="block hover:cursor-pointer"
+                      onClick={() => window.location.href = `/campaigns/${campaign.id}`}
                     >
-                      <div className="flex items-center p-4">
-                        <div className="w-24 h-24 bg-gray-200 relative flex-shrink-0">
-                          {campaign.imageUrl ? (
-                            <Image
-                              src={campaign.imageUrl}
-                              alt={campaign.name}
-                              fill
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                              <div className="text-primary font-bold text-xl">
-                                {campaign.name.charAt(0)}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="ml-6 flex-grow">
-                          <h3 className="font-bold text-lg text-gray-800 mb-1">{campaign.name}</h3>
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <span>Campaign ID:</span>
-                            <code className="bg-gray-100 px-2 py-1 rounded">{campaign.id}</code>
+                      <CampaignCardReadOnly campaign={campaign}>
+                        <div className="mt-auto pt-4">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm font-medium text-gray-500">Progress</span>
+                            <span className="text-sm font-medium text-primary">{Math.round((campaign.budgetUsed / campaign.budget) * 100)}%</span>
                           </div>
-                          {campaign.description && (
-                            <p className="text-gray-800 mt-2 line-clamp-2">{campaign.description}</p>
-                          )}
+                          <div className="w-full bg-gray-200 rounded-full h-2.5">
+                            <div 
+                              className="bg-primary h-2.5 rounded-full" 
+                              style={{ width: `${Math.min(100, (campaign.budgetUsed / campaign.budget) * 100)}%` }}
+                            ></div>
+                          </div>
                         </div>
-                      </div>
-                    </Link>
+                      </CampaignCardReadOnly>
+                    </div>
                   ))}
                 </div>
 
