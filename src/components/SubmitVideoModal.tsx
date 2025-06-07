@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFirestoreOperations } from '@/hooks';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import toast from 'react-hot-toast';
 
 type SubmitVideoModalProps = {
   campaignId: string;
@@ -52,10 +53,36 @@ export default function SubmitVideoModal({ campaignId, onClose, onVideosUpdated 
 
       setVideoUrl('');
       onVideosUpdated();
+      toast.success(
+        'Your video has been submitted successfully! Our team will review it shortly.',
+        {
+          duration: 5000,
+          position: 'top-center',
+          style: {
+            background: '#10B981',
+            color: '#fff',
+            padding: '16px',
+            borderRadius: '8px',
+          },
+        }
+      );
       onClose();
     } catch (error) {
       console.error('Error submitting video:', error);
       setError('Failed to submit video. Please try again.');
+      toast.error(
+        'Failed to submit video. Please check your connection and try again.',
+        {
+          duration: 5000,
+          position: 'bottom-right',
+          style: {
+            background: '#EF4444',
+            color: '#fff',
+            padding: '16px',
+            borderRadius: '8px',
+          },
+        }
+      );
     } finally {
       setIsLoading(false);
     }
@@ -97,10 +124,36 @@ export default function SubmitVideoModal({ campaignId, onClose, onVideosUpdated 
 
       setBulkImportText('');
       onVideosUpdated();
+      toast.success(
+        `Successfully submitted ${newVideos.length} video${newVideos.length > 1 ? 's' : ''}! Our team will review them shortly.`,
+        {
+          duration: 5000,
+          position: 'bottom-right',
+          style: {
+            background: '#10B981',
+            color: '#fff',
+            padding: '16px',
+            borderRadius: '8px',
+          },
+        }
+      );
       onClose();
     } catch (error) {
       console.error('Error submitting videos:', error);
       setError('Failed to submit videos. Please try again.');
+      toast.error(
+        'Failed to submit videos. Please check your connection and try again.',
+        {
+          duration: 5000,
+          position: 'bottom-right',
+          style: {
+            background: '#EF4444',
+            color: '#fff',
+            padding: '16px',
+            borderRadius: '8px',
+          },
+        }
+      );
     } finally {
       setIsLoading(false);
     }
@@ -120,6 +173,19 @@ export default function SubmitVideoModal({ campaignId, onClose, onVideosUpdated 
     } catch (error) {
       console.error('Error reading file:', error);
       setError('Failed to read file. Please try again.');
+      toast.error(
+        'Failed to read file. Please make sure it\'s a valid text or CSV file.',
+        {
+          duration: 5000,
+          position: 'bottom-right',
+          style: {
+            background: '#EF4444',
+            color: '#fff',
+            padding: '16px',
+            borderRadius: '8px',
+          },
+        }
+      );
     } finally {
       setIsLoading(false);
     }
@@ -141,7 +207,7 @@ export default function SubmitVideoModal({ campaignId, onClose, onVideosUpdated 
           <h2 className="text-xl font-bold text-gray-900">Submit Video</h2>
           <button 
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 hover:cursor-pointer"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -174,7 +240,7 @@ export default function SubmitVideoModal({ campaignId, onClose, onVideosUpdated 
                 <button
                   onClick={handleSingleVideoSubmit}
                   disabled={isLoading || !videoUrl.trim()}
-                  className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer"
                 >
                   {isLoading ? 'Submitting...' : 'Submit'}
                 </button>
@@ -190,7 +256,7 @@ export default function SubmitVideoModal({ campaignId, onClose, onVideosUpdated 
                 <button
                   type="button"
                   onClick={() => setShowBulkImport(!showBulkImport)}
-                  className="text-primary hover:text-primary/90 text-sm font-medium"
+                  className="text-primary hover:text-primary/90 text-sm font-medium hover:cursor-pointer"
                 >
                   {showBulkImport ? 'Cancel' : 'Import Multiple Videos'}
                 </button>
@@ -211,9 +277,9 @@ export default function SubmitVideoModal({ campaignId, onClose, onVideosUpdated 
                     />
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="space-y-4">
                     <div>
-                      <label htmlFor="csv-upload" className="inline-block px-4 py-2 bg-gray-200 text-gray-900 rounded-md cursor-pointer hover:bg-gray-300 text-sm font-medium">
+                      <label htmlFor="csv-upload" className="inline-block px-4 py-2 bg-gray-200 text-gray-900 rounded-md cursor-pointer hover:bg-gray-300 text-sm font-medium hover:cursor-pointer">
                         Import from CSV
                       </label>
                       <input
@@ -229,7 +295,7 @@ export default function SubmitVideoModal({ campaignId, onClose, onVideosUpdated 
                     <button
                       onClick={handleBulkImport}
                       disabled={isLoading || !bulkImportText.trim()}
-                      className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer"
                     >
                       {isLoading ? 'Submitting...' : 'Submit All'}
                     </button>
