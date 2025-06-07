@@ -58,6 +58,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [servers, setServers] = useState<Server[]>([]);
   const [selectedServerId, setSelectedServerId] = useState<string>('');
+  const [visibleTooltip, setVisibleTooltip] = useState<string | null>(null);
   
   // Initialize form with editing data if available
   useEffect(() => {
@@ -415,11 +416,17 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
                 <label htmlFor="soundId" className="block text-sm font-medium text-gray-900">
                   Sound ID
                 </label>
-                <div className="relative group" key="soundId-tooltip">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
+                <div className="relative">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" 
+                    viewBox="0 0 20 20" 
+                    fill="currentColor"
+                    onClick={() => setVisibleTooltip(visibleTooltip === 'soundId' ? null : 'soundId')}
+                  >
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                   </svg>
-                  <div className="absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                  <div className={`absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg transition-opacity duration-200 z-50 ${visibleTooltip === 'soundId' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                     Example: 7462880899001616400
                   </div>
                 </div>
@@ -441,11 +448,17 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
                 <label htmlFor="soundUrl" className="block text-sm font-medium text-gray-900">
                   Sound URL
                 </label>
-                <div className="relative group" key="soundUrl-tooltip">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
+                <div className="relative">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" 
+                    viewBox="0 0 20 20" 
+                    fill="currentColor"
+                    onClick={() => setVisibleTooltip(visibleTooltip === 'soundUrl' ? null : 'soundUrl')}
+                  >
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                   </svg>
-                  <div className="absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                  <div className={`absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg transition-opacity duration-200 z-50 ${visibleTooltip === 'soundUrl' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                     Example: https://www.tiktok.com/music/Die-With-A-Smile-7403588534353528848
                   </div>
                 </div>
@@ -483,11 +496,17 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
               <label htmlFor="notes" className="block text-sm font-medium text-gray-900">
                 Notes
               </label>
-              <div className="relative group" key="notes-tooltip">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
+              <div className="relative">
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" 
+                  viewBox="0 0 20 20" 
+                  fill="currentColor"
+                  onClick={() => setVisibleTooltip(visibleTooltip === 'notes' ? null : 'notes')}
+                >
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                 </svg>
-                <div className="absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                <div className={`absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg transition-opacity duration-200 z-50 ${visibleTooltip === 'notes' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                   This field supports markdown formatting. You can use **bold**, *italic*, [links](url), and more.
                 </div>
               </div>
@@ -640,11 +659,17 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
               <label className="block text-sm font-medium text-gray-900">
                 Discord Servers*
               </label>
-              <div className="relative group">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" viewBox="0 0 20 20" fill="currentColor">
+              <div className="relative">
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-5 w-5 text-gray-400 hover:text-gray-600 hover:cursor-pointer" 
+                  viewBox="0 0 20 20" 
+                  fill="currentColor"
+                  onClick={() => setVisibleTooltip(visibleTooltip === 'servers' ? null : 'servers')}
+                >
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                 </svg>
-                <div className="absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                <div className={`absolute top-full left-0 mt-2 w-64 p-2 bg-gray-800 text-white text-sm rounded-lg transition-opacity duration-200 z-50 ${visibleTooltip === 'servers' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                   Select the Discord servers where this campaign should be visible. You can add multiple servers.
                 </div>
               </div>
