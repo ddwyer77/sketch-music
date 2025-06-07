@@ -5,7 +5,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFirestoreOperations } from '@/hooks';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { fetchTikTokDataFromUrl, extractTikTokMetrics } from '@/lib/webScraper';
 
 type Video = {
   id: string;
@@ -20,6 +19,15 @@ type Video = {
     nickname: string;
     uniqueId: string;
   };
+  views?: number;
+  shares?: number;
+  comments?: number;
+  likes?: number;
+  description?: string;
+  createdAt?: string;
+  musicTitle?: string;
+  musicAuthor?: string;
+  musicId?: string;
 };
 
 type DenialModalProps = {
@@ -150,34 +158,12 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
         const campaign = campaignDoc.data();
         const soundId = campaign?.soundId;
 
-        // Process all videos at once
-        const updatedVideos = await Promise.all(
-          videoUrls.map(async (video) => {
-            try {
-              // Get video data
-              const data = await fetchTikTokDataFromUrl(video.url);
-              const metrics = await extractTikTokMetrics(data);
-              
-              return {
-                ...video,
-                id: video.id || crypto.randomUUID(),
-                title: data.shareMeta?.title || '',
-                author: data.itemInfo?.itemStruct?.author ? {
-                  nickname: data.itemInfo.itemStruct.author.nickname,
-                  uniqueId: data.itemInfo.itemStruct.author.uniqueId
-                } : undefined,
-                soundIdMatch: soundId ? metrics.musicId === soundId : false
-              };
-            } catch (error) {
-              // Silently handle the error and continue
-              return {
-                ...video,
-                id: video.id || crypto.randomUUID(),
-                soundIdMatch: false
-              };
-            }
-          })
-        );
+        // Process all videos using existing data
+        const updatedVideos = videoUrls.map(video => ({
+          ...video,
+          id: video.id || crypto.randomUUID(),
+          soundIdMatch: soundId ? video.musicId === soundId : false
+        }));
 
         setLocalVideos(updatedVideos);
       } catch (error) {
