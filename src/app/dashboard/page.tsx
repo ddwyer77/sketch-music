@@ -6,95 +6,11 @@ import CampaignCard from '../../components/CampaignCard';
 import { useQuery, useFirestoreOperations } from '../../hooks';
 import { doc, updateDoc, where, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { fetchTikTokDataFromUrl, extractTikTokMetrics } from '../../lib/webScraper';
 import { Campaign } from '@/types/campaign';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { getDoc } from 'firebase/firestore';
 import CampaignCreatorModal from '../../components/CampaignCreatorModal';
-
-const generateMetrics = async(url: string) => {
-  try {
-    const data = await fetchTikTokDataFromUrl(url);
-    return extractTikTokMetrics(data);
-  } catch (error) {
-    console.error(`Error fetching data for ${url}:`, error);
-    return {
-      views: 0,
-      shares: 0,
-      comments: 0,
-      likes: 0,
-      author: '',
-      description: '',
-      createdAt: '',
-      musicTitle: '',
-      musicAuthor: '',
-      musicId: ''
-    };
-  }
-};
-
-// Update a single campaign's metrics with real TikTok data
-const updateCampaignMetrics = async (campaign: Campaign): Promise<Campaign> => {
-  if (!campaign.videos?.length) {
-    return campaign;
-  }
-
-  try {
-    // Fetch metrics for each video URL in the campaign
-    const metricsPromises = campaign.videos.map(async video => {
-      const metrics = await generateMetrics(video.url);
-      // Check if the video's music ID matches the campaign's sound ID
-      // If no soundId is set, it's automatically not a match (false)
-      const soundIdMatch = campaign.soundId ? metrics.musicId === campaign.soundId : false;
-      return { ...metrics, soundIdMatch };
-    });
-    const metricsArray = await Promise.all(metricsPromises);
-    
-    // Aggregate metrics across all videos
-    const aggregatedMetrics = metricsArray.reduce((total, current) => {
-      return {
-        views: total.views + current.views,
-        shares: total.shares + current.shares,
-        comments: total.comments + current.comments,
-        likes: (total.likes || 0) + (current.likes || 0)
-      }
-    }, { views: 0, shares: 0, comments: 0, likes: 0 });
-    
-    // Calculate budget used based on views and campaign rate
-    const budgetUsed = (aggregatedMetrics.views / 1000000) * campaign.ratePerMillion;
-
-    // Update videos with sound ID match information
-    const updatedVideos = campaign.videos.map((video, index) => ({
-      ...video,
-      soundIdMatch: metricsArray[index].soundIdMatch
-    }));
-
-    // Include additional metrics in the update
-    const campaignUpdate = {
-      views: aggregatedMetrics.views,
-      shares: aggregatedMetrics.shares,
-      comments: aggregatedMetrics.comments,
-      likes: aggregatedMetrics.likes,
-      budgetUsed,
-      lastUpdated: Date.now(),
-      videos: updatedVideos
-    };
-
-    // Update campaign in Firestore
-    const campaignRef = doc(db, 'campaigns', campaign.id);
-    await updateDoc(campaignRef, campaignUpdate);
-
-    // Return updated campaign
-    return {
-      ...campaign,
-      ...campaignUpdate
-    };
-  } catch (error) {
-    console.error(`Error updating metrics for campaign ${campaign.id}:`, error);
-    return campaign;
-  }
-};
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -145,9 +61,14 @@ export default function Dashboard() {
       setIsUpdating(true);
       setUpdateMessage('Updating campaign metrics...');
       
-      // Update each campaign
-      for (const campaign of campaigns) {
-        await updateCampaignMetrics(campaign);
+      // Call the new API endpoint
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/update-metrics`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || `HTTP error! status: ${response.status}`);
       }
       
       // Refresh campaigns list with updated data
@@ -159,9 +80,9 @@ export default function Dashboard() {
       setTimeout(() => {
         setUpdateMessage(null);
       }, 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating metrics:', error);
-      setUpdateMessage('Error updating metrics');
+      setUpdateMessage(`Error updating metrics: ${error.message || 'Unknown error'}`);
       
       // Clear error message after 5 seconds
       setTimeout(() => {

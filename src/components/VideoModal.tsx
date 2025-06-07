@@ -266,9 +266,6 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
     if (!newVideoUrl.trim()) return;
 
     try {
-      // Check if the URL is valid by trying to fetch its data
-      const metrics = await extractTikTokMetrics(await fetchTikTokDataFromUrl(newVideoUrl.trim()));
-      
       const newVideo = { 
         id: crypto.randomUUID(),
         url: newVideoUrl.trim(), 
