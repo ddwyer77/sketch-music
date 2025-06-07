@@ -34,4 +34,6 @@ export interface Video {
   created_at: number;
   updated_at: number;
   soundIdMatch?: boolean;
+  title?: string;
+  reasonForDenial?: string | null;
 } 
