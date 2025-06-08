@@ -49,6 +49,13 @@ export default function CampaignCard({ campaign, onEdit, onDelete, onManageCreat
       <div className="flex flex-col h-full">
         {/* Campaign Image or Placeholder */}
         <div className="h-64 bg-gray-200 relative">
+          {campaign.isComplete && (
+            <div className="absolute inset-0 flex items-center justify-center z-20">
+              <div className="bg-red-500/70 text-white text-base font-medium px-6 py-2 rounded-full shadow-md backdrop-blur-sm" style={{fontFamily: 'Inter, sans-serif', letterSpacing: '0.02em'}}>
+                Complete
+              </div>
+            </div>
+          )}
           {campaign.imageUrl ? (
             <Image 
               src={campaign.imageUrl} 
