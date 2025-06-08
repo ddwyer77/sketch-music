@@ -95,6 +95,7 @@ export default function CampaignsPage() {
           views: 0,
           shares: 0,
           comments: 0,
+          isComplete: false,
           lastUpdated: Date.now()
         });
 

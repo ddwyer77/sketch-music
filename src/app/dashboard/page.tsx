@@ -129,6 +129,7 @@ export default function Dashboard() {
         views: 0,
         shares: 0,
         comments: 0,
+        isComplete: false,
         lastUpdated: Date.now()
       };
 

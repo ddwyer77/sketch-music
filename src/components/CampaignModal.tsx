@@ -47,7 +47,8 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     updatedAt: Date.now(),
     lastUpdated: Date.now(),
     owner_id: '',
-    maxSubmissions: 0
+    maxSubmissions: 0,
+    isComplete: false
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -91,7 +92,8 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         updatedAt: initialData.updatedAt,
         lastUpdated: initialData.lastUpdated,
         owner_id: initialData.owner_id,
-        maxSubmissions: initialData.maxSubmissions || 0
+        maxSubmissions: initialData.maxSubmissions || 0,
+        isComplete: initialData.isComplete || false
       });
     }
   }, [initialData]);
@@ -374,8 +376,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
       // Don't include owner_id here - it will be set by the parent component
       owner_id: initialData?.owner_id || ''  // Only include if editing
     };
-    
-    console.log('CampaignModal sending data:', campaign); // Debug log
+
     onSave(campaign);
   };
   

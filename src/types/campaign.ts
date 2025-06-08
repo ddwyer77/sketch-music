@@ -24,6 +24,7 @@ export interface Campaign {
   campaign_path?: string;
   owner_id: string;
   maxSubmissions?: number; // Maximum number of video submissions allowed
+  isComplete: boolean;
 }
 
 export interface Video {
