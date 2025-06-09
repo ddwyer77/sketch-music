@@ -148,7 +148,16 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     
     // Convert numeric fields to numbers
     if (type === 'number') {
-      const numValue = parseFloat(value) || 0;
+      // If the current value is 0 and user starts typing, clear the field
+      if (formData[name as keyof typeof formData] === 0 && value === '0') {
+        setFormData({
+          ...formData,
+          [name]: '',
+        });
+        return;
+      }
+      
+      const numValue = value === '' ? '' : parseFloat(value) || 0;
       setFormData({
         ...formData,
         [name]: numValue,
