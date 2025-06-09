@@ -410,7 +410,7 @@ export default function CreatorDashboard() {
             {campaigns.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-10 text-center">
                 <h2 className="text-xl font-medium mb-4 text-gray-800">No submissions found</h2>
-                <p className="text-gray-900 mb-6">You haven't submitted any videos to campaigns yet.</p>
+                <p className="text-gray-900 mb-6">You haven&apos;t submitted any videos to campaigns yet.</p>
               </div>
             ) : (
               <div className="space-y-4">
