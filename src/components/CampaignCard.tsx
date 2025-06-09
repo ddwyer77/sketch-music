@@ -54,7 +54,7 @@ export default function CampaignCard({ campaign, onEdit, onDelete, onManageCreat
         {/* Campaign Image or Placeholder */}
         <div className="h-64 bg-gray-200 relative">
           {campaign.isComplete && (
-            <div className="absolute inset-0 flex items-center justify-center z-20">
+            <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
               <button
                 onClick={() => setShowReactivateModal(true)}
                 onMouseEnter={() => setShowTooltip(true)}
@@ -69,6 +69,24 @@ export default function CampaignCard({ campaign, onEdit, onDelete, onManageCreat
                   </div>
                 )}
               </button>
+              {campaign.campaignTerminationDetails && (
+                <div className="mt-2 text-center text-white text-sm bg-black/50 px-4 py-2 rounded-lg backdrop-blur-sm max-w-[80%]">
+                  <div className="font-medium mb-1">Reason:</div>
+                  <div>
+                    {campaign.campaignTerminationDetails.budget && "Budget limit reached"}
+                    {campaign.campaignTerminationDetails.date && "End date reached"}
+                    {campaign.campaignTerminationDetails.maxSubmissions && "Maximum submissions reached"}
+                    {campaign.campaignTerminationDetails.manualTermination && "Manually terminated"}
+                    {campaign.campaignTerminationDetails.other && "Other reason"}
+                  </div>
+                  {campaign.campaignTerminationDetails.comments && campaign.campaignTerminationDetails.comments.trim() !== '' && (
+                    <div className="mt-1">
+                      <div className="font-medium">Notes:</div>
+                      <div>{campaign.campaignTerminationDetails.comments}</div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
           {campaign.imageUrl ? (
