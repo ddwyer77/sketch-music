@@ -52,7 +52,6 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     shares: 0,
     comments: 0,
     likes: 0,
-    status: 'draft',
     updatedAt: Date.now(),
     lastUpdated: Date.now(),
     owner_id: '',
@@ -107,7 +106,6 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
         shares: initialData.shares,
         comments: initialData.comments,
         likes: initialData.likes,
-        status: initialData.status,
         updatedAt: initialData.updatedAt,
         lastUpdated: initialData.lastUpdated,
         owner_id: initialData.owner_id,
@@ -415,7 +413,6 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
       ...initialData, // Preserve all existing campaign data
       isComplete: true,
       campaignTerminationDetails: terminationDetails,
-      status: 'completed',
       lastUpdated: Date.now(),
       updatedAt: Date.now()
     };
