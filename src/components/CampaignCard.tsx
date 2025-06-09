@@ -1,7 +1,7 @@
 "use client";
 
 import Image from 'next/image';
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { Campaign } from '@/types/campaign';
 import toast from 'react-hot-toast';
 
@@ -10,10 +10,14 @@ type CampaignCardProps = {
   onEdit: () => void;
   onDelete: () => void;
   onManageCreators: () => void;
+  onReactivate?: (campaign: Campaign) => void;
   children?: ReactNode;
 };
 
-export default function CampaignCard({ campaign, onEdit, onDelete, onManageCreators, children }: CampaignCardProps) {
+export default function CampaignCard({ campaign, onEdit, onDelete, onManageCreators, onReactivate, children }: CampaignCardProps) {
+  const [showReactivateModal, setShowReactivateModal] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
+
   // Format number with commas
   const formatNumber = (num: number): string => {
     return num.toLocaleString('en-US');
@@ -51,9 +55,20 @@ export default function CampaignCard({ campaign, onEdit, onDelete, onManageCreat
         <div className="h-64 bg-gray-200 relative">
           {campaign.isComplete && (
             <div className="absolute inset-0 flex items-center justify-center z-20">
-              <div className="bg-red-500/70 text-white text-base font-medium px-6 py-2 rounded-full shadow-md backdrop-blur-sm" style={{fontFamily: 'Inter, sans-serif', letterSpacing: '0.02em'}}>
+              <button
+                onClick={() => setShowReactivateModal(true)}
+                onMouseEnter={() => setShowTooltip(true)}
+                onMouseLeave={() => setShowTooltip(false)}
+                className="relative bg-red-500/70 text-white text-base font-medium px-6 py-2 rounded-full shadow-md backdrop-blur-sm hover:bg-red-600/70 transition-colors hover:cursor-pointer"
+                style={{fontFamily: 'Inter, sans-serif', letterSpacing: '0.02em'}}
+              >
                 Complete
-              </div>
+                {showTooltip && (
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-sm rounded-lg whitespace-nowrap">
+                    Undo mark as complete
+                  </div>
+                )}
+              </button>
             </div>
           )}
           {campaign.imageUrl ? (
@@ -175,6 +190,57 @@ export default function CampaignCard({ campaign, onEdit, onDelete, onManageCreat
           {children}
         </div>
       </div>
+
+      {/* Reactivation Modal */}
+      {showReactivateModal && (
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-lg w-full max-w-lg p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Reactivate Campaign</h3>
+            <div className="space-y-4">
+              <p className="text-gray-600">
+                Are you sure you want to reactivate this campaign? This will make it available for submissions again.
+              </p>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h4 className="text-yellow-800 font-medium mb-2">Important Note</h4>
+                <p className="text-yellow-700 text-sm">
+                  Before reactivating, please review and update:
+                </p>
+                <ul className="list-disc list-inside text-yellow-700 text-sm mt-2 space-y-1">
+                  <li>Campaign budget</li>
+                  <li>Maximum submissions limit</li>
+                  <li>End date</li>
+                  <li>Other termination criteria</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-4">
+              <button
+                type="button"
+                onClick={() => setShowReactivateModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium transition-colors hover:cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onReactivate) {
+                    onReactivate({
+                      ...campaign,
+                      isComplete: false
+                    });
+                  }
+                  setShowReactivateModal(false);
+                }}
+                className="px-4 py-2 bg-primary hover:bg-primary/90 text-white font-medium rounded-md transition-colors hover:cursor-pointer"
+              >
+                Reactivate Campaign
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

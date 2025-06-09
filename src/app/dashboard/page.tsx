@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { getDoc } from 'firebase/firestore';
 import CampaignCreatorModal from '../../components/CampaignCreatorModal';
+import { toast } from 'react-hot-toast';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -177,6 +178,21 @@ export default function Dashboard() {
     setShowCreatorModal(true);
   };
   
+  const handleReactivateCampaign = async (campaign: Campaign) => {
+    try {
+      await updateDocument(campaign.id, {
+        ...campaign,
+        isComplete: false,
+        lastUpdated: Date.now()
+      });
+      await refresh();
+      toast.success('Campaign reactivated successfully');
+    } catch (error) {
+      console.error('Error reactivating campaign:', error);
+      toast.error('Failed to reactivate campaign');
+    }
+  };
+  
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8 flex-wrap">
@@ -241,6 +257,7 @@ export default function Dashboard() {
               onEdit={() => openModal(campaign)}
               onDelete={() => handleDeleteCampaign(campaign.id)}
               onManageCreators={() => handleManageCreators(campaign)}
+              onReactivate={handleReactivateCampaign}
             >
               <div className="mt-auto pt-4">
                 <div className="flex justify-between items-center mb-1">
