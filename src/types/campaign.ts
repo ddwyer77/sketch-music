@@ -25,6 +25,14 @@ export interface Campaign {
   owner_id: string;
   maxSubmissions?: number; // Maximum number of video submissions allowed
   isComplete: boolean;
+  campaignTerminationDetails?: {
+    date: boolean;
+    budget: boolean;
+    maxSubmissions: boolean;
+    manualTermination: boolean;
+    other: boolean;
+    comments: string;
+  };
 }
 
 export interface Video {

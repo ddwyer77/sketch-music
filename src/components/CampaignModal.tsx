@@ -10,6 +10,15 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Server } from '@/types/server';
 
+type TerminationDetails = {
+  date: boolean;
+  budget: boolean;
+  maxSubmissions: boolean;
+  manualTermination: boolean;
+  other: boolean;
+  comments: string;
+};
+
 type CampaignModalProps = {
   onClose: () => void;
   onSave: (campaign: Campaign) => void;
@@ -60,6 +69,16 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
   const [servers, setServers] = useState<Server[]>([]);
   const [selectedServerId, setSelectedServerId] = useState<string>('');
   const [visibleTooltip, setVisibleTooltip] = useState<string | null>(null);
+  const [showDangerZone, setShowDangerZone] = useState(false);
+  const [showTerminationModal, setShowTerminationModal] = useState(false);
+  const [terminationDetails, setTerminationDetails] = useState<TerminationDetails>({
+    date: false,
+    budget: false,
+    maxSubmissions: false,
+    manualTermination: false,
+    other: false,
+    comments: ''
+  });
   
   // Initialize form with editing data if available
   useEffect(() => {
@@ -380,6 +399,22 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
     onSave(campaign);
   };
   
+  const handleTermination = () => {
+    if (!initialData) return; // Safety check - we should only terminate existing campaigns
+
+    const updatedCampaign: Campaign = {
+      ...initialData, // Preserve all existing campaign data
+      isComplete: true,
+      campaignTerminationDetails: terminationDetails,
+      status: 'completed',
+      lastUpdated: Date.now(),
+      updatedAt: Date.now()
+    };
+
+    onSave(updatedCampaign);
+    setShowTerminationModal(false);
+  };
+
   return (
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -827,7 +862,44 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
             </div>
             {errors.videos && <p className="mt-1 text-sm text-red-500">{errors.videos}</p>}
           </div>
-          
+
+          {/* Danger Zone Section */}
+          <div className="mt-8 border-t border-gray-200 pt-6">
+            <div 
+              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:cursor-pointer"
+              onClick={() => setShowDangerZone(!showDangerZone)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span className="font-medium">Danger Zone</span>
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className={`h-5 w-5 transition-transform ${showDangerZone ? 'rotate-180' : ''}`} 
+                viewBox="0 0 20 20" 
+                fill="currentColor"
+              >
+                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </div>
+
+            {showDangerZone && (
+              <div className="mt-4 p-4 border border-red-200 rounded-lg bg-red-50">
+                <h3 className="text-lg font-medium text-red-900 mb-4">End Campaign</h3>
+                <p className="text-sm text-red-700 mb-4">
+                  Users will no longer be able to submit to this campaign and it will no longer be listed in discord/the creator dashboard.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowTerminationModal(true)}
+                  className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md transition-colors hover:cursor-pointer"
+                >
+                  End Campaign Now
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="flex justify-end space-x-4 border-t border-gray-200 pt-6">
             <button
               type="button"
@@ -857,6 +929,103 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
           </div>
         </form>
       </div>
+
+      {/* Termination Confirmation Modal */}
+      {showTerminationModal && (
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-lg w-full max-w-lg p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">End Campaign</h3>
+            <p className="text-gray-600 mb-6">
+              Please select the reason(s) for ending this campaign and provide any additional comments.
+            </p>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={terminationDetails.date}
+                    onChange={(e) => setTerminationDetails(prev => ({ ...prev, date: e.target.checked }))}
+                    className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                  />
+                  <span className="text-gray-700">Campaign end date reached</span>
+                </label>
+
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={terminationDetails.budget}
+                    onChange={(e) => setTerminationDetails(prev => ({ ...prev, budget: e.target.checked }))}
+                    className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                  />
+                  <span className="text-gray-700">Budget limit reached</span>
+                </label>
+
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={terminationDetails.maxSubmissions}
+                    onChange={(e) => setTerminationDetails(prev => ({ ...prev, maxSubmissions: e.target.checked }))}
+                    className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                  />
+                  <span className="text-gray-700">Maximum submissions reached</span>
+                </label>
+
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={terminationDetails.manualTermination}
+                    onChange={(e) => setTerminationDetails(prev => ({ ...prev, manualTermination: e.target.checked }))}
+                    className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                  />
+                  <span className="text-gray-700">Manual termination</span>
+                </label>
+
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={terminationDetails.other}
+                    onChange={(e) => setTerminationDetails(prev => ({ ...prev, other: e.target.checked }))}
+                    className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                  />
+                  <span className="text-gray-700">Other reason</span>
+                </label>
+              </div>
+
+              <div>
+                <label htmlFor="terminationComments" className="block text-sm font-medium text-gray-700 mb-1">
+                  Additional Comments
+                </label>
+                <textarea
+                  id="terminationComments"
+                  value={terminationDetails.comments}
+                  onChange={(e) => setTerminationDetails(prev => ({ ...prev, comments: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 min-h-[100px] resize-y"
+                  placeholder="Please provide any additional details about why you're ending this campaign..."
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-4">
+              <button
+                type="button"
+                onClick={() => setShowTerminationModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium transition-colors hover:cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleTermination}
+                disabled={!Object.values(terminationDetails).some(value => value === true)}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer"
+              >
+                Confirm Termination
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
