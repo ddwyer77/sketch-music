@@ -5,13 +5,13 @@ declare global {
       command: 'event' | 'config',
       action: string,
       params?: {
-        [key: string]: any;
+        [key: string]: string | number | boolean | null | undefined;
       }
     ) => void;
   }
 }
 
-export const trackEvent = (action: string, params?: { [key: string]: any }) => {
+export const trackEvent = (action: string, params?: { [key: string]: string | number | boolean | null | undefined }) => {
   // Only track in production
   if (process.env.NODE_ENV !== 'production') {
     console.log('Analytics Event (dev):', action, params);

@@ -78,7 +78,7 @@ export default function CreatorDashboard() {
         <div className="space-y-2">
           <p className="text-gray-800">Use the <code className="bg-gray-100 px-2 py-1 rounded">/campaigns</code> command to see all current campaigns along with their campaign IDs.</p>
           <b>--OR--</b>
-          <p className="text-gray-800">You can find campaign info on your creator dashboard under the campaigns section</p>
+          <p className="text-gray-800">You can&apos;t find campaign info on your creator dashboard under the campaigns section</p>
         </div>
       )
     }

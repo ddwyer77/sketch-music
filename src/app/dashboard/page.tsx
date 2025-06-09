@@ -81,9 +81,9 @@ export default function Dashboard() {
       setTimeout(() => {
         setUpdateMessage(null);
       }, 3000);
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error('Error updating metrics:', error);
-      setUpdateMessage(`Error updating metrics: ${error.message || 'Unknown error'}`);
+      setUpdateMessage(`Error updating metrics: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
       // Clear error message after 5 seconds
       setTimeout(() => {
