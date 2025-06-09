@@ -87,9 +87,11 @@ export default function CreatorDashboard() {
   const filteredCampaigns = campaigns.filter(campaign => {
     const searchLower = searchQuery.toLowerCase();
     return (
-      campaign.id.toLowerCase().includes(searchLower) ||
-      campaign.name.toLowerCase().includes(searchLower) ||
-      campaign.serverIds?.some(id => id.toLowerCase().includes(searchLower))
+      !campaign.isComplete && (
+        campaign.id.toLowerCase().includes(searchLower) ||
+        campaign.name.toLowerCase().includes(searchLower) ||
+        campaign.serverIds?.some(id => id.toLowerCase().includes(searchLower))
+      )
     );
   });
 
