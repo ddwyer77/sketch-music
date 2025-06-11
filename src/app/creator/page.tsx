@@ -27,6 +27,9 @@ export default function CreatorDashboard() {
   const [activeTooltip, setActiveTooltip] = useState<'campaign' | 'server' | null>(null);
   const [denialModalOpen, setDenialModalOpen] = useState(false);
   const [selectedDenialReason, setSelectedDenialReason] = useState<string | null>(null);
+  const [tiktokUsername, setTiktokUsername] = useState('');
+  const [isLinking, setIsLinking] = useState(false);
+  const [linkingError, setLinkingError] = useState<string | null>(null);
 
   const discordCommands = [
     {
@@ -114,6 +117,30 @@ export default function CreatorDashboard() {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleLinkTikTok = async () => {
+    if (!user?.uid || !tiktokUsername) return;
+    
+    setIsLinking(true);
+    setLinkingError(null);
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/link-tiktok-account/${tiktokUsername}?firebaseUserId=${user.uid}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        alert('TikTok account linked successfully! You can now remove the creator ID from your bio.');
+        setTiktokUsername('');
+      } else {
+        setLinkingError(data.message || 'Failed to link TikTok account');
+      }
+    } catch (error) {
+      console.error('Error linking TikTok account:', error);
+      setLinkingError('An error occurred while linking your TikTok account');
+    } finally {
+      setIsLinking(false);
+    }
   };
 
   if (!user) {
@@ -361,7 +388,9 @@ export default function CreatorDashboard() {
           <div className="space-y-8">
             <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Your Creator ID</h3>
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <span>🎯</span> Your Creator ID
+                </h3>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(user?.uid || '');
@@ -375,32 +404,116 @@ export default function CreatorDashboard() {
                   <span>Copy to clipboard</span>
                 </button>
               </div>
-              <div className="bg-gray-50 p-4 rounded-lg mb-4">
+              <div className="bg-gray-50 p-4 rounded-lg mb-6">
                 <code className="text-gray-800 font-mono">{user?.uid}</code>
               </div>
-              <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-blue-700">
-                      Add this ID to your TikTok bio before submitting videos. This helps us verify your identity and ensure proper attribution for your content.
-                    </p>
+              
+              <div className="space-y-8">
+                <div className="bg-blue-50 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <span>🤖</span> Method 1: Link through Discord
+                  </h3>
+                  <ol className="list-decimal list-inside space-y-3 text-gray-700">
+                    <li className="flex items-start gap-2">
+                      <span className="flex-shrink-0">1.</span>
+                      <span>Log in to your Sketch Music account with the <code className="bg-white px-2 py-1 rounded shadow-sm">/login</code> command</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="flex-shrink-0">2.</span>
+                      <span>Copy your creator ID (shown above) and add it to your TikTok bio</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="flex-shrink-0">3.</span>
+                      <span>Use the <code className="bg-white px-2 py-1 rounded shadow-sm">/verify</code> command and add your TikTok username</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="flex-shrink-0">4.</span>
+                      <span>Once you receive a success message, your account is linked and you can remove the creator ID from your bio</span>
+                    </li>
+                  </ol>
+                </div>
+
+                <div className="bg-purple-50 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <span>💻</span> Method 2: Link directly here
+                  </h3>
+                  <ol className="list-decimal list-inside space-y-3 text-gray-700 mb-6">
+                    <li className="flex items-start gap-2">
+                      <span className="flex-shrink-0">1.</span>
+                      <span>Copy your creator ID (shown above) and add it to your TikTok bio</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="flex-shrink-0">2.</span>
+                      <span>Enter your TikTok username in the field below</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="flex-shrink-0">3.</span>
+                      <span>Click the "Link TikTok Account" button</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="flex-shrink-0">4.</span>
+                      <span>Once you receive a success message, your account is linked and you can remove the creator ID from your bio</span>
+                    </li>
+                  </ol>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="tiktok-username" className="block text-sm font-medium text-gray-900 mb-1 flex items-center gap-2">
+                        <span>📱</span> TikTok Username
+                      </label>
+                      <div className="flex gap-3">
+                        <input
+                          type="text"
+                          id="tiktok-username"
+                          value={tiktokUsername}
+                          onChange={(e) => setTiktokUsername(e.target.value)}
+                          placeholder="@yourusername"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        />
+                        <button
+                          onClick={handleLinkTikTok}
+                          disabled={isLinking || !tiktokUsername}
+                          className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium transition-colors hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                          {isLinking ? (
+                            <>
+                              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              <span>Linking...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>🔗</span>
+                              <span>Link TikTok Account</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      {linkingError && (
+                        <div className="mt-2 flex items-center gap-2 text-sm text-red-600">
+                          <span>⚠️</span>
+                          <span>{linkingError}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
             <div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">Discord Commands</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                <span>🤖</span> Discord Commands
+              </h2>
               <DiscordCommandTable commands={discordCommands} />
             </div>
             
             <div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">Frequently Asked Questions</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                <span>❓</span> Frequently Asked Questions
+              </h2>
               <FAQTable items={faqItems} />
             </div>
           </div>
