@@ -568,7 +568,7 @@ export default function CreatorDashboard() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="flex-shrink-0">3.</span>
-                      <span>Click the "Link TikTok Account" button</span>
+                      <span>Click the &quot;Link TikTok Account&quot; button</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="flex-shrink-0">4.</span>
