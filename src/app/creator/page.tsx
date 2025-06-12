@@ -52,6 +52,10 @@ export default function CreatorDashboard() {
       command: '/status'
     },
     {
+      name: 'Link TikTok Account',
+      command: '/link <username>'
+    },
+    {
       name: 'View All Commands',
       command: '/commands'
     },
@@ -544,7 +548,7 @@ export default function CreatorDashboard() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="flex-shrink-0">3.</span>
-                      <span>Use the <code className="bg-white px-2 py-1 rounded shadow-sm">/verify</code> command and add your TikTok username</span>
+                      <span>Use the <code className="bg-white px-2 py-1 rounded shadow-sm">/link</code> command and add your TikTok username</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="flex-shrink-0">4.</span>
@@ -578,7 +582,7 @@ export default function CreatorDashboard() {
 
                   <div className="space-y-4">
                     <div>
-                      <label htmlFor="tiktok-username" className="block text-sm font-medium text-gray-900 mb-1 flex items-center gap-2">
+                      <label htmlFor="tiktok-username" className="block text-sm font-medium text-gray-900 mb-1 items-center gap-2">
                         <span>📱</span> TikTok Username
                       </label>
                       <div className="flex gap-3">
