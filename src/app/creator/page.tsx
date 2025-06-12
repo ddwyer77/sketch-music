@@ -53,7 +53,7 @@ export default function CreatorDashboard() {
     },
     {
       name: 'Link TikTok Account',
-      command: '/link <username>'
+      command: '/link <username> <token>'
     },
     {
       name: 'View All Commands',
@@ -186,18 +186,29 @@ export default function CreatorDashboard() {
   };
 
   const handleLinkTikTok = async () => {
-    if (!user?.uid || !tiktokUsername) return;
+    if (!user?.uid || !tiktokUsername || !linkToken) return;
     
     setIsLinking(true);
     setLinkingError(null);
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/link-tiktok-account/${tiktokUsername}?firebaseUserId=${user.uid}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/link-tiktok-account/${tiktokUsername}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firebaseUserId: user.uid,
+          token: linkToken
+        })
+      });
+      
       const data = await response.json();
       
       if (data.success) {
-        alert('TikTok account linked successfully! You can now remove the creator ID from your bio.');
+        alert('TikTok account linked successfully! You can now remove the token from your bio.');
         setTiktokUsername('');
+        setLinkToken(null);
       } else {
         setLinkingError(data.message || 'Failed to link TikTok account');
       }
@@ -564,11 +575,11 @@ export default function CreatorDashboard() {
                   <ol className="list-decimal list-inside space-y-3 text-gray-700 mb-6">
                     <li className="flex items-start gap-2">
                       <span className="flex-shrink-0">1.</span>
-                      <span>Copy your creator ID (shown above) and add it to your TikTok bio</span>
+                      <span>Copy your account link token (shown above) and add it to your TikTok bio</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="flex-shrink-0">2.</span>
-                      <span>Enter your TikTok username in the field below</span>
+                      <span>Enter your TikTok username and paste your account link token in the fields below</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="flex-shrink-0">3.</span>
@@ -576,7 +587,7 @@ export default function CreatorDashboard() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="flex-shrink-0">4.</span>
-                      <span>Once you receive a success message, your account is linked and you can remove the creator ID from your bio</span>
+                      <span>Once you receive a success message, your account is linked and you can remove the token from your bio</span>
                     </li>
                   </ol>
 
@@ -585,43 +596,54 @@ export default function CreatorDashboard() {
                       <label htmlFor="tiktok-username" className="block text-sm font-medium text-gray-900 mb-1 items-center gap-2">
                         <span>📱</span> TikTok Username
                       </label>
-                      <div className="flex gap-3">
-                        <input
-                          type="text"
-                          id="tiktok-username"
-                          value={tiktokUsername}
-                          onChange={(e) => setTiktokUsername(e.target.value)}
-                          placeholder="@yourusername"
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                        />
-                        <button
-                          onClick={handleLinkTikTok}
-                          disabled={isLinking || !tiktokUsername}
-                          className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium transition-colors hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                        >
-                          {isLinking ? (
-                            <>
-                              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              <span>Linking...</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>🔗</span>
-                              <span>Link TikTok Account</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                      {linkingError && (
-                        <div className="mt-2 flex items-center gap-2 text-sm text-red-600">
-                          <span>⚠️</span>
-                          <span>{linkingError}</span>
-                        </div>
-                      )}
+                      <input
+                        type="text"
+                        id="tiktok-username"
+                        value={tiktokUsername}
+                        onChange={(e) => setTiktokUsername(e.target.value)}
+                        placeholder="@yourusername"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      />
                     </div>
+                    <div>
+                      <label htmlFor="account-link-token" className="block text-sm font-medium text-gray-900 mb-1 items-center gap-2">
+                        <span>🔑</span> Account Link Token
+                      </label>
+                      <input
+                        type="text"
+                        id="account-link-token"
+                        value={linkToken || ''}
+                        onChange={(e) => setLinkToken(e.target.value)}
+                        placeholder="Enter your account link token"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      />
+                    </div>
+                    <button
+                      onClick={handleLinkTikTok}
+                      disabled={isLinking || !tiktokUsername || !linkToken}
+                      className="w-full bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium transition-colors hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {isLinking ? (
+                        <>
+                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>Linking...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>🔗</span>
+                          <span>Link TikTok Account</span>
+                        </>
+                      )}
+                    </button>
+                    {linkingError && (
+                      <div className="mt-2 flex items-center gap-2 text-sm text-red-600">
+                        <span>⚠️</span>
+                        <span>{linkingError}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
