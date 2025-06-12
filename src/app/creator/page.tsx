@@ -30,6 +30,9 @@ export default function CreatorDashboard() {
   const [tiktokUsername, setTiktokUsername] = useState('');
   const [isLinking, setIsLinking] = useState(false);
   const [linkingError, setLinkingError] = useState<string | null>(null);
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [isGeneratingToken, setIsGeneratingToken] = useState(false);
+  const [tokenError, setTokenError] = useState<string | null>(null);
 
   const discordCommands = [
     {
@@ -113,6 +116,65 @@ export default function CreatorDashboard() {
     };
     fetchUserData();
   }, [user]);
+
+  useEffect(() => {
+    const checkLinkToken = async () => {
+      if (!user?.uid) return;
+      
+      try {
+        const tokenDoc = await getDoc(doc(db, 'socialMediaAccountLinkTokens', user.uid));
+        if (tokenDoc.exists()) {
+          const tokenData = tokenDoc.data();
+          const now = Date.now();
+          
+          // Only show token if it's not expired and not used
+          if (tokenData.expires_at > now && !tokenData.used) {
+            setLinkToken(tokenData.token);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking link token:', error);
+      }
+    };
+    
+    checkLinkToken();
+  }, [user]);
+
+  const handleGenerateToken = async () => {
+    if (!user?.uid) return;
+    
+    setIsGeneratingToken(true);
+    setTokenError(null);
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/generate-social-media-account-link-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firebaseUserId: user.uid
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.token) {
+        setLinkToken(data.token);
+      } else {
+        setTokenError(data.error || 'Failed to generate token');
+      }
+    } catch (error) {
+      console.error('Error generating token:', error);
+      setTokenError('An error occurred while generating the token');
+    } finally {
+      setIsGeneratingToken(false);
+    }
+  };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -387,28 +449,86 @@ export default function CreatorDashboard() {
         {activeTab === 'discord' && (
           <div className="space-y-8">
             <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <span>🎯</span> Your Creator ID
-                </h3>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(user?.uid || '');
-                  }}
-                  className="flex items-center gap-2 text-primary hover:text-primary-dark hover:cursor-pointer"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
-                  </svg>
-                  <span>Copy to clipboard</span>
-                </button>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                <code className="text-gray-800 font-mono">{user?.uid}</code>
-              </div>
-              
               <div className="space-y-8">
+                <div className="bg-blue-50 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <span>🔑</span> Account Link Token
+                  </h3>
+                  <p className="text-gray-700 mb-4">
+                    Generate a one-time use token to link your social media account. If you have any issues, you can generate a new token.
+                  </p>
+                  
+                  {linkToken ? (
+                    <div className="space-y-4">
+                      <div className="bg-white p-4 rounded-lg border border-gray-200">
+                        <div className="flex items-center justify-between">
+                          <code className="text-gray-800 font-mono">{linkToken}</code>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(linkToken);
+                            }}
+                            className="flex items-center gap-2 text-primary hover:text-primary-dark hover:cursor-pointer"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                              <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                            </svg>
+                            <span>Copy to clipboard</span>
+                          </button>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleGenerateToken}
+                        disabled={isGeneratingToken}
+                        className="w-full bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium transition-colors hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {isGeneratingToken ? (
+                          <>
+                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Generating...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>🔄</span>
+                            <span>Generate New Token</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleGenerateToken}
+                      disabled={isGeneratingToken}
+                      className="w-full bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium transition-colors hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {isGeneratingToken ? (
+                        <>
+                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>Generating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>🔑</span>
+                          <span>Generate Account Link Token</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                  
+                  {tokenError && (
+                    <div className="mt-2 flex items-center gap-2 text-sm text-red-600">
+                      <span>⚠️</span>
+                      <span>{tokenError}</span>
+                    </div>
+                  )}
+                </div>
+
                 <div className="bg-blue-50 rounded-lg p-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                     <span>🤖</span> Method 1: Link through Discord
@@ -420,7 +540,7 @@ export default function CreatorDashboard() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="flex-shrink-0">2.</span>
-                      <span>Copy your creator ID (shown above) and add it to your TikTok bio</span>
+                      <span>Copy your account link token (shown above) and add it to your TikTok bio</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="flex-shrink-0">3.</span>
@@ -428,7 +548,7 @@ export default function CreatorDashboard() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="flex-shrink-0">4.</span>
-                      <span>Once you receive a success message, your account is linked and you can remove the creator ID from your bio</span>
+                      <span>Once you receive a success message, your account is linked and you can remove the token from your bio</span>
                     </li>
                   </ol>
                 </div>

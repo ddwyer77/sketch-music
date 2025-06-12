@@ -85,5 +85,15 @@ service cloud.firestore {
       allow create: if isAuthenticated() && isAdmin();
       allow create, update, delete: if isAuthenticated() && isAdmin();
     }
+
+    // Social Media Account Link Token rules
+    match /socialMediaAccountLinkTokens/{userId} {
+      // Users can only read their own token
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      // Only the backend can create/update tokens
+      allow create, update: if false;
+      // Users can delete their own token
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+    }
   }
 } 
