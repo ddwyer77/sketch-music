@@ -121,10 +121,7 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
       if (!user) return;
       
       try {
-        const serversQuery = query(
-          collection(db, 'servers'),
-          where('owner_id', '==', user.uid)
-        );
+        const serversQuery = collection(db, 'servers');
         
         const querySnapshot = await getDocs(serversQuery);
         const serversData = querySnapshot.docs.map(doc => ({
