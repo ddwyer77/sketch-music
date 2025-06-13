@@ -30,6 +30,7 @@ export default function CreatorDashboard() {
   const [tiktokUsername, setTiktokUsername] = useState('');
   const [isLinking, setIsLinking] = useState(false);
   const [linkingError, setLinkingError] = useState<string | null>(null);
+  const [linkingSuccess, setLinkingSuccess] = useState<string | null>(null);
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
   const [tokenError, setTokenError] = useState<string | null>(null);
@@ -190,23 +191,20 @@ export default function CreatorDashboard() {
     
     setIsLinking(true);
     setLinkingError(null);
+    setLinkingSuccess(null);
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/link-tiktok-account/${tiktokUsername}`, {
-        method: 'POST',
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/link-tiktok-account/${tiktokUsername}?firebaseUserId=${user.uid}&token=${linkToken}`, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firebaseUserId: user.uid,
-          token: linkToken
-        })
+        }
       });
       
       const data = await response.json();
       
       if (data.success) {
-        alert('TikTok account linked successfully! You can now remove the token from your bio.');
+        setLinkingSuccess('TikTok account linked successfully! You can now remove the token from your bio.');
         setTiktokUsername('');
         setLinkToken(null);
       } else {
@@ -642,6 +640,12 @@ export default function CreatorDashboard() {
                       <div className="mt-2 flex items-center gap-2 text-sm text-red-600">
                         <span>⚠️</span>
                         <span>{linkingError}</span>
+                      </div>
+                    )}
+                    {linkingSuccess && (
+                      <div className="mt-2 flex items-center gap-2 text-sm text-green-600">
+                        <span>✅</span>
+                        <span>{linkingSuccess}</span>
                       </div>
                     )}
                   </div>
