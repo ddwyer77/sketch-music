@@ -382,7 +382,7 @@ export default function PaymentsPage() {
                       
                       const userIds = Array.from(new Set(selectedCampaign.videos.map((v: Video) => v.author_id)));
                       try {
-                        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/pay-creators`, {
+                        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/pay-creators`, {
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json',
@@ -490,7 +490,7 @@ export default function PaymentsPage() {
                             <button
                               onClick={async () => {
                                 try {
-                                  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/pay-creators`, {
+                                  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/pay-creators`, {
                                     method: 'POST',
                                     headers: {
                                       'Content-Type': 'application/json',
