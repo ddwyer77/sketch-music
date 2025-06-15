@@ -95,5 +95,11 @@ service cloud.firestore {
       // Users can delete their own token
       allow delete: if isAuthenticated() && request.auth.uid == userId;
     }
+
+    match /ledger/{document=**} {
+      allow read: if request.auth != null;  // Allow authenticated users to read
+      allow create: if request.auth != null;  // Allow authenticated users to create
+      allow update, delete: if false;  // No updates or deletes allowed
+    }
   }
 } 
