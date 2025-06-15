@@ -89,18 +89,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       
       // Create user document with all required fields
-      await setDoc(doc(db, 'users', result.user.uid), {
+      const userData = {
         id: result.user.uid,
         email,
         first_name: firstName,
         last_name: lastName,
-        roles: [userType],
-        groups: [],
-        campaign_contributions: [],
-        payment_info: paymentEmail ? [{ email: paymentEmail }] : [],
-        created_at: serverTimestamp(),
-        updated_at: serverTimestamp()
-      });
+        roles: [userType || 'creator'],
+        paymentEmail: paymentEmail,
+        created_at: Date.now(),
+        updated_at: Date.now()
+      };
+      await setDoc(doc(db, 'users', result.user.uid), userData);
     } catch (error: unknown) {
       console.error('Error signing up with email:', error);
       // Convert Firebase error codes to user-friendly messages

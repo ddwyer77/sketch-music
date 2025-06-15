@@ -34,10 +34,10 @@ export default function CampaignCreatorModal({ isOpen, onClose, selectedCampaign
   const filteredUsers = users.filter(user => {
     const searchLower = searchQuery.toLowerCase();
     return (
-      (user.email?.toLowerCase() || '').includes(searchLower) ||
       (user.first_name?.toLowerCase() || '').includes(searchLower) ||
       (user.last_name?.toLowerCase() || '').includes(searchLower) ||
-      (user.payment_info?.[0]?.email?.toLowerCase() || '').includes(searchLower)
+      (user.email?.toLowerCase() || '').includes(searchLower) ||
+      (user.paymentEmail?.toLowerCase() || '').includes(searchLower)
     );
   }).sort((a, b) => {
     const aValue = sortBy === 'name' 

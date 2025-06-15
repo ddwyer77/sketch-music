@@ -11,9 +11,7 @@ export type User = {
   first_name: string;
   last_name: string;
   roles: userRole[];
-  payment_info?: {
-    email: string;
-  }[];
+  paymentEmail?: string;
   groups?: string[];
   campaign_contributions?: CampaignContribution[];
   discord_id?: string;
