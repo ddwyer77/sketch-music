@@ -672,6 +672,22 @@ export default function CreatorDashboard() {
         {activeTab === 'submissions' && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">My Submissions</h2>
+            
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-yellow-700">
+                    <strong className="font-medium text-yellow-800">Important Notice:</strong> All earnings shown are estimates and may be adjusted based on campaign criteria and final review. Final payment amounts are subject to verification and approval.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {campaigns.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-10 text-center">
                 <h2 className="text-xl font-medium mb-4 text-gray-800">No submissions found</h2>
@@ -715,12 +731,33 @@ export default function CreatorDashboard() {
                                   )}
                                   <span className="text-sm text-gray-600">Sound Match</span>
                                 </div>
-                                <div className={`px-2 py-1 rounded-full text-sm font-medium ${
-                                  video.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                  video.status === 'denied' ? 'bg-red-100 text-red-800' :
-                                  'bg-yellow-100 text-yellow-800'
-                                }`}>
-                                  {video.status.charAt(0).toUpperCase() + video.status.slice(1)}
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-gray-600">Submission Status:</span>
+                                  <div className={`px-2 py-1 rounded-full text-sm font-medium ${
+                                    video.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                    video.status === 'denied' ? 'bg-red-100 text-red-800' :
+                                    'bg-yellow-100 text-yellow-800'
+                                  }`}>
+                                    {video.status.charAt(0).toUpperCase() + video.status.slice(1)}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-gray-600">Estimated Earnings:</span>
+                                  <span className={`text-sm font-medium ${
+                                    video.status === 'denied' ? 'text-red-600' : 
+                                    video.status === 'approved' ? 'text-green-600' : 
+                                    'text-gray-800'
+                                  }`}>
+                                    ${video.status === 'denied' ? '0.00' : (video.hasBeenPaid ? video.payoutAmountForVideo?.toFixed(2) : video.earnings?.toFixed(2) || '0.00')}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-gray-600">Payment Status:</span>
+                                  <span className={`px-2 py-1 rounded-full text-sm font-medium ${
+                                    video.hasBeenPaid ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                  }`}>
+                                    {video.hasBeenPaid ? 'Paid' : 'Pending'}
+                                  </span>
                                 </div>
                                 {video.status === 'denied' && (
                                   <button

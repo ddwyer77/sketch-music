@@ -44,4 +44,7 @@ export interface Video {
   soundIdMatch?: boolean;
   title?: string;
   reasonForDenial?: string | null;
+  hasBeenPaid?: boolean;
+  payoutAmountForVideo?: number;
+  earnings?: number;
 } 
