@@ -8,8 +8,8 @@ export type CampaignContribution = {
 export type User = {
   id: string;
   email: string;
-  first_name: string;
-  last_name: string;
+  firstName: string;
+  lastName: string;
   roles: userRole[];
   paymentEmail?: string;
   groups?: string[];

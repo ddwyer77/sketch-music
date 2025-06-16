@@ -26,7 +26,7 @@ export default function Navbar() {
           if (userDoc.exists()) {
             const userData = userDoc.data();
             setUserRoles(userData.roles || []);
-            setFirstName(userData.first_name || userData.firstName || '');
+            setFirstName(userData.firstName || '');
           }
         } catch (error) {
           console.error('Error checking user roles:', error);

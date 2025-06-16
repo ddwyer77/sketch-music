@@ -92,8 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = {
         id: result.user.uid,
         email,
-        first_name: firstName,
-        last_name: lastName,
+        firstName: firstName,
+        lastName: lastName,
         roles: [userType || 'creator'],
         paymentEmail: paymentEmail,
         created_at: Date.now(),

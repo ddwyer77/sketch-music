@@ -8,7 +8,7 @@ import { useQuery } from '@/hooks';
 import { Campaign, Video } from '@/types/campaign';
 import { useAuth } from '@/contexts/AuthContext';
 import { User } from '@/types/user';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export default function PaymentsPage() {
@@ -20,10 +20,23 @@ export default function PaymentsPage() {
   const [isLoadingCampaign, setIsLoadingCampaign] = useState(false);
   const [creatorDetails, setCreatorDetails] = useState<Record<string, User>>({});
   const [isLoadingCreators, setIsLoadingCreators] = useState(false);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   
-  // Fetch campaigns
-  const { documents: campaigns = [] } = useQuery<Campaign>('campaigns', []);
-  
+  // Fetch campaigns with proper cleanup
+  useEffect(() => {
+    const campaignsRef = collection(db, 'campaigns');
+    const unsubscribe = onSnapshot(campaignsRef, (snapshot) => {
+      const campaignsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Campaign[];
+      setCampaigns(campaignsData);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
+
   // Placeholder payment transactions data (updated to match Firestore structure)
   const transactions = [
     {
@@ -446,7 +459,7 @@ export default function PaymentsPage() {
                             <div className="space-y-2">
                               <div>
                                 <h4 className="font-medium text-gray-900">
-                                  {userDetails ? `${userDetails.first_name} ${userDetails.last_name}` : 'Unknown User'}
+                                  {userDetails ? `${userDetails.firstName} ${userDetails.lastName}` : 'Unknown User'}
                                 </h4>
                                 <p className="text-sm text-gray-600">{userDetails?.email || 'No email available'}</p>
                               </div>
@@ -473,6 +486,11 @@ export default function PaymentsPage() {
                               <div className="flex items-center gap-2">
                                 <span className="text-sm text-gray-600">Total Earnings:</span>
                                 <span className="text-sm font-medium text-gray-900">${creator.totalEarnings.toFixed(2)}</span>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-gray-600">Videos Submitted:</span>
+                                <span className="text-sm font-medium text-gray-900">{creator.videos.length}</span>
                               </div>
 
                               <div className="flex items-center gap-2">

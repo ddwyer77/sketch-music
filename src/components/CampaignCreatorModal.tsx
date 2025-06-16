@@ -34,17 +34,17 @@ export default function CampaignCreatorModal({ isOpen, onClose, selectedCampaign
   const filteredUsers = users.filter(user => {
     const searchLower = searchQuery.toLowerCase();
     return (
-      (user.first_name?.toLowerCase() || '').includes(searchLower) ||
-      (user.last_name?.toLowerCase() || '').includes(searchLower) ||
+      (user.firstName?.toLowerCase() || '').includes(searchLower) ||
+      (user.lastName?.toLowerCase() || '').includes(searchLower) ||
       (user.email?.toLowerCase() || '').includes(searchLower) ||
       (user.paymentEmail?.toLowerCase() || '').includes(searchLower)
     );
   }).sort((a, b) => {
     const aValue = sortBy === 'name' 
-      ? `${a.first_name || ''} ${a.last_name || ''}`.toLowerCase()
+      ? `${a.firstName || ''} ${a.lastName || ''}`.toLowerCase()
       : (a.email || '').toLowerCase();
     const bValue = sortBy === 'name'
-      ? `${b.first_name || ''} ${b.last_name || ''}`.toLowerCase()
+      ? `${b.firstName || ''} ${b.lastName || ''}`.toLowerCase()
       : (b.email || '').toLowerCase();
     
     return sortOrder === 'asc'
@@ -233,14 +233,14 @@ export default function CampaignCreatorModal({ isOpen, onClose, selectedCampaign
                       <div className="flex items-center space-x-4">
                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
                           <span className="text-gray-800 font-medium">
-                            {user?.first_name ? user.first_name.charAt(0) : creatorEmail.charAt(0)}
+                            {user?.firstName ? user.firstName.charAt(0) : creatorEmail.charAt(0)}
                           </span>
                         </div>
                         <div>
                           {user ? (
                             <>
                               <h4 className="font-medium text-gray-800">
-                                {user.first_name} {user.last_name}
+                                {user.firstName} {user.lastName}
                               </h4>
                               <p className="text-sm text-gray-800">{user.email}</p>
                             </>

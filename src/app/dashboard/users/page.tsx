@@ -10,8 +10,8 @@ import { userRole } from '@/types/user';
 type User = {
   id: string;
   email: string;
-  first_name: string;
-  last_name: string;
+  firstName: string;
+  lastName: string;
   roles: userRole[];
   displayName?: string;
 };
@@ -88,8 +88,8 @@ export default function UsersPage() {
         const usersSnapshot = await getDocs(usersCollection);
         const usersData = usersSnapshot.docs.map(doc => {
           const data = doc.data();
-          // For Gmail accounts, try to extract name from email if first_name is not set
-          if (data.email?.endsWith('@gmail.com') && !data.first_name) {
+          // For Gmail accounts, try to extract name from email if firstName is not set
+          if (data.email?.endsWith('@gmail.com') && !data.firstName) {
             const emailName = data.email.split('@')[0];
             // Convert email name to proper case and handle dots/underscores
             const formattedName = emailName
@@ -100,8 +100,8 @@ export default function UsersPage() {
             return {
               id: doc.id,
               ...data,
-              first_name: formattedName,
-              last_name: ''
+              firstName: formattedName,
+              lastName: ''
             };
           }
           return {
@@ -135,8 +135,8 @@ export default function UsersPage() {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(user => 
-        (user.first_name?.toLowerCase() || '').includes(query) ||
-        (user.last_name?.toLowerCase() || '').includes(query) ||
+        (user.firstName?.toLowerCase() || '').includes(query) ||
+        (user.lastName?.toLowerCase() || '').includes(query) ||
         (user.email?.toLowerCase() || '').includes(query)
       );
     }
@@ -246,7 +246,7 @@ export default function UsersPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2">
                     <h2 className="text-lg font-medium text-gray-900">
-                      {user.first_name} {user.last_name}
+                      {user.firstName} {user.lastName}
                     </h2>
                     <div className="flex space-x-1">
                       {user.roles?.map(role => (

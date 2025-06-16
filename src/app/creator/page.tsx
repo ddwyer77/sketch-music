@@ -447,7 +447,7 @@ export default function CreatorDashboard() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-800 mb-1">Name</label>
-                <p className="text-gray-800">{userData?.first_name} {userData?.last_name}</p>
+                <p className="text-gray-800">{userData?.firstName} {userData?.lastName}</p>
               </div>
               {/* Payment Email Section */}
               {userData?.paymentEmail && (
