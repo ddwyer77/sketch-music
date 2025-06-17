@@ -493,11 +493,72 @@ export default function PaymentsPage() {
                                 <span className="text-sm font-medium text-gray-900">{creator.videos.length}</span>
                               </div>
 
+                              {/* Video Itemization */}
+                              <div className="mt-2 space-y-2">
+                                {creator.videos.map((video: Video, index: number) => (
+                                  <div key={video.id} className="text-sm">
+                                    <a 
+                                      href={video.url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-primary hover:text-primary-dark hover:cursor-pointer"
+                                    >
+                                      Video {index + 1}
+                                    </a>
+                                    {' - '}
+                                    <span className="text-gray-600">{video.title || 'Untitled Video'}</span>
+                                    {' - '}
+                                    <span className="font-medium text-gray-800">${video.status === 'approved' ? (video.earnings || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}</span>
+                                    {' '}
+                                    <span className={`${
+                                      video.status === 'approved' ? 'text-green-600' :
+                                      video.status === 'denied' ? 'text-red-600' :
+                                      'text-yellow-500 font-bold'
+                                    }`}>
+                                      {video.status?.charAt(0).toUpperCase() + video.status?.slice(1) || 'Pending'}
+                                    </span>
+                                    {' - '}
+                                    <span className="text-gray-600">{video.views?.toLocaleString() || 0} views</span>
+                                  </div>
+                                ))}
+                                <div className="pt-1 border-t border-gray-200">
+                                  <span className="text-sm text-gray-600">Total Payout: </span>
+                                  <span className="text-sm font-bold text-gray-800">
+                                    ${creator.videos
+                                      .filter((v: Video) => v.status === 'approved')
+                                      .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0)
+                                      .toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                                {creator.videos.some((v: Video) => v.status === 'pending') && (
+                                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                                    <p className="text-sm text-yellow-800">
+                                      ⚠️ You have videos still pending. Users will not be paid unless their video has been approved.
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+
                               <div className="flex items-center gap-2">
-                                <span className={`text-sm ${creator.allPaid ? 'text-green-600' : 'text-yellow-600'}`}>
-                                  {creator.allPaid ? 'Paid' : 'Unpaid'}
+                                <span className={`text-sm ${
+                                  creator.videos
+                                    .filter((v: Video) => v.status === 'approved')
+                                    .every((v: Video) => v.hasBeenPaid) 
+                                    ? 'text-green-600' 
+                                    : 'text-yellow-600'
+                                }`}>
+                                  {creator.videos
+                                    .filter((v: Video) => v.status === 'approved')
+                                    .every((v: Video) => v.hasBeenPaid)
+                                    ? 'Paid'
+                                    : 'Unpaid'}
                                 </span>
-                                {!creator.allPaid && creator.videos.some((v: Video) => v.hasBeenPaid) && (
+                                {!creator.videos
+                                  .filter((v: Video) => v.status === 'approved')
+                                  .every((v: Video) => v.hasBeenPaid) && 
+                                  creator.videos
+                                    .filter((v: Video) => v.status === 'approved')
+                                    .some((v: Video) => v.hasBeenPaid) && (
                                   <span className="text-sm text-yellow-600">
                                     (Partial payment detected)
                                   </span>

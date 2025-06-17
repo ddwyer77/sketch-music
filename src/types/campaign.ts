@@ -47,4 +47,9 @@ export interface Video {
   hasBeenPaid?: boolean;
   payoutAmountForVideo?: number;
   earnings?: number;
+  views?: number;
+  author?: {
+    uniqueId: string;
+    nickname?: string;
+  };
 } 
