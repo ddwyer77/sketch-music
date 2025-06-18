@@ -80,6 +80,14 @@ export interface Video {
   payoutAmountForVideo?: number;
   earnings?: number;
   views?: number;
+  shares?: number;
+  comments?: number;
+  likes?: number;
+  description?: string;
+  musicTitle?: string;
+  musicAuthor?: string;
+  musicId?: string;
+  markedForDeletion?: boolean;
   author?: {
     uniqueId: string;
     nickname?: string;

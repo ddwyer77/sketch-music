@@ -5,30 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFirestoreOperations } from '@/hooks';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-
-type Video = {
-  id: string;
-  url: string;
-  status: 'pending' | 'approved' | 'denied';
-  author_id: string;
-  soundIdMatch?: boolean;
-  title?: string;
-  reasonForDenial?: string | null;
-  markedForDeletion?: boolean;
-  author?: {
-    nickname: string;
-    uniqueId: string;
-  };
-  views?: number;
-  shares?: number;
-  comments?: number;
-  likes?: number;
-  description?: string;
-  createdAt?: string;
-  musicTitle?: string;
-  musicAuthor?: string;
-  musicId?: string;
-};
+import { Video } from '@/types/campaign';
 
 type DenialModalProps = {
   isOpen: boolean;
@@ -265,23 +242,21 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
   const handleAddVideo = async () => {
     if (!newVideoUrl.trim()) return;
 
-    try {
-      const newVideo = { 
-        id: crypto.randomUUID(),
-        url: newVideoUrl.trim(), 
-        status: 'pending' as const, 
-        author_id: user?.uid || '',
-        soundIdMatch: false // Will be updated when the modal opens
-      };
+    const now = Date.now();
+    const newVideo: Video = {
+      id: crypto.randomUUID(),
+      url: newVideoUrl.trim(),
+      status: 'pending',
+      author_id: user?.uid || '',
+      soundIdMatch: false,
+      created_at: now,
+      updated_at: now
+    };
 
-      setLocalVideos(prevVideos => [...prevVideos, newVideo]);
-      setNewVideoUrl('');
-      setIsAddingVideo(false);
-      setHasChanges(true);
-    } catch (error) {
-      console.error('Error adding video:', error);
-      alert('Invalid TikTok URL. Please check the URL and try again.');
-    }
+    setLocalVideos(prevVideos => [...prevVideos, newVideo]);
+    setNewVideoUrl('');
+    setIsAddingVideo(false);
+    setHasChanges(true);
   };
 
   const handleCloseAttempt = () => {
