@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCollection } from '@/hooks';
+import { useQuery } from '@/hooks';
 import { toast } from 'react-hot-toast';
 import { collection, doc, updateDoc, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -22,9 +22,9 @@ export default function BugsPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Fetch bugs with ordering
-  const { documents: bugs = [], loading } = useCollection<Bug>(
+  const { documents: bugs = [], loading } = useQuery<Bug>(
     'bugs',
-    query(collection(db, 'bugs'), orderBy('order', 'asc'))
+    [orderBy('order', 'asc')]
   );
 
   const activeBugs = bugs.filter(bug => bug.status === 'active');

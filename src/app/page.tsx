@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
+import Image from 'next/image';
 import ContactForm from '../components/ContactForm';
 import { trackEvent } from '@/utils/analytics';
 
@@ -115,7 +116,7 @@ export default function Home() {
             <div className="rounded-lg border bg-card text-card-foreground shadow-sm absolute w-[340px] -top-[15px] drop-shadow-xl shadow-black/10 dark:shadow-white/10 bg-primary/5">
               <div className="space-y-1.5 p-6 flex flex-row items-center gap-4 pb-2">
                 <span className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full">
-                  <img className="aspect-square h-full w-full" alt="Sarah Mcghee" src="https://cdn.pixabay.com/photo/2023/02/03/16/54/dj-7765608_1280.png" />
+                  <Image className="aspect-square h-full w-full" alt="Sarah Mcghee" src="https://cdn.pixabay.com/photo/2023/02/03/16/54/dj-7765608_1280.png" width={40} height={40} />
                 </span>
                 <div className="flex flex-col">
                   <h3 className="font-semibold tracking-tight text-lg text-gray-800">Sarah Mcghee</h3>
@@ -126,7 +127,7 @@ export default function Home() {
             </div>
             <div className="rounded-lg border bg-card text-card-foreground shadow-sm absolute right-[20px] top-4 w-80 flex flex-col justify-center items-center drop-shadow-xl shadow-black/10 dark:shadow-white/10 bg-primary/5">
               <div className="flex-col space-y-1.5 p-6 mt-8 flex justify-center items-center pb-2">
-                <img src="https://cdn.pixabay.com/photo/2023/11/12/15/33/man-8383298_1280.jpg" alt="user avatar" className="absolute grayscale-[0%] -top-12 rounded-full w-24 h-24 aspect-square object-cover" />
+                <Image src="https://cdn.pixabay.com/photo/2023/11/12/15/33/man-8383298_1280.jpg" alt="user avatar" className="absolute grayscale-[0%] -top-12 rounded-full w-24 h-24 aspect-square object-cover" width={96} height={96} />
                 <h3 className="text-2xl font-semibold leading-none tracking-tight text-center text-gray-800">Ron Johnson</h3>
                 <p className="text-sm font-normal text-primary">Content Creator</p>
               </div>
@@ -136,7 +137,7 @@ export default function Home() {
             </div>
             <div className="absolute top-[150px] left-[50px] w-72 drop-shadow-xl shadow-black/10 dark:shadow-white/10 flex flex-col items-center justify-center bg-gradient-to-br from-green-100 via-white to-blue-100 border border-gray-200 rounded-2xl overflow-hidden">
               <div className="flex flex-col items-center p-6 w-full">
-                <img src="https://cdn.pixabay.com/photo/2016/11/18/15/44/audience-1835431_1280.jpg" alt="New campaigns" className="rounded-full w-20 h-20 object-cover mb-4 shadow-md" />
+                <Image src="https://cdn.pixabay.com/photo/2016/11/18/15/44/audience-1835431_1280.jpg" alt="New campaigns" className="rounded-full w-20 h-20 object-cover mb-4 shadow-md" width={80} height={80} />
                 <h3 className="text-xl font-bold text-gray-800 text-center mb-2">New campaigns added daily</h3>
                 <p className="text-gray-600 text-center">Discover fresh opportunities to earn and grow every day.</p>
               </div>
