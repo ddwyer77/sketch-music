@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Image from 'next/image';
 import { toast } from 'react-hot-toast';
-import { useQuery } from '@/hooks';
-import { Campaign, Video } from '@/types/campaign';
+import { useQuery, useCollection } from '@/hooks';
+import { Campaign, Video, Transaction } from '@/types/campaign';
 import { useAuth } from '@/contexts/AuthContext';
 import { User } from '@/types/user';
 import { doc, getDoc, collection, onSnapshot } from 'firebase/firestore';
@@ -22,6 +22,9 @@ export default function PaymentsPage() {
   const [isLoadingCreators, setIsLoadingCreators] = useState(false);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [showCampaignReceiptsModal, setShowCampaignReceiptsModal] = useState(false);
+  const { documents: transactions = [], loading: loadingTransactions } = useCollection<Transaction>('transactions');
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
   
   // Fetch campaigns with proper cleanup
   useEffect(() => {
@@ -38,27 +41,13 @@ export default function PaymentsPage() {
     return () => unsubscribe();
   }, []);
 
-  // Placeholder payment transactions data (updated to match Firestore structure)
-  const transactions = [
-    {
-      id: 'VTXDC5WyROSz5BPFHV17',
-      amount: 5000,
-      initiatedById: 'OGytrAaMadgp2VbDRz51hpIHUdk2',
-      initiatedByName: 'Jake Dwyer',
-      metadata: { ratePerMillion: null, vid: null },
-      targetUserId: '',
-      typeOfTransaction: 'income',
-      date: '2023-05-15',
-    }
-  ];
-
   // Calculate financial metrics
   const totalRevenue = transactions
-    .filter(t => t.typeOfTransaction === 'income')
+    .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + (typeof t.amount === 'number' ? t.amount : 0), 0);
 
   const totalExpenses = transactions
-    .filter(t => t.typeOfTransaction === 'expense')
+    .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + (typeof t.amount === 'number' ? Math.abs(t.amount) : 0), 0);
 
   const netIncome = totalRevenue - totalExpenses;
@@ -257,18 +246,25 @@ export default function PaymentsPage() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {transactions.map((transaction) => (
-                    <tr key={transaction.id} className="hover:bg-gray-50">
+                    <tr
+                      key={transaction.id}
+                      className="hover:bg-gray-50 hover:cursor-pointer"
+                      onClick={() => {
+                        setSelectedTransaction(transaction);
+                        setShowTransactionModal(true);
+                      }}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {transaction.id}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatDate(transaction.date)}
+                        {formatDate(transaction.createdAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {transaction.initiatedByName}
+                        {transaction.actorName}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {transaction.typeOfTransaction}
+                        {transaction.type}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <span className={transaction.amount >= 0 ? 'text-green-600' : 'text-red-600'}>
@@ -413,6 +409,23 @@ export default function PaymentsPage() {
                             const data = await response.json();
                             setReceiptData(data);
                             setShowReceiptModal(true);
+                            
+                            // Update the campaign state with the new receipt
+                            if (selectedCampaign) {
+                              const updatedCampaign = {
+                                ...selectedCampaign,
+                                receipts: [...(selectedCampaign.receipts || []), data]
+                              };
+                              setSelectedCampaign(updatedCampaign);
+                              
+                              // Update the campaigns list
+                              setCampaigns(prevCampaigns => 
+                                prevCampaigns.map(campaign => 
+                                  campaign.id === selectedCampaign.id ? updatedCampaign : campaign
+                                )
+                              );
+                            }
+                            
                             toast.success('Successfully paid all creators');
                           } catch (error) {
                             console.error('Error paying creators:', error);
@@ -587,6 +600,23 @@ export default function PaymentsPage() {
                                       const data = await response.json();
                                       setReceiptData(data);
                                       setShowReceiptModal(true);
+                                      
+                                      // Update the campaign state with the new receipt
+                                      if (selectedCampaign) {
+                                        const updatedCampaign = {
+                                          ...selectedCampaign,
+                                          receipts: [...(selectedCampaign.receipts || []), data]
+                                        };
+                                        setSelectedCampaign(updatedCampaign);
+                                        
+                                        // Update the campaigns list
+                                        setCampaigns(prevCampaigns => 
+                                          prevCampaigns.map(campaign => 
+                                            campaign.id === selectedCampaign.id ? updatedCampaign : campaign
+                                          )
+                                        );
+                                      }
+                                      
                                       toast.success('Successfully paid creator');
                                     } catch (error) {
                                       console.error('Error paying creator:', error);
@@ -641,11 +671,18 @@ export default function PaymentsPage() {
       {showReceiptModal && (
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-lg w-full max-w-lg p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Payment Receipt</h3>
             <div className="space-y-4">
-              <p className="text-gray-600">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-              </p>
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h4 className="text-xl font-semibold text-gray-900 mb-2">Payment Successful!</h4>
+                <p className="text-gray-600">
+                  You can see payment information by clicking the receipts button next to the campaign on this page or see your transactions in the overview tab.
+                </p>
+              </div>
             </div>
             <div className="mt-6 flex justify-end">
               <button
@@ -762,6 +799,130 @@ export default function PaymentsPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transaction Details Modal */}
+      {showTransactionModal && selectedTransaction && (
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-lg w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Transaction Details</h3>
+              <button
+                onClick={() => setShowTransactionModal(false)}
+                className="text-gray-500 hover:text-gray-700 hover:cursor-pointer"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-gray-500">Actor ID</p>
+                  <p className="text-gray-800 font-medium">{selectedTransaction.actorId}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Actor Name</p>
+                  <p className="text-gray-800 font-medium">{selectedTransaction.actorName}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Amount</p>
+                  <p className="text-gray-800 font-medium">{formatCurrency(selectedTransaction.amount)}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Campaign ID</p>
+                  <p className="text-gray-800 font-medium">{selectedTransaction.campaignId}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Created At</p>
+                  <p className="text-gray-800 font-medium">{formatDate(selectedTransaction.createdAt)}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Currency</p>
+                  <p className="text-gray-800 font-medium">{selectedTransaction.currency}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Payment Method</p>
+                  <p className="text-gray-800 font-medium">{selectedTransaction.paymentMethod}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Payment Reference</p>
+                  <p className="text-gray-800 font-medium">{selectedTransaction.paymentReference}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Source</p>
+                  <p className="text-gray-800 font-medium">{selectedTransaction.source}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Status</p>
+                  <p className="text-gray-800 font-medium">{selectedTransaction.status}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Target User ID</p>
+                  <p className="text-gray-800 font-medium">{selectedTransaction.targetUserId}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Type</p>
+                  <p className="text-gray-800 font-medium">{selectedTransaction.type}</p>
+                </div>
+              </div>
+              <div className="mt-4">
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">Metadata</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-gray-500">Net Amount</p>
+                    <p className="text-gray-800 font-medium">{formatCurrency(selectedTransaction.metadata.netAmount)}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Payment Email</p>
+                    <p className="text-gray-800 font-medium">{selectedTransaction.metadata.paymentEmail}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Payment Status</p>
+                    <p className="text-gray-800 font-medium">{selectedTransaction.metadata.paymentStatus}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Payout Batch ID</p>
+                    <p className="text-gray-800 font-medium">{selectedTransaction.metadata.payoutBatchId}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Platform Fee</p>
+                    <p className="text-gray-800 font-medium">{formatCurrency(selectedTransaction.metadata.platformFee)}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Rate Per Million</p>
+                    <p className="text-gray-800 font-medium">{selectedTransaction.metadata.ratePerMillion}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Reconciliation ID</p>
+                    <p className="text-gray-800 font-medium">{selectedTransaction.metadata.reconciliationId}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Timestamp</p>
+                    <p className="text-gray-800 font-medium">{formatDate(selectedTransaction.metadata.timestamp)}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Total Views</p>
+                    <p className="text-gray-800 font-medium">{selectedTransaction.metadata.totalViews}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Video Count</p>
+                    <p className="text-gray-800 font-medium">{selectedTransaction.metadata.videoCount}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Video IDs</p>
+                    <p className="text-gray-800 font-medium break-all">{selectedTransaction.metadata.videoIds?.join(', ')}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Views</p>
+                    <p className="text-gray-800 font-medium">{selectedTransaction.metadata.views?.join(', ')}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

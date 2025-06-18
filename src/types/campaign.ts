@@ -84,4 +84,34 @@ export interface Video {
     uniqueId: string;
     nickname?: string;
   };
+}
+
+export interface Transaction {
+  id: string;
+  actorId: string;
+  actorName: string;
+  amount: number;
+  campaignId: string;
+  createdAt: number; // timestamp (ms)
+  currency: string;
+  metadata: {
+    netAmount: number;
+    paymentEmail: string;
+    paymentStatus: string;
+    payoutBatchId: string;
+    platformFee: number;
+    ratePerMillion: number;
+    reconciliationId: string;
+    timestamp: number;
+    totalViews: number;
+    videoCount: number;
+    videoIds: string[];
+    views: number[];
+  };
+  paymentMethod: string;
+  paymentReference: string;
+  source: string;
+  status: string;
+  targetUserId: string;
+  type: string;
 } 
