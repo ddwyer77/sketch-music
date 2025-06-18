@@ -1,9 +1,27 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user is an admin
+    function isAdmin() {
+      return isAuthenticated() && 
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.roles.hasAny(['admin']);
+    }
+
+    // Campaign images
     match /images/{imageId} {
       allow read: if true;  // Anyone can view images
-      allow write: if true; // Anyone can upload images
+      allow write: if isAuthenticated(); // Only authenticated users can upload images
+    }
+
+    // Bug images
+    match /bugs/{bugId} {
+      allow read: if true;  // Anyone can view bug images
+      allow create, update, delete: if isAdmin(); // Only admins can upload bug images
     }
   }
 } 

@@ -102,5 +102,11 @@ service cloud.firestore {
       allow update: if request.auth != null;
       allow delete: if false;  // No updates or deletes allowed
     }
+
+    // Bugs collection rules
+    match /bugs/{bugId} {
+      // Only admins can read and write bugs
+      allow read, write: if isAdmin();
+    }
   }
 } 
