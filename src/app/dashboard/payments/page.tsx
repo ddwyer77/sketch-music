@@ -72,11 +72,13 @@ export default function PaymentsPage() {
 
   // Function to format date
   const formatDate = (dateInput: string | number) => {
-    const date = new Date(dateInput);
+    const date = new Date(Number(dateInput));
     return date.toLocaleDateString('en-US', {
       year: 'numeric', 
       month: 'short', 
-      day: 'numeric'
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
