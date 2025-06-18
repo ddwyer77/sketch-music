@@ -5,7 +5,7 @@ import { useCollection } from '@/hooks';
 import { Campaign } from '@/types/campaign';
 import { useAuth } from '@/contexts/AuthContext';
 import Image from 'next/image';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { User } from '@/types/user';
 import DiscordCommandTable from '@/components/DiscordCommandTable';
@@ -13,7 +13,7 @@ import FAQTable from '@/components/FAQTable';
 import Link from 'next/link';
 import CampaignCardReadOnly from '@/components/CampaignCardReadOnly';
 
-type Tab = 'campaigns' | 'settings' | 'discord' | 'submissions';
+type Tab = 'campaigns' | 'settings' | 'discord' | 'submissions' | 'myinfo';
 
 const ITEMS_PER_PAGE = 15;
 
@@ -34,6 +34,10 @@ export default function CreatorDashboard() {
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
   const [tokenError, setTokenError] = useState<string | null>(null);
+  const [paymentEmail, setPaymentEmail] = useState('');
+  const [isSavingEmail, setIsSavingEmail] = useState(false);
+  const [emailSaveError, setEmailSaveError] = useState<string | null>(null);
+  const [emailSaveSuccess, setEmailSaveSuccess] = useState<string | null>(null);
 
   const discordCommands = [
     {
@@ -115,7 +119,9 @@ export default function CreatorDashboard() {
       if (user) {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
-          setUserData(userDoc.data() as User);
+          const data = userDoc.data() as User;
+          setUserData(data);
+          setPaymentEmail(data.paymentEmail || '');
         }
       }
     };
@@ -178,6 +184,28 @@ export default function CreatorDashboard() {
       setTokenError('An error occurred while generating the token');
     } finally {
       setIsGeneratingToken(false);
+    }
+  };
+
+  const handleSavePaymentEmail = async () => {
+    if (!user?.uid) return;
+    
+    setIsSavingEmail(true);
+    setEmailSaveError(null);
+    setEmailSaveSuccess(null);
+    
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        paymentEmail: paymentEmail
+      });
+      
+      setEmailSaveSuccess('Payment email updated successfully!');
+      setUserData(prev => prev ? { ...prev, paymentEmail } : null);
+    } catch (error) {
+      console.error('Error updating payment email:', error);
+      setEmailSaveError('Failed to update payment email. Please try again.');
+    } finally {
+      setIsSavingEmail(false);
     }
   };
 
@@ -245,7 +273,7 @@ export default function CreatorDashboard() {
               }`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+                <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zm2 3a1 1 0 100 2h6a1 1 0 100-2H7z" />
               </svg>
               Campaigns
             </button>
@@ -287,6 +315,19 @@ export default function CreatorDashboard() {
                 <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
               </svg>
               My Submissions
+            </button>
+            <button
+              onClick={() => setActiveTab('myinfo')}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 hover:cursor-pointer ${
+                activeTab === 'myinfo'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+              </svg>
+              My Info
             </button>
           </nav>
         </div>
@@ -782,6 +823,110 @@ export default function CreatorDashboard() {
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'myinfo' && (
+          <div className="space-y-8">
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">My Information</h2>
+              
+              <div className="space-y-6">
+                {/* Payment Email Section */}
+                <div>
+                  <label htmlFor="payment-email" className="block text-sm font-medium text-gray-800 mb-1">
+                    Payment Email
+                  </label>
+                  <div className="flex gap-4">
+                    <input
+                      type="email"
+                      id="payment-email"
+                      value={paymentEmail}
+                      onChange={(e) => setPaymentEmail(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="Enter your payment email"
+                    />
+                    <button
+                      onClick={handleSavePaymentEmail}
+                      disabled={isSavingEmail || paymentEmail === userData?.paymentEmail}
+                      className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-md font-medium transition-colors hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {isSavingEmail ? (
+                        <>
+                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>💾</span>
+                          <span>Save Changes</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  {emailSaveError && (
+                    <p className="mt-2 text-sm text-red-600">{emailSaveError}</p>
+                  )}
+                  {emailSaveSuccess && (
+                    <p className="mt-2 text-sm text-green-600">{emailSaveSuccess}</p>
+                  )}
+                </div>
+
+                {/* Discord ID Section */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">
+                    Discord ID
+                  </label>
+                  <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-gray-800">
+                    {userData?.discord_id || 'Not linked'}
+                  </div>
+                </div>
+
+                {/* TikTok Information Section */}
+                {userData?.tiktokData && (
+                  <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-800">TikTok Account</h3>
+                        {userData.tiktokVerified && (
+                          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                            Verified ✓
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-start gap-6">
+                        <div className="flex-shrink-0">
+                          <Image
+                            src={userData.tiktokData.profileImage}
+                            alt={`${userData.tiktokData.uniqueId}'s profile`}
+                            width={100}
+                            height={100}
+                            className="rounded-full"
+                          />
+                        </div>
+                        
+                        <div className="flex-1 space-y-2">
+                          <div>
+                            <h4 className="text-lg font-medium text-gray-800">
+                              @{userData.tiktokData.uniqueId}
+                            </h4>
+                            <p className="text-gray-600">{userData.tiktokData.title}</p>
+                          </div>
+                          
+                          <p className="text-gray-700 text-sm">
+                            {userData.tiktokData.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -5,6 +5,13 @@ export type CampaignContribution = {
   name: string;
 };
 
+export type TikTokData = {
+  description: string;
+  profileImage: string;
+  title: string;
+  uniqueId: string;
+};
+
 export type User = {
   id: string;
   email: string;
@@ -15,4 +22,6 @@ export type User = {
   groups?: string[];
   campaign_contributions?: CampaignContribution[];
   discord_id?: string;
+  tiktokData?: TikTokData;
+  tiktokVerified?: boolean;
 };
