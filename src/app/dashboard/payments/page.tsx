@@ -11,12 +11,45 @@ import { User } from '@/types/user';
 import { doc, getDoc, collection, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
+interface ReceiptData {
+  receiptId: string;
+  creator: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    paymentEmail: string;
+  };
+  processedBy: {
+    id: string;
+    name: string;
+  };
+  payment: {
+    amount: number;
+    currency: string;
+    method: string;
+    status: string;
+    batchId: string;
+    timestamp: number;
+  };
+  summary: {
+    netAmount: number;
+    platformFee: number;
+    totalVideos: number;
+    totalViews: number;
+    unpaidVideosCount: number;
+  };
+  metadata: {
+    paymentReference: string;
+  };
+}
+
 export default function PaymentsPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
-  const [receiptData, setReceiptData] = useState<any>(null);
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [isLoadingCampaign, setIsLoadingCampaign] = useState(false);
   const [creatorDetails, setCreatorDetails] = useState<Record<string, User>>({});
   const [isLoadingCreators, setIsLoadingCreators] = useState(false);
@@ -716,7 +749,7 @@ export default function PaymentsPage() {
             </div>
             
             <div className="space-y-4">
-              {selectedCampaign?.receipts?.map((receipt: any, index: number) => (
+              {selectedCampaign?.receipts?.map((receipt: ReceiptData, index: number) => (
                 <div key={receipt.receiptId} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -788,13 +821,13 @@ export default function PaymentsPage() {
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-600">Paid Videos:</span>
                         <span className="text-sm font-medium text-green-600">
-                          {receipt.videos?.paid?.length || 0}
+                          {receipt.summary.totalVideos - receipt.summary.unpaidVideosCount}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-600">Unpaid Videos:</span>
                         <span className="text-sm font-medium text-yellow-600">
-                          {receipt.videos?.unpaid?.length || 0}
+                          {receipt.summary.unpaidVideosCount}
                         </span>
                       </div>
                     </div>
