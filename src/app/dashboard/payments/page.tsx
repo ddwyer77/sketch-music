@@ -21,6 +21,7 @@ export default function PaymentsPage() {
   const [creatorDetails, setCreatorDetails] = useState<Record<string, User>>({});
   const [isLoadingCreators, setIsLoadingCreators] = useState(false);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [showCampaignReceiptsModal, setShowCampaignReceiptsModal] = useState(false);
   
   // Fetch campaigns with proper cleanup
   useEffect(() => {
@@ -292,35 +293,13 @@ export default function PaymentsPage() {
             <h2 className="text-lg font-medium text-gray-900 mb-4">Select Campaign</h2>
             <select 
               className="w-full p-2 border border-gray-300 rounded-lg text-gray-900"
-              onChange={async (e) => {
+              onChange={(e) => {
                 const campaignId = e.target.value;
                 if (!campaignId) return;
                 
-                setIsLoadingCampaign(true);
-                // Update metrics
-                try {
-                  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/update-metrics`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ campaignIds: [campaignId] }),
-                  });
-                  
-                  if (!response.ok) {
-                    throw new Error('Failed to update metrics');
-                  }
-                  
-                  // Refresh campaign data
-                  const updatedCampaign = campaigns.find(c => c.id === campaignId);
-                  if (updatedCampaign) {
-                    setSelectedCampaign(updatedCampaign);
-                  }
-                } catch (error) {
-                  console.error('Error updating metrics:', error);
-                  toast.error('Failed to update campaign metrics');
-                } finally {
-                  setIsLoadingCampaign(false);
+                const selectedCampaign = campaigns.find(c => c.id === campaignId);
+                if (selectedCampaign) {
+                  setSelectedCampaign(selectedCampaign);
                 }
               }}
             >
@@ -363,6 +342,15 @@ export default function PaymentsPage() {
                     <h3 className="text-xl font-bold text-gray-900">{selectedCampaign.name}</h3>
                     <p className="text-sm text-gray-600">Campaign ID: {selectedCampaign.id}</p>
                   </div>
+                  <button
+                    onClick={() => setShowCampaignReceiptsModal(true)}
+                    className="ml-auto bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2 rounded-lg flex items-center gap-2 hover:cursor-pointer"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                    </svg>
+                    <span>{selectedCampaign.receipts?.length || 0} Receipts</span>
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-4 gap-4 text-sm">
@@ -385,232 +373,265 @@ export default function PaymentsPage() {
                 </div>
               </div>
 
-              {/* Creators List */}
-              <div className="mb-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-medium text-gray-900">Creators</h2>
-                  <button
-                    onClick={async () => {
-                      if (!selectedCampaign.videos?.length) return;
-                      
-                      const userIds = Array.from(new Set(selectedCampaign.videos.map((v: Video) => v.author_id)));
-                      try {
-                        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/pay-creators`, {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                          },
-                          body: JSON.stringify({
-                            userIds,
-                            campaignId: selectedCampaign.id,
-                            actorId: user?.uid,
-                          }),
-                        });
-                        
-                        if (!response.ok) {
-                          throw new Error('Failed to pay creators');
-                        }
-                        
-                        const data = await response.json();
-                        setReceiptData(data);
-                        setShowReceiptModal(true);
-                        toast.success('Successfully paid all creators');
-                      } catch (error) {
-                        console.error('Error paying creators:', error);
-                        toast.error('Failed to pay creators');
-                      }
-                    }}
-                    className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg hover:cursor-pointer"
-                  >
-                    Pay All Users
-                  </button>
+              {!selectedCampaign.isComplete ? (
+                <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-600" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-yellow-800 font-medium">Campaign is still active. Complete campaign before sending payments</p>
+                  </div>
                 </div>
+              ) : (
+                <>
+                  {/* Creators List */}
+                  <div className="mb-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-lg font-medium text-gray-900">Creators</h2>
+                      <button
+                        onClick={async () => {
+                          if (!selectedCampaign.videos?.length) return;
+                          
+                          const userIds = Array.from(new Set(selectedCampaign.videos.map((v: Video) => v.author_id)));
+                          try {
+                            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/pay-creators`, {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify({
+                                userIds,
+                                campaignId: selectedCampaign.id,
+                                actorId: user?.uid,
+                              }),
+                            });
+                            
+                            if (!response.ok) {
+                              throw new Error('Failed to pay creators');
+                            }
+                            
+                            const data = await response.json();
+                            setReceiptData(data);
+                            setShowReceiptModal(true);
+                            toast.success('Successfully paid all creators');
+                          } catch (error) {
+                            console.error('Error paying creators:', error);
+                            toast.error('Failed to pay creators');
+                          }
+                        }}
+                        className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg hover:cursor-pointer"
+                      >
+                        Pay All Users
+                      </button>
+                    </div>
 
-                <div className="space-y-4">
-                  {(() => {
-                    // Group videos by author_id and calculate total earnings
-                    const creatorMap = new Map();
-                    selectedCampaign.videos?.forEach(video => {
-                      if (!video.author_id) return;
-                      
-                      const existing = creatorMap.get(video.author_id) || {
-                        author_id: video.author_id,
-                        totalEarnings: 0,
-                        videos: [],
-                        allPaid: true,
-                      };
-                      
-                      existing.totalEarnings += video.earnings || 0;
-                      existing.videos.push(video);
-                      if (!video.hasBeenPaid) {
-                        existing.allPaid = false;
-                      }
-                      
-                      creatorMap.set(video.author_id, existing);
-                    });
+                    <div className="space-y-4">
+                      {(() => {
+                        // Group videos by author_id and calculate total earnings
+                        const creatorMap = new Map();
+                        selectedCampaign.videos?.forEach(video => {
+                          if (!video.author_id) return;
+                          
+                          const existing = creatorMap.get(video.author_id) || {
+                            author_id: video.author_id,
+                            totalEarnings: 0,
+                            videos: [],
+                            allPaid: true,
+                          };
+                          
+                          existing.totalEarnings += video.earnings || 0;
+                          existing.videos.push(video);
+                          if (!video.hasBeenPaid) {
+                            existing.allPaid = false;
+                          }
+                          
+                          creatorMap.set(video.author_id, existing);
+                        });
 
-                    return Array.from(creatorMap.values()).map(creator => {
-                      const userDetails = creatorDetails[creator.author_id];
-                      const paymentEmail = userDetails?.paymentEmail;
-                      
-                      return (
-                        <div key={creator.author_id} className="border border-gray-200 rounded-lg p-4">
-                          <div className="flex justify-between items-start">
-                            <div className="space-y-2">
-                              <div>
-                                <h4 className="font-medium text-gray-900">
-                                  {userDetails ? `${userDetails.firstName} ${userDetails.lastName}` : 'Unknown User'}
-                                </h4>
-                                <p className="text-sm text-gray-600">{userDetails?.email || 'No email available'}</p>
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm text-gray-600">Payment Email:</span>
-                                {paymentEmail ? (
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-sm text-gray-900">{paymentEmail}</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
+                        return Array.from(creatorMap.values()).map(creator => {
+                          const userDetails = creatorDetails[creator.author_id];
+                          const paymentEmail = userDetails?.paymentEmail;
+                          
+                          return (
+                            <div key={creator.author_id} className="border border-gray-200 rounded-lg p-4">
+                              <div className="flex justify-between items-start">
+                                <div className="space-y-2">
+                                  <div>
+                                    <h4 className="font-medium text-gray-900">
+                                      {userDetails ? `${userDetails.firstName} ${userDetails.lastName}` : 'Unknown User'}
+                                    </h4>
+                                    <p className="text-sm text-gray-600">{userDetails?.email || 'No email available'}</p>
                                   </div>
-                                ) : (
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-sm text-gray-500">N/A</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                    </svg>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-600">Payment Email:</span>
+                                    {paymentEmail ? (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-sm text-gray-900">{paymentEmail}</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-sm text-gray-500">N/A</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                        </svg>
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                              </div>
 
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm text-gray-600">Total Earnings:</span>
-                                <span className="text-sm font-medium text-gray-900">${creator.totalEarnings.toFixed(2)}</span>
-                              </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-600">Total Earnings:</span>
+                                    <span className="text-sm font-medium text-gray-900">${creator.totalEarnings.toFixed(2)}</span>
+                                  </div>
 
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm text-gray-600">Videos Submitted:</span>
-                                <span className="text-sm font-medium text-gray-900">{creator.videos.length}</span>
-                              </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-600">Videos Submitted:</span>
+                                    <span className="text-sm font-medium text-gray-900">{creator.videos.length}</span>
+                                  </div>
 
-                              {/* Video Itemization */}
-                              <div className="mt-2 space-y-2">
-                                {creator.videos.map((video: Video, index: number) => (
-                                  <div key={video.id} className="text-sm">
-                                    <a 
-                                      href={video.url} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="text-primary hover:text-primary-dark hover:cursor-pointer"
-                                    >
-                                      Video {index + 1}
-                                    </a>
-                                    {' - '}
-                                    <span className="text-gray-600">{video.title || 'Untitled Video'}</span>
-                                    {' - '}
-                                    <span className="font-medium text-gray-800">${video.status === 'approved' ? (video.earnings || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}</span>
-                                    {' '}
-                                    <span className={`${
-                                      video.status === 'approved' ? 'text-green-600' :
-                                      video.status === 'denied' ? 'text-red-600' :
-                                      'text-yellow-500 font-bold'
+                                  {/* Video Itemization */}
+                                  <div className="mt-2 space-y-2">
+                                    {creator.videos.map((video: Video, index: number) => (
+                                      <div key={video.id} className="text-sm">
+                                        <a 
+                                          href={video.url} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="text-primary hover:text-primary-dark hover:cursor-pointer"
+                                        >
+                                          Video {index + 1}
+                                        </a>
+                                        {' - '}
+                                        <span className="text-gray-600">{video.title || 'Untitled Video'}</span>
+                                        {' - '}
+                                        <span className="font-medium text-gray-800">${video.status === 'approved' ? (video.earnings || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}</span>
+                                        {' '}
+                                        <span className={`${
+                                          video.status === 'approved' ? 'text-green-600' :
+                                          video.status === 'denied' ? 'text-red-600' :
+                                          'text-yellow-500 font-bold'
+                                        }`}>
+                                          {video.status?.charAt(0).toUpperCase() + video.status?.slice(1) || 'Pending'}
+                                        </span>
+                                        {' - '}
+                                        <span className="text-gray-600">{video.views?.toLocaleString() || 0} views</span>
+                                      </div>
+                                    ))}
+                                    <div className="pt-1 border-t border-gray-200">
+                                      <span className="text-sm text-gray-600">Total Payout: </span>
+                                      <span className="text-sm font-bold text-gray-800">
+                                        ${creator.videos
+                                          .filter((v: Video) => v.status === 'approved')
+                                          .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0)
+                                          .toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                      </span>
+                                    </div>
+                                    {creator.videos.some((v: Video) => v.status === 'pending') && (
+                                      <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                                        <p className="text-sm text-yellow-800">
+                                          ⚠️ You have videos still pending. Please approve or deny all videos before submitting payment.
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <span className={`text-sm ${
+                                      creator.videos
+                                        .filter((v: Video) => v.status === 'approved')
+                                        .every((v: Video) => v.hasBeenPaid) 
+                                        ? 'text-green-600' 
+                                        : 'text-yellow-600'
                                     }`}>
-                                      {video.status?.charAt(0).toUpperCase() + video.status?.slice(1) || 'Pending'}
+                                      {creator.videos
+                                        .filter((v: Video) => v.status === 'approved')
+                                        .every((v: Video) => v.hasBeenPaid)
+                                        ? 'Paid'
+                                        : 'Unpaid'}
                                     </span>
-                                    {' - '}
-                                    <span className="text-gray-600">{video.views?.toLocaleString() || 0} views</span>
-                                  </div>
-                                ))}
-                                <div className="pt-1 border-t border-gray-200">
-                                  <span className="text-sm text-gray-600">Total Payout: </span>
-                                  <span className="text-sm font-bold text-gray-800">
-                                    ${creator.videos
+                                    {!creator.videos
                                       .filter((v: Video) => v.status === 'approved')
-                                      .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0)
-                                      .toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                  </span>
-                                </div>
-                                {creator.videos.some((v: Video) => v.status === 'pending') && (
-                                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                                    <p className="text-sm text-yellow-800">
-                                      ⚠️ You have videos still pending. Users will not be paid unless their video has been approved.
-                                    </p>
+                                      .every((v: Video) => v.hasBeenPaid) && 
+                                      creator.videos
+                                        .filter((v: Video) => v.status === 'approved')
+                                        .some((v: Video) => v.hasBeenPaid) && (
+                                      <span className="text-sm text-yellow-600">
+                                        (Partial payment detected)
+                                      </span>
+                                    )}
                                   </div>
-                                )}
-                              </div>
+                                </div>
 
-                              <div className="flex items-center gap-2">
-                                <span className={`text-sm ${
-                                  creator.videos
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/pay-creators`, {
+                                        method: 'POST',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({
+                                          userIds: [creator.author_id],
+                                          campaignId: selectedCampaign.id,
+                                          actorId: user?.uid,
+                                        }),
+                                      });
+                                      
+                                      if (!response.ok) {
+                                        throw new Error('Failed to pay creator');
+                                      }
+                                      
+                                      const data = await response.json();
+                                      setReceiptData(data);
+                                      setShowReceiptModal(true);
+                                      toast.success('Successfully paid creator');
+                                    } catch (error) {
+                                      console.error('Error paying creator:', error);
+                                      toast.error('Failed to pay creator');
+                                    }
+                                  }}
+                                  disabled={creator.videos
                                     .filter((v: Video) => v.status === 'approved')
-                                    .every((v: Video) => v.hasBeenPaid) 
-                                    ? 'text-green-600' 
-                                    : 'text-yellow-600'
-                                }`}>
-                                  {creator.videos
-                                    .filter((v: Video) => v.status === 'approved')
-                                    .every((v: Video) => v.hasBeenPaid)
-                                    ? 'Paid'
-                                    : 'Unpaid'}
-                                </span>
-                                {!creator.videos
-                                  .filter((v: Video) => v.status === 'approved')
-                                  .every((v: Video) => v.hasBeenPaid) && 
-                                  creator.videos
-                                    .filter((v: Video) => v.status === 'approved')
-                                    .some((v: Video) => v.hasBeenPaid) && (
-                                  <span className="text-sm text-yellow-600">
-                                    (Partial payment detected)
-                                  </span>
-                                )}
+                                    .every((v: Video) => v.hasBeenPaid) || 
+                                    creator.videos.some((v: Video) => v.status === 'pending')}
+                                  className={`${
+                                    creator.videos
+                                      .filter((v: Video) => v.status === 'approved')
+                                      .every((v: Video) => v.hasBeenPaid) || 
+                                    creator.videos.some((v: Video) => v.status === 'pending')
+                                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                      : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300 hover:cursor-pointer'
+                                  } px-4 py-2 rounded-lg border`}
+                                  title={
+                                    creator.videos
+                                      .filter((v: Video) => v.status === 'approved')
+                                      .every((v: Video) => v.hasBeenPaid)
+                                      ? "Creator has been paid"
+                                      : creator.videos.some((v: Video) => v.status === 'pending')
+                                      ? "Please approve or deny any pending videos before paying creator"
+                                      : "Pay Creator"
+                                  }
+                                >
+                                  Pay Creator
+                                </button>
                               </div>
                             </div>
+                          );
+                        });
+                      })()}
+                    </div>
 
-                            <button
-                              onClick={async () => {
-                                try {
-                                  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/pay-creators`, {
-                                    method: 'POST',
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({
-                                      userIds: [creator.author_id],
-                                      campaignId: selectedCampaign.id,
-                                      actorId: user?.uid,
-                                    }),
-                                  });
-                                  
-                                  if (!response.ok) {
-                                    throw new Error('Failed to pay creator');
-                                  }
-                                  
-                                  const data = await response.json();
-                                  setReceiptData(data);
-                                  setShowReceiptModal(true);
-                                  toast.success('Successfully paid creator');
-                                } catch (error) {
-                                  console.error('Error paying creator:', error);
-                                  toast.error('Failed to pay creator');
-                                }
-                              }}
-                              className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:cursor-pointer"
-                            >
-                              Pay Creator
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
-
-                {isLoadingCreators && (
-                  <div className="flex justify-center items-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    {isLoadingCreators && (
+                      <div className="flex justify-center items-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </>
+              )}
             </>
           )}
         </div>
@@ -634,6 +655,113 @@ export default function PaymentsPage() {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Campaign Receipts Modal */}
+      {showCampaignReceiptsModal && (
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-lg w-full max-w-4xl p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Campaign Receipts</h3>
+              <button
+                onClick={() => setShowCampaignReceiptsModal(false)}
+                className="text-gray-500 hover:text-gray-700 hover:cursor-pointer"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {selectedCampaign?.receipts?.map((receipt: any, index: number) => (
+                <div key={receipt.receiptId} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900">Receipt #{index + 1}</h4>
+                      <p className="text-sm text-gray-600">ID: {receipt.receiptId}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-600">Processed by: {receipt.processedBy?.name || 'Unknown'}</p>
+                      <p className="text-sm text-gray-600">
+                        {new Date(receipt.payment.timestamp).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6 mb-4">
+                    <div>
+                      <h5 className="text-sm font-medium text-gray-900 mb-2">Creator Details</h5>
+                      <div className="space-y-1">
+                        <p className="text-sm text-gray-600">
+                          Name: {receipt.creator.firstName} {receipt.creator.lastName}
+                        </p>
+                        <p className="text-sm text-gray-600">Email: {receipt.creator.email}</p>
+                        <p className="text-sm text-gray-600">Payment Email: {receipt.creator.paymentEmail}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <h5 className="text-sm font-medium text-gray-900 mb-2">Payment Details</h5>
+                      <div className="space-y-1">
+                        <p className="text-sm text-gray-600">
+                          Amount: ${receipt.payment.amount.toFixed(2)} {receipt.payment.currency}
+                        </p>
+                        <p className="text-sm text-gray-600">Method: {receipt.payment.method}</p>
+                        <p className="text-sm text-gray-600">Status: {receipt.payment.status}</p>
+                        <p className="text-sm text-gray-600">Batch ID: {receipt.payment.batchId}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-gray-200 pt-4">
+                    <h5 className="text-sm font-medium text-gray-900 mb-2">Summary</h5>
+                    <div className="grid grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-600">Net Amount</p>
+                        <p className="text-sm font-medium text-gray-900">${receipt.summary.netAmount.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Platform Fee</p>
+                        <p className="text-sm font-medium text-gray-900">${receipt.summary.platformFee.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Total Videos</p>
+                        <p className="text-sm font-medium text-gray-900">{receipt.summary.totalVideos}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Total Views</p>
+                        <p className="text-sm font-medium text-gray-900">{receipt.summary.totalViews.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">Paid Videos:</span>
+                        <span className="text-sm font-medium text-green-600">
+                          {receipt.videos?.paid?.length || 0}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">Unpaid Videos:</span>
+                        <span className="text-sm font-medium text-yellow-600">
+                          {receipt.videos?.unpaid?.length || 0}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
