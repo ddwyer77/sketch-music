@@ -123,7 +123,22 @@ export default function PaymentsPage() {
     // Group by month
     const map = new Map<string, { income: number; expenses: number }>();
     transactions.forEach((t) => {
-      const d = new Date(Number(t.createdAt));
+      // Handle different timestamp formats
+      let d: Date;
+      if (t.createdAt && typeof t.createdAt === 'object' && 'toDate' in t.createdAt) {
+        // Firestore timestamp
+        d = (t.createdAt as any).toDate();
+      } else if (typeof t.createdAt === 'string') {
+        // String timestamp
+        d = new Date(t.createdAt);
+      } else if (typeof t.createdAt === 'number') {
+        // Number timestamp (milliseconds)
+        d = new Date(t.createdAt);
+      } else {
+        // Fallback to current date
+        d = new Date();
+      }
+      
       const label = getMonthLabel(d);
       const entry = map.get(label) || { income: 0, expenses: 0 };
       
@@ -164,8 +179,22 @@ export default function PaymentsPage() {
   };
 
   // Function to format date
-  const formatDate = (dateInput: string | number) => {
-    const date = new Date(Number(dateInput));
+  const formatDate = (dateInput: string | number | any) => {
+    let date: Date;
+    if (dateInput && typeof dateInput === 'object' && 'toDate' in dateInput) {
+      // Firestore timestamp
+      date = dateInput.toDate();
+    } else if (typeof dateInput === 'string') {
+      // String timestamp
+      date = new Date(dateInput);
+    } else if (typeof dateInput === 'number') {
+      // Number timestamp (milliseconds)
+      date = new Date(dateInput);
+    } else {
+      // Fallback to current date
+      date = new Date();
+    }
+    
     return date.toLocaleDateString('en-US', {
       year: 'numeric', 
       month: 'short', 
@@ -321,7 +350,18 @@ export default function PaymentsPage() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      color: '#374151'
+                    }}
+                    labelStyle={{
+                      color: '#374151',
+                      fontWeight: '600'
+                    }}
+                  />
                   <Line type="monotone" dataKey="income" stroke="#10B981" name="Income" />
                   <Line type="monotone" dataKey="expenses" stroke="#EF4444" name="Expenses" />
                 </LineChart>
@@ -1376,16 +1416,9 @@ export default function PaymentsPage() {
                 const data = await response.json();
                 toast.success('Deposit recorded successfully!');
                 
-                // Reset form and close modal
-                setDepositForm({
-                  campaignId: '',
-                  amount: '',
-                  paymentMethod: 'paypal',
-                  paymentReference: ''
-                });
-                setShowDepositModal(false);
+                // Reload the page to show the new transaction
+                window.location.reload();
                 
-                // The transactions will automatically reload due to the useCollection hook
               } catch (error) {
                 console.error('Error recording deposit:', error);
                 toast.error(error instanceof Error ? error.message : 'Failed to record deposit');
