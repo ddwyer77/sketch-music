@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@/hooks';
 import { toast } from 'react-hot-toast';
@@ -23,10 +23,13 @@ export default function BugsPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  // Create stable query constraints to prevent infinite loop
+  const queryConstraints = useMemo(() => [orderBy('order', 'asc')], []);
+
   // Fetch bugs with ordering
   const { documents: bugs = [], loading } = useQuery<Bug>(
     'bugs',
-    [orderBy('order', 'asc')]
+    queryConstraints
   );
 
   const activeBugs = bugs.filter(bug => bug.status === 'active');
