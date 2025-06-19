@@ -8,7 +8,7 @@ import { useQuery, useCollection } from '@/hooks';
 import { Campaign, Video, Transaction } from '@/types/campaign';
 import { useAuth } from '@/contexts/AuthContext';
 import { User } from '@/types/user';
-import { doc, getDoc, collection, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, collection, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 interface ReceiptData {
@@ -127,7 +127,7 @@ export default function PaymentsPage() {
       let d: Date;
       if (t.createdAt && typeof t.createdAt === 'object' && 'toDate' in t.createdAt) {
         // Firestore timestamp
-        d = (t.createdAt as any).toDate();
+        d = (t.createdAt as Timestamp).toDate();
       } else if (typeof t.createdAt === 'string') {
         // String timestamp
         d = new Date(t.createdAt);
@@ -179,7 +179,7 @@ export default function PaymentsPage() {
   };
 
   // Function to format date
-  const formatDate = (dateInput: string | number | any) => {
+  const formatDate = (dateInput: string | number | Timestamp) => {
     let date: Date;
     if (dateInput && typeof dateInput === 'object' && 'toDate' in dateInput) {
       // Firestore timestamp
@@ -385,7 +385,7 @@ export default function PaymentsPage() {
               </div>
             </div>
             <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
-              <p className="text-sm text-blue-700">If you recently made a payment and don't see it here, please refresh the page.</p>
+              <p className="text-sm text-blue-700">If you recently made a payment and don&apos;t see it here, please refresh the page.</p>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -430,10 +430,10 @@ export default function PaymentsPage() {
                   ) : (
                     sortedTransactions.map((transaction) => {
                       const recipient =
-                        (transaction as any).targetFirstName || (transaction as any).targetLastName
-                          ? `${(transaction as any).targetFirstName || ''} ${(transaction as any).targetLastName || ''}`.trim() || 'N/A'
+                        (transaction as Transaction & { targetFirstName?: string; targetLastName?: string }).targetFirstName || (transaction as Transaction & { targetFirstName?: string; targetLastName?: string }).targetLastName
+                          ? `${(transaction as Transaction & { targetFirstName?: string; targetLastName?: string }).targetFirstName || ''} ${(transaction as Transaction & { targetFirstName?: string; targetLastName?: string }).targetLastName || ''}`.trim() || 'N/A'
                           : 'N/A';
-                      const isTestPayment = (transaction as any).isTestPayment === true;
+                      const isTestPayment = (transaction as Transaction & { isTestPayment?: boolean }).isTestPayment === true;
                       return (
                         <tr
                           key={transaction.id}
@@ -1239,8 +1239,8 @@ export default function PaymentsPage() {
                   </h5>
                   <div className="space-y-2">
                     <p className="text-lg font-medium text-gray-900">
-                      {(selectedTransaction as any).targetFirstName || (selectedTransaction as any).targetLastName
-                        ? `${(selectedTransaction as any).targetFirstName || ''} ${(selectedTransaction as any).targetLastName || ''}`.trim() || 'N/A'
+                      {(selectedTransaction as Transaction & { targetFirstName?: string; targetLastName?: string }).targetFirstName || (selectedTransaction as Transaction & { targetFirstName?: string; targetLastName?: string }).targetLastName
+                        ? `${(selectedTransaction as Transaction & { targetFirstName?: string; targetLastName?: string }).targetFirstName || ''} ${(selectedTransaction as Transaction & { targetFirstName?: string; targetLastName?: string }).targetLastName || ''}`.trim() || 'N/A'
                         : 'N/A'}
                     </p>
                     <p className="text-sm text-gray-600">ID: {selectedTransaction.targetUserId}</p>
