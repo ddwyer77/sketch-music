@@ -579,257 +579,375 @@ export default function PaymentsPage() {
                             toast.error('Failed to pay creators');
                           }
                         }}
-                        className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg hover:cursor-pointer"
+                        disabled={(() => {
+                          if (!selectedCampaign.videos?.length) return true;
+                          
+                          // Group videos by author_id and check for disabling conditions
+                          const creatorMap = new Map();
+                          selectedCampaign.videos.forEach(video => {
+                            if (!video.author_id) return;
+                            
+                            const existing = creatorMap.get(video.author_id) || {
+                              author_id: video.author_id,
+                              totalEarnings: 0,
+                              videos: [],
+                              allPaid: true,
+                            };
+                            
+                            existing.totalEarnings += video.earnings || 0;
+                            existing.videos.push(video);
+                            if (!video.hasBeenPaid) {
+                              existing.allPaid = false;
+                            }
+                            
+                            creatorMap.set(video.author_id, existing);
+                          });
+
+                          // Check if any creator has disabling conditions (same logic as individual buttons)
+                          return Array.from(creatorMap.values()).some(creator => {
+                            return creator.videos
+                              .filter((v: Video) => v.status === 'approved')
+                              .every((v: Video) => v.hasBeenPaid) || // All approved videos already paid
+                              creator.videos.some((v: Video) => v.status === 'pending') || // Has pending videos
+                              creator.videos
+                                .filter((v: Video) => v.status === 'approved')
+                                .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0; // No earnings from approved videos
+                          });
+                        })()}
+                        className={`${
+                          (() => {
+                            if (!selectedCampaign.videos?.length) return true;
+                            
+                            // Group videos by author_id and check for disabling conditions
+                            const creatorMap = new Map();
+                            selectedCampaign.videos.forEach(video => {
+                              if (!video.author_id) return;
+                              
+                              const existing = creatorMap.get(video.author_id) || {
+                                author_id: video.author_id,
+                                totalEarnings: 0,
+                                videos: [],
+                                allPaid: true,
+                              };
+                              
+                              existing.totalEarnings += video.earnings || 0;
+                              existing.videos.push(video);
+                              if (!video.hasBeenPaid) {
+                                existing.allPaid = false;
+                              }
+                              
+                              creatorMap.set(video.author_id, existing);
+                            });
+
+                            // Check if any creator has disabling conditions (same logic as individual buttons)
+                            return Array.from(creatorMap.values()).some(creator => {
+                              return creator.videos
+                                .filter((v: Video) => v.status === 'approved')
+                                .every((v: Video) => v.hasBeenPaid) || // All approved videos already paid
+                                creator.videos.some((v: Video) => v.status === 'pending') || // Has pending videos
+                                creator.videos
+                                  .filter((v: Video) => v.status === 'approved')
+                                  .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0; // No earnings from approved videos
+                            });
+                          })()
+                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                            : 'bg-primary hover:bg-primary-dark text-white hover:cursor-pointer'
+                        } px-4 py-2 rounded-lg`}
                       >
                         Pay All Users
                       </button>
                     </div>
 
-                    <div className="space-y-4">
-                      {(() => {
-                        // Group videos by author_id and calculate total earnings
-                        const creatorMap = new Map();
-                        selectedCampaign.videos?.forEach(video => {
-                          if (!video.author_id) return;
-                          
-                          const existing = creatorMap.get(video.author_id) || {
-                            author_id: video.author_id,
-                            totalEarnings: 0,
-                            videos: [],
-                            allPaid: true,
-                          };
-                          
-                          existing.totalEarnings += video.earnings || 0;
-                          existing.videos.push(video);
-                          if (!video.hasBeenPaid) {
-                            existing.allPaid = false;
-                          }
-                          
-                          creatorMap.set(video.author_id, existing);
-                        });
+                    {/* Alert message for disabled "Pay All Users" button */}
+                    {(() => {
+                      if (!selectedCampaign.videos?.length) return null;
+                      
+                      // Group videos by author_id and check for disabling conditions
+                      const creatorMap = new Map();
+                      selectedCampaign.videos.forEach(video => {
+                        if (!video.author_id) return;
+                        
+                        const existing = creatorMap.get(video.author_id) || {
+                          author_id: video.author_id,
+                          totalEarnings: 0,
+                          videos: [],
+                          allPaid: true,
+                        };
+                        
+                        existing.totalEarnings += video.earnings || 0;
+                        existing.videos.push(video);
+                        if (!video.hasBeenPaid) {
+                          existing.allPaid = false;
+                        }
+                        
+                        creatorMap.set(video.author_id, existing);
+                      });
 
-                        return Array.from(creatorMap.values()).map(creator => {
-                          const userDetails = creatorDetails[creator.author_id];
-                          const paymentEmail = userDetails?.paymentEmail;
-                          
-                          return (
-                            <div key={creator.author_id} className="border border-gray-200 rounded-lg p-4">
-                              <div className="flex justify-between items-start">
-                                <div className="space-y-2">
-                                  <div>
-                                    <h4 className="font-medium text-gray-900">
-                                      {userDetails ? `${userDetails.firstName} ${userDetails.lastName}` : 'Unknown User'}
-                                    </h4>
-                                    <p className="text-sm text-gray-600">{userDetails?.email || 'No email available'}</p>
-                                  </div>
-                                  
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm text-gray-600">Payment Email:</span>
-                                    {paymentEmail ? (
-                                      <div className="flex items-center gap-1">
-                                        <span className="text-sm text-gray-900">{paymentEmail}</span>
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                        </svg>
-                                      </div>
-                                    ) : (
-                                      <div className="flex items-center gap-1">
-                                        <span className="text-sm text-gray-500">N/A</span>
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                        </svg>
-                                      </div>
-                                    )}
-                                  </div>
+                      const creatorsWithIssues = Array.from(creatorMap.values()).filter(creator => {
+                        return creator.videos
+                          .filter((v: Video) => v.status === 'approved')
+                          .every((v: Video) => v.hasBeenPaid) || // All approved videos already paid
+                          creator.videos.some((v: Video) => v.status === 'pending') || // Has pending videos
+                          creator.videos
+                            .filter((v: Video) => v.status === 'approved')
+                            .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0; // No earnings from approved videos
+                      });
 
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm text-gray-600">Total Earnings:</span>
-                                    <span className="text-sm font-medium text-gray-900">${creator.totalEarnings.toFixed(2)}</span>
-                                  </div>
+                      if (creatorsWithIssues.length > 0) {
+                        return (
+                          <div className="mt-2 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-center">
+                            <p className="text-gray-600 text-sm">Pay all users button unavailable. Payment not applicable for some users</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
 
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm text-gray-600">Videos Submitted:</span>
-                                    <span className="text-sm font-medium text-gray-900">{creator.videos.length}</span>
-                                  </div>
+                  <div className="space-y-4">
+                    {(() => {
+                      // Group videos by author_id and calculate total earnings
+                      const creatorMap = new Map();
+                      selectedCampaign.videos?.forEach(video => {
+                        if (!video.author_id) return;
+                        
+                        const existing = creatorMap.get(video.author_id) || {
+                          author_id: video.author_id,
+                          totalEarnings: 0,
+                          videos: [],
+                          allPaid: true,
+                        };
+                        
+                        existing.totalEarnings += video.earnings || 0;
+                        existing.videos.push(video);
+                        if (!video.hasBeenPaid) {
+                          existing.allPaid = false;
+                        }
+                        
+                        creatorMap.set(video.author_id, existing);
+                      });
 
-                                  {/* Video Itemization */}
-                                  <div className="mt-2 space-y-2">
-                                    {creator.videos.map((video: Video, index: number) => (
-                                      <div key={video.id} className="text-sm">
-                                        <a 
-                                          href={video.url} 
-                                          target="_blank" 
-                                          rel="noopener noreferrer"
-                                          className="text-primary hover:text-primary-dark hover:cursor-pointer"
-                                        >
-                                          Video {index + 1}
-                                        </a>
-                                        {' - '}
-                                        <span className="text-gray-600">{video.title || 'Untitled Video'}</span>
-                                        {' - '}
-                                        <span className="font-medium text-gray-800">${video.status === 'approved' ? (video.earnings || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}</span>
-                                        {' '}
-                                        <span className={`${
-                                          video.status === 'approved' ? 'text-green-600' :
-                                          video.status === 'denied' ? 'text-red-600' :
-                                          'text-yellow-500 font-bold'
-                                        }`}>
-                                          {video.status?.charAt(0).toUpperCase() + video.status?.slice(1) || 'Pending'}
-                                        </span>
-                                        {' - '}
-                                        <span className="text-gray-600">{video.views?.toLocaleString() || 0} views</span>
-                                      </div>
-                                    ))}
-                                    <div className="pt-1 border-t border-gray-200">
-                                      <span className="text-sm text-gray-600">Total Payout: </span>
-                                      <span className="text-sm font-bold text-gray-800">
-                                        ${creator.videos
-                                          .filter((v: Video) => v.status === 'approved')
-                                          .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0)
-                                          .toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                      </span>
+                      return Array.from(creatorMap.values()).map(creator => {
+                        const userDetails = creatorDetails[creator.author_id];
+                        const paymentEmail = userDetails?.paymentEmail;
+                        
+                        return (
+                          <div key={creator.author_id} className="border border-gray-200 rounded-lg p-4">
+                            <div className="flex justify-between items-start">
+                              <div className="space-y-2">
+                                <div>
+                                  <h4 className="font-medium text-gray-900">
+                                    {userDetails ? `${userDetails.firstName} ${userDetails.lastName}` : 'Unknown User'}
+                                  </h4>
+                                  <p className="text-sm text-gray-600">{userDetails?.email || 'No email available'}</p>
+                                </div>
+                                
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-gray-600">Payment Email:</span>
+                                  {paymentEmail ? (
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-sm text-gray-900">{paymentEmail}</span>
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                      </svg>
                                     </div>
-                                    {creator.videos.some((v: Video) => v.status === 'pending') && (
-                                      <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                                        <p className="text-sm text-yellow-800">
-                                          ⚠️ You have videos still pending. Please approve or deny all videos before submitting payment.
-                                        </p>
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  <div className="flex items-center gap-2">
-                                    <span className={`text-sm ${
-                                      creator.videos
-                                        .filter((v: Video) => v.status === 'approved')
-                                        .every((v: Video) => v.hasBeenPaid) 
-                                        ? 'text-green-600' 
-                                        : 'text-yellow-600'
-                                    }`}>
-                                      {creator.videos
-                                        .filter((v: Video) => v.status === 'approved')
-                                        .every((v: Video) => v.hasBeenPaid)
-                                        ? 'Paid'
-                                        : 'Unpaid'}
-                                    </span>
-                                    {!creator.videos
-                                      .filter((v: Video) => v.status === 'approved')
-                                      .every((v: Video) => v.hasBeenPaid) && 
-                                      creator.videos
-                                        .filter((v: Video) => v.status === 'approved')
-                                        .some((v: Video) => v.hasBeenPaid) && (
-                                      <span className="text-sm text-yellow-600">
-                                        (Partial payment detected)
-                                      </span>
-                                    )}
-                                  </div>
+                                  ) : (
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-sm text-gray-500">N/A</span>
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                      </svg>
+                                    </div>
+                                  )}
                                 </div>
 
-                                <button
-                                  onClick={async () => {
-                                    try {
-                                      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/pay-creators`, {
-                                        method: 'POST',
-                                        headers: {
-                                          'Content-Type': 'application/json',
-                                        },
-                                        body: JSON.stringify({
-                                          userIds: [creator.author_id],
-                                          campaignId: selectedCampaign.id,
-                                          actorId: user?.uid,
-                                        }),
-                                      });
-                                      
-                                      if (!response.ok) {
-                                        throw new Error('Failed to pay creator');
-                                      }
-                                      
-                                      const data = await response.json();
-                                      
-                                      // Update state immediately after successful payment
-                                      updateCampaignAfterPayment(selectedCampaign, data, [creator.author_id]);
-                                      
-                                      setReceiptData(data);
-                                      setShowReceiptModal(true);
-                                      
-                                      toast.success('Successfully paid creator');
-                                    } catch (error) {
-                                      console.error('Error paying creator:', error);
-                                      toast.error('Failed to pay creator');
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-gray-600">Total Earnings:</span>
+                                  <span className="text-sm font-medium text-gray-900">${creator.totalEarnings.toFixed(2)}</span>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-gray-600">Videos Submitted:</span>
+                                  <span className="text-sm font-medium text-gray-900">{creator.videos.length}</span>
+                                </div>
+
+                                {/* Video Itemization */}
+                                <div className="mt-2 space-y-2">
+                                  {creator.videos.map((video: Video, index: number) => (
+                                    <div key={video.id} className="text-sm">
+                                      <a 
+                                        href={video.url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="text-primary hover:text-primary-dark hover:cursor-pointer"
+                                      >
+                                        Video {index + 1}
+                                      </a>
+                                      {' - '}
+                                      <span className="text-gray-600">{video.title || 'Untitled Video'}</span>
+                                      {' - '}
+                                      <span className="font-medium text-gray-800">${video.status === 'approved' ? (video.earnings || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}</span>
+                                      {' '}
+                                      <span className={`${
+                                        video.status === 'approved' ? 'text-green-600' :
+                                        video.status === 'denied' ? 'text-red-600' :
+                                        'text-yellow-500 font-bold'
+                                      }`}>
+                                        {video.status?.charAt(0).toUpperCase() + video.status?.slice(1) || 'Pending'}
+                                      </span>
+                                      {' - '}
+                                      <span className="text-gray-600">{video.views?.toLocaleString() || 0} views</span>
+                                    </div>
+                                  ))}
+                                  <div className="pt-1 border-t border-gray-200">
+                                    <span className="text-sm text-gray-600">Total Payout: </span>
+                                    <span className="text-sm font-bold text-gray-800">
+                                      ${creator.videos
+                                        .filter((v: Video) => v.status === 'approved')
+                                        .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0)
+                                        .toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </span>
+                                  </div>
+                                  {creator.videos.some((v: Video) => v.status === 'pending') && (
+                                    <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                                      <p className="text-sm text-yellow-800">
+                                        ⚠️ You have videos still pending. Please approve or deny all videos before submitting payment.
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-sm ${
+                                    creator.videos
+                                      .filter((v: Video) => v.status === 'approved')
+                                      .every((v: Video) => v.hasBeenPaid) 
+                                      ? 'text-green-600' 
+                                      : 'text-yellow-600'
+                                  }`}>
+                                    {creator.videos
+                                      .filter((v: Video) => v.status === 'approved')
+                                      .every((v: Video) => v.hasBeenPaid)
+                                      ? 'Paid'
+                                      : 'Unpaid'}
+                                  </span>
+                                  {!creator.videos
+                                    .filter((v: Video) => v.status === 'approved')
+                                    .every((v: Video) => v.hasBeenPaid) && 
+                                    creator.videos
+                                      .filter((v: Video) => v.status === 'approved')
+                                      .some((v: Video) => v.hasBeenPaid) && (
+                                    <span className="text-sm text-yellow-600">
+                                      (Partial payment detected)
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/pay-creators`, {
+                                      method: 'POST',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                      },
+                                      body: JSON.stringify({
+                                        userIds: [creator.author_id],
+                                        campaignId: selectedCampaign.id,
+                                        actorId: user?.uid,
+                                      }),
+                                    });
+                                    
+                                    if (!response.ok) {
+                                      throw new Error('Failed to pay creator');
                                     }
-                                  }}
-                                  disabled={creator.videos
+                                    
+                                    const data = await response.json();
+                                    
+                                    // Update state immediately after successful payment
+                                    updateCampaignAfterPayment(selectedCampaign, data, [creator.author_id]);
+                                    
+                                    setReceiptData(data);
+                                    setShowReceiptModal(true);
+                                    
+                                    toast.success('Successfully paid creator');
+                                  } catch (error) {
+                                    console.error('Error paying creator:', error);
+                                    toast.error('Failed to pay creator');
+                                  }
+                                }}
+                                disabled={creator.videos
+                                  .filter((v: Video) => v.status === 'approved')
+                                  .every((v: Video) => v.hasBeenPaid) || 
+                                  creator.videos.some((v: Video) => v.status === 'pending') ||
+                                  creator.videos
+                                    .filter((v: Video) => v.status === 'approved')
+                                    .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0}
+                                className={`${
+                                  creator.videos
                                     .filter((v: Video) => v.status === 'approved')
                                     .every((v: Video) => v.hasBeenPaid) || 
                                     creator.videos.some((v: Video) => v.status === 'pending') ||
                                     creator.videos
                                       .filter((v: Video) => v.status === 'approved')
-                                      .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0}
-                                  className={`${
-                                    creator.videos
-                                      .filter((v: Video) => v.status === 'approved')
-                                      .every((v: Video) => v.hasBeenPaid) || 
-                                    creator.videos.some((v: Video) => v.status === 'pending') ||
-                                    creator.videos
-                                      .filter((v: Video) => v.status === 'approved')
                                       .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0
-                                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                                      : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300 hover:cursor-pointer'
-                                  } px-4 py-2 rounded-lg border`}
-                                >
-                                  Pay Creator
-                                </button>
-                              </div>
-                              
-                              {/* Alert message for disabled button */}
-                              {(creator.videos
-                                .filter((v: Video) => v.status === 'approved')
-                                .every((v: Video) => v.hasBeenPaid) || 
-                                creator.videos.some((v: Video) => v.status === 'pending') ||
-                                creator.videos
-                                  .filter((v: Video) => v.status === 'approved')
-                                  .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0) && (
-                                <div className="mt-3 p-3 rounded-lg text-sm">
-                                  {creator.videos
-                                    .filter((v: Video) => v.status === 'approved')
-                                    .every((v: Video) => v.hasBeenPaid) ? (
-                                    <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded-lg p-3">
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                      </svg>
-                                      <span>Creator has been paid</span>
-                                    </div>
-                                  ) : creator.videos.some((v: Video) => v.status === 'pending') ? (
-                                    <div className="flex items-center gap-2 text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                      </svg>
-                                      <span>Please approve or deny any pending videos before paying creator</span>
-                                    </div>
-                                  ) : creator.videos
-                                      .filter((v: Video) => v.status === 'approved')
-                                      .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0 ? (
-                                    <div className="flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                      </svg>
-                                      <span>Cannot send a payment of $0.00</span>
-                                    </div>
-                                  ) : null}
-                                </div>
-                              )}
+                                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                    : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300 hover:cursor-pointer'
+                                } px-4 py-2 rounded-lg border`}
+                              >
+                                Pay Creator
+                              </button>
                             </div>
-                          );
-                        });
-                      })()}
-                    </div>
-
-                    {isLoadingCreators && (
-                      <div className="flex justify-center items-center py-4">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                      </div>
-                    )}
+                            
+                            {/* Alert message for disabled button */}
+                            {(creator.videos
+                              .filter((v: Video) => v.status === 'approved')
+                              .every((v: Video) => v.hasBeenPaid) || 
+                              creator.videos.some((v: Video) => v.status === 'pending') ||
+                              creator.videos
+                                .filter((v: Video) => v.status === 'approved')
+                                .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0) && (
+                              <div className="mt-3 p-3 rounded-lg text-sm">
+                                {creator.videos
+                                  .filter((v: Video) => v.status === 'approved')
+                                  .every((v: Video) => v.hasBeenPaid) ? (
+                                  <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded-lg p-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span>Creator has been paid</span>
+                                  </div>
+                                ) : creator.videos.some((v: Video) => v.status === 'pending') ? (
+                                  <div className="flex items-center gap-2 text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                    </svg>
+                                    <span>Please approve or deny any pending videos before paying creator</span>
+                                  </div>
+                                ) : creator.videos
+                                    .filter((v: Video) => v.status === 'approved')
+                                    .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0 ? (
+                                  <div className="flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>Cannot send a payment of $0.00</span>
+                                  </div>
+                                ) : null}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      });
+                    })()}
                   </div>
+
+                  {isLoadingCreators && (
+                    <div className="flex justify-center items-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    </div>
+                  )}
                 </>
               )}
             </>
