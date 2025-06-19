@@ -384,6 +384,9 @@ export default function PaymentsPage() {
                 </button>
               </div>
             </div>
+            <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
+              <p className="text-sm text-blue-700">If you recently made a payment and don't see it here, please refresh the page.</p>
+            </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
