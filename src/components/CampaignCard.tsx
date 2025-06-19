@@ -17,6 +17,7 @@ type CampaignCardProps = {
 export default function CampaignCard({ campaign, onEdit, onDelete, onManageCreators, onReactivate, children }: CampaignCardProps) {
   const [showReactivateModal, setShowReactivateModal] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [showViewsAlert, setShowViewsAlert] = useState(false);
 
   // Format number with commas
   const formatNumber = (num: number): string => {
@@ -31,6 +32,11 @@ export default function CampaignCard({ campaign, onEdit, onDelete, onManageCreat
       month: 'short',
       day: 'numeric',
     });
+  };
+
+  // Check if there are videos with non-approved status
+  const hasNonApprovedVideos = (): boolean => {
+    return campaign.videos?.some(video => video.status !== 'approved') || false;
   };
 
   // Use actual views if available, otherwise calculate estimate
@@ -174,9 +180,27 @@ export default function CampaignCard({ campaign, onEdit, onDelete, onManageCreat
               <p className="text-gray-500">Rate per 1M</p>
               <p className="font-medium text-gray-900">${campaign.ratePerMillion.toFixed(2)}</p>
             </div>
-            <div>
-              <p className="text-gray-500">Views</p>
+            <div className="relative">
+              <div className="flex items-center gap-1">
+                <p className="text-gray-500">Views</p>
+                {hasNonApprovedVideos() && (
+                  <button
+                    onMouseEnter={() => setShowViewsAlert(true)}
+                    onMouseLeave={() => setShowViewsAlert(false)}
+                    className="text-yellow-500 hover:text-yellow-600 hover:cursor-pointer transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </button>
+                )}
+              </div>
               <p className="font-medium text-gray-900">{formatNumber(views)}</p>
+              {showViewsAlert && hasNonApprovedVideos() && (
+                <div className="block mt-1 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
+                  Views are only calculated for approved videos
+                </div>
+              )}
             </div>
             <div>
               <p className="text-gray-500">Likes</p>
