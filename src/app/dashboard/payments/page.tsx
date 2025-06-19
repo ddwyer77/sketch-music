@@ -76,24 +76,76 @@ export default function PaymentsPage() {
 
   // Calculate financial metrics
   const totalRevenue = transactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + (typeof t.amount === 'number' ? t.amount : 0), 0);
+    .filter(t => {
+      const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
+      return amount > 0;
+    })
+    .reduce((sum, t) => {
+      const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
+      return sum + (typeof amount === 'number' && !isNaN(amount) ? amount : 0);
+    }, 0);
 
   const totalExpenses = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + (typeof t.amount === 'number' ? Math.abs(t.amount) : 0), 0);
+    .filter(t => {
+      const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
+      return amount < 0;
+    })
+    .reduce((sum, t) => {
+      const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
+      return sum + (typeof amount === 'number' && !isNaN(amount) ? Math.abs(amount) : 0);
+    }, 0);
 
   const netIncome = totalRevenue - totalExpenses;
+  const availableBalance = totalRevenue - totalExpenses;
 
-  // Sample data for the graph - last 6 months of transactions
-  const graphData = [
-    { month: 'Jan', income: 3000, expenses: 1500 },
-    { month: 'Feb', income: 4500, expenses: 2000 },
-    { month: 'Mar', income: 3800, expenses: 1800 },
-    { month: 'Apr', income: 5200, expenses: 2200 },
-    { month: 'May', income: 4800, expenses: 1900 },
-    { month: 'Jun', income: 5500, expenses: 2100 },
-  ];
+  // Sort transactions by date (most recent first)
+  const sortedTransactions = React.useMemo(() => {
+    return [...transactions].sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
+  }, [transactions]);
+
+  // Group transactions by month for the graph
+  const graphData = React.useMemo(() => {
+    // Helper to get month label
+    const getMonthLabel = (date: Date) =>
+      date.toLocaleString('en-US', { month: 'short', year: '2-digit' });
+    // Helper to get month index from short name
+    const monthIndex: Record<string, number> = {
+      Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
+    };
+    // Group by month
+    const map = new Map<string, { income: number; expenses: number }>();
+    transactions.forEach((t) => {
+      const d = new Date(Number(t.createdAt));
+      const label = getMonthLabel(d);
+      const entry = map.get(label) || { income: 0, expenses: 0 };
+      
+      // Handle potential string amounts and ensure proper number conversion
+      const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
+      
+      // Positive amounts are income, negative amounts are expenses
+      if (typeof amount === 'number' && !isNaN(amount)) {
+        if (amount > 0) {
+          entry.income += amount;
+        } else if (amount < 0) {
+          entry.expenses += Math.abs(amount);
+        }
+      }
+      
+      map.set(label, entry);
+    });
+    // Sort by date (ascending)
+    const sorted = Array.from(map.entries())
+      .map(([month, vals]) => ({ month, ...vals }))
+      .sort((a, b) => {
+        // Parse year and month for sorting
+        const [aMonth, aYear] = a.month.split(' ');
+        const [bMonth, bYear] = b.month.split(' ');
+        const aDate = new Date(2000 + parseInt(aYear, 10), monthIndex[aMonth]);
+        const bDate = new Date(2000 + parseInt(bYear, 10), monthIndex[bMonth]);
+        return aDate.getTime() - bDate.getTime();
+      });
+    return sorted;
+  }, [transactions]);
 
   // Function to format currency
   const formatCurrency = (amount: number) => {
@@ -196,7 +248,9 @@ export default function PaymentsPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div className="bg-white rounded-xl shadow-sm p-6">
               <p className="text-sm font-medium text-gray-900">Available Balance</p>
-              <p className="text-3xl font-bold mt-2 text-green-600">{formatCurrency(totalRevenue - totalExpenses)}</p>
+              <p className={`text-3xl font-bold mt-2 ${availableBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatCurrency(availableBalance)}
+              </p>
             </div>
             <div className="bg-white rounded-xl shadow-sm p-6">
               <p className="text-sm font-medium text-gray-900">Total Revenue</p>
@@ -228,7 +282,6 @@ export default function PaymentsPage() {
           {/* Financial Overview Graph */}
           <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
             <h2 className="text-lg font-medium text-gray-900 mb-4">Financial Overview</h2>
-            <span className="text-red-600">*Displaying dummy data until we have enough transactions.</span>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={graphData}>
@@ -263,13 +316,16 @@ export default function PaymentsPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                      Date & Time
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                       Transaction ID
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                      Date
+                      Initiated By
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                      Initiated By
+                      Recipient
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                       Type
@@ -277,42 +333,77 @@ export default function PaymentsPage() {
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                       Amount
                     </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                      {/* Test Payment Flag */}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {transactions.map((transaction) => (
-                    <tr
-                      key={transaction.id}
-                      className="hover:bg-gray-50 hover:cursor-pointer"
-                      onClick={() => {
-                        setSelectedTransaction(transaction);
-                        setShowTransactionModal(true);
-                      }}
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {transaction.id}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatDate(transaction.createdAt)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {transaction.actorName}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {transaction.type}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <span className={transaction.amount >= 0 ? 'text-green-600' : 'text-red-600'}>
-                          {formatCurrency(transaction.amount)}
-                        </span>
+                  {loadingTransactions ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                        Loading transactions...
                       </td>
                     </tr>
-                  ))}
+                  ) : sortedTransactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                        No transactions found. Transactions will appear here after payments are processed.
+                      </td>
+                    </tr>
+                  ) : (
+                    sortedTransactions.map((transaction) => {
+                      const recipient =
+                        (transaction as any).targetFirstName || (transaction as any).targetLastName
+                          ? `${(transaction as any).targetFirstName || ''} ${(transaction as any).targetLastName || ''}`.trim() || 'N/A'
+                          : 'N/A';
+                      const isTestPayment = (transaction as any).isTestPayment === true;
+                      return (
+                        <tr
+                          key={transaction.id}
+                          className="hover:bg-gray-50 hover:cursor-pointer"
+                          onClick={() => {
+                            setSelectedTransaction(transaction);
+                            setShowTransactionModal(true);
+                          }}
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {formatDate(transaction.createdAt)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {transaction.id}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {transaction.actorName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {recipient}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {transaction.type === 'creatorPayout' ? 'Creator Payout' : 
+                             transaction.type === 'deposit' ? 'Deposit' :
+                             transaction.type === 'withdrawal' ? 'Withdrawal' :
+                             transaction.type}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <span className={(typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              {formatCurrency(typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {isTestPayment && (
+                              <span className="inline-block bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-semibold">Test Payment</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
             <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
-              <p className="text-sm text-gray-900">Showing {transactions.length} transactions</p>
+              <p className="text-sm text-gray-900">Showing {sortedTransactions.length} transactions</p>
             </div>
           </div>
         </>
@@ -842,120 +933,219 @@ export default function PaymentsPage() {
       {/* Transaction Details Modal */}
       {showTransactionModal && selectedTransaction && (
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-lg w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Transaction Details</h3>
-              <button
-                onClick={() => setShowTransactionModal(false)}
-                className="text-gray-500 hover:text-gray-700 hover:cursor-pointer"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Transaction Details</h3>
+                  <p className="text-sm text-gray-600 mt-1">ID: {selectedTransaction.id}</p>
+                </div>
+                <button
+                  onClick={() => setShowTransactionModal(false)}
+                  className="text-gray-500 hover:text-gray-700 hover:cursor-pointer p-2 rounded-lg hover:bg-gray-100"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
-            <div className="space-y-2">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-gray-500">Actor ID</p>
-                  <p className="text-gray-800 font-medium">{selectedTransaction.actorId}</p>
+
+            <div className="p-6 space-y-6">
+              {/* Main Transaction Info */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      (typeof selectedTransaction.amount === 'string' ? parseFloat(selectedTransaction.amount) : selectedTransaction.amount) >= 0 
+                        ? 'bg-green-100' 
+                        : 'bg-red-100'
+                    }`}>
+                      {(typeof selectedTransaction.amount === 'string' ? parseFloat(selectedTransaction.amount) : selectedTransaction.amount) >= 0 ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                        </svg>
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900">
+                        {selectedTransaction.type === 'creatorPayout' ? 'Creator Payout' : 
+                         selectedTransaction.type === 'deposit' ? 'Deposit' :
+                         selectedTransaction.type === 'withdrawal' ? 'Withdrawal' :
+                         selectedTransaction.type}
+                      </h4>
+                      <p className="text-sm text-gray-600">{formatDate(selectedTransaction.createdAt)}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-2xl font-bold ${
+                      (typeof selectedTransaction.amount === 'string' ? parseFloat(selectedTransaction.amount) : selectedTransaction.amount) >= 0 
+                        ? 'text-green-600' 
+                        : 'text-red-600'
+                    }`}>
+                      {formatCurrency(typeof selectedTransaction.amount === 'string' ? parseFloat(selectedTransaction.amount) : selectedTransaction.amount)}
+                    </p>
+                    <p className="text-sm text-gray-600">{selectedTransaction.currency}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-gray-500">Actor Name</p>
-                  <p className="text-gray-800 font-medium">{selectedTransaction.actorName}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Amount</p>
-                  <p className="text-gray-800 font-medium">{formatCurrency(selectedTransaction.amount)}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Campaign ID</p>
-                  <p className="text-gray-800 font-medium">{selectedTransaction.campaignId}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Created At</p>
-                  <p className="text-gray-800 font-medium">{formatDate(selectedTransaction.createdAt)}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Currency</p>
-                  <p className="text-gray-800 font-medium">{selectedTransaction.currency}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Payment Method</p>
-                  <p className="text-gray-800 font-medium">{selectedTransaction.paymentMethod}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Payment Reference</p>
-                  <p className="text-gray-800 font-medium">{selectedTransaction.paymentReference}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Source</p>
-                  <p className="text-gray-800 font-medium">{selectedTransaction.source}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Status</p>
-                  <p className="text-gray-800 font-medium">{selectedTransaction.status}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Target User ID</p>
-                  <p className="text-gray-800 font-medium">{selectedTransaction.targetUserId}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Type</p>
-                  <p className="text-gray-800 font-medium">{selectedTransaction.type}</p>
+
+                {/* Status Badge */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                      selectedTransaction.status === 'completed' ? 'bg-green-100 text-green-800' :
+                      selectedTransaction.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      selectedTransaction.status === 'failed' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {selectedTransaction.status}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">Method: {selectedTransaction.paymentMethod}</p>
                 </div>
               </div>
-              <div className="mt-4">
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">Metadata</h4>
-                <div className="grid grid-cols-2 gap-4">
+
+              {/* Parties Involved */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <h5 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    From (Actor)
+                  </h5>
+                  <div className="space-y-2">
+                    <p className="text-lg font-medium text-gray-900">{selectedTransaction.actorName}</p>
+                    <p className="text-sm text-gray-600">ID: {selectedTransaction.actorId}</p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <h5 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    To (Recipient)
+                  </h5>
+                  <div className="space-y-2">
+                    <p className="text-lg font-medium text-gray-900">
+                      {(selectedTransaction as any).targetFirstName || (selectedTransaction as any).targetLastName
+                        ? `${(selectedTransaction as any).targetFirstName || ''} ${(selectedTransaction as any).targetLastName || ''}`.trim() || 'N/A'
+                        : 'N/A'}
+                    </p>
+                    <p className="text-sm text-gray-600">ID: {selectedTransaction.targetUserId}</p>
+                    {selectedTransaction.metadata?.paymentEmail && (
+                      <p className="text-sm text-gray-600">Email: {selectedTransaction.metadata.paymentEmail}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Campaign Info */}
+              {selectedTransaction.campaignId && (
+                <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                  <h5 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    Campaign Information
+                  </h5>
+                  <p className="text-sm text-gray-600">Campaign ID: {selectedTransaction.campaignId}</p>
+                </div>
+              )}
+
+              {/* Payment Details */}
+              <div className="bg-white border border-gray-200 rounded-xl p-4">
+                <h5 className="text-sm font-semibold text-gray-900 mb-4">Payment Details</h5>
+                <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-gray-500">Net Amount</p>
-                    <p className="text-gray-800 font-medium">{formatCurrency(selectedTransaction.metadata.netAmount)}</p>
+                    <p className="text-gray-600">Reference</p>
+                    <p className="font-medium text-gray-900">{selectedTransaction.paymentReference}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Payment Email</p>
-                    <p className="text-gray-800 font-medium">{selectedTransaction.metadata.paymentEmail}</p>
+                    <p className="text-gray-600">Source</p>
+                    <p className="font-medium text-gray-900">{selectedTransaction.source}</p>
                   </div>
+                </div>
+              </div>
+
+              {/* Financial Breakdown */}
+              {selectedTransaction.metadata && (
+                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                  <h5 className="text-sm font-semibold text-gray-900 mb-4">Financial Breakdown</h5>
+                  <div className="space-y-3">
+                    {selectedTransaction.metadata.netAmount && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Net Amount</span>
+                        <span className="font-medium text-gray-900">
+                          {formatCurrency(typeof selectedTransaction.metadata.netAmount === 'string' ? parseFloat(selectedTransaction.metadata.netAmount) : selectedTransaction.metadata.netAmount)}
+                        </span>
+                      </div>
+                    )}
+                    {selectedTransaction.metadata.platformFee && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Platform Fee</span>
+                        <span className="font-medium text-gray-900">
+                          {formatCurrency(typeof selectedTransaction.metadata.platformFee === 'string' ? parseFloat(selectedTransaction.metadata.platformFee) : selectedTransaction.metadata.platformFee)}
+                        </span>
+                      </div>
+                    )}
+                    {selectedTransaction.metadata.ratePerMillion && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Rate per Million</span>
+                        <span className="font-medium text-gray-900">${selectedTransaction.metadata.ratePerMillion}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Video Information */}
+              {selectedTransaction.metadata?.videoCount && selectedTransaction.metadata.videoCount > 0 && (
+                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                  <h5 className="text-sm font-semibold text-gray-900 mb-4">Video Information</h5>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600">Video Count</p>
+                      <p className="font-medium text-gray-900">{selectedTransaction.metadata.videoCount}</p>
+                    </div>
+                    {selectedTransaction.metadata.totalViews && (
+                      <div>
+                        <p className="text-gray-600">Total Views</p>
+                        <p className="font-medium text-gray-900">{selectedTransaction.metadata.totalViews.toLocaleString()}</p>
+                      </div>
+                    )}
+                  </div>
+                  {selectedTransaction.metadata.videoIds && selectedTransaction.metadata.videoIds.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-gray-600 text-sm mb-2">Video IDs:</p>
+                      <div className="bg-gray-50 rounded p-2">
+                        <p className="text-xs text-gray-700 break-all">{selectedTransaction.metadata.videoIds.join(', ')}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Additional Metadata */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h5 className="text-sm font-semibold text-gray-900 mb-3">Additional Information</h5>
+                <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-gray-500">Payment Status</p>
-                    <p className="text-gray-800 font-medium">{selectedTransaction.metadata.paymentStatus}</p>
+                    <p className="text-gray-600">Payment Status</p>
+                    <p className="font-medium text-gray-900">{selectedTransaction.metadata?.paymentStatus || 'N/A'}</p>
                   </div>
-                  <div>
-                    <p className="text-gray-500">Payout Batch ID</p>
-                    <p className="text-gray-800 font-medium">{selectedTransaction.metadata.payoutBatchId}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Platform Fee</p>
-                    <p className="text-gray-800 font-medium">{formatCurrency(selectedTransaction.metadata.platformFee)}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Rate Per Million</p>
-                    <p className="text-gray-800 font-medium">{selectedTransaction.metadata.ratePerMillion}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Reconciliation ID</p>
-                    <p className="text-gray-800 font-medium">{selectedTransaction.metadata.reconciliationId}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Timestamp</p>
-                    <p className="text-gray-800 font-medium">{formatDate(selectedTransaction.metadata.timestamp)}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Total Views</p>
-                    <p className="text-gray-800 font-medium">{selectedTransaction.metadata.totalViews}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Video Count</p>
-                    <p className="text-gray-800 font-medium">{selectedTransaction.metadata.videoCount}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Video IDs</p>
-                    <p className="text-gray-800 font-medium break-all">{selectedTransaction.metadata.videoIds?.join(', ')}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Views</p>
-                    <p className="text-gray-800 font-medium">{selectedTransaction.metadata.views?.join(', ')}</p>
-                  </div>
+                  {selectedTransaction.metadata?.timestamp && (
+                    <div>
+                      <p className="text-gray-600">Timestamp</p>
+                      <p className="font-medium text-gray-900">{formatDate(selectedTransaction.metadata.timestamp)}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
