@@ -124,7 +124,7 @@ export default function Sidebar() {
     { path: '/dashboard/analytics', label: 'Analytics', icon: AnalyticsIcon },
     { path: '/dashboard/payments', label: 'Payments', icon: PaymentsIcon },
     { path: '/dashboard/discord', label: 'Discord', icon: DiscordIcon },
-    { path: '/dashboard/bugs', label: 'Bugs', icon: BugsIcon },
+    { path: '/dashboard/bugs', label: 'Bugs and Tasks', icon: BugsIcon },
     { path: '/dashboard/settings', label: 'Settings', icon: SettingsIcon },
     { path: '/dashboard/help', label: 'Help', icon: HelpIcon },
     { path: '/dashboard/users', label: 'Users', icon: UsersIcon }

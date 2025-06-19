@@ -16,6 +16,8 @@ export default function BugsPage() {
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [priority, setPriority] = useState('medium');
+  const [type, setType] = useState('bug');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -41,8 +43,8 @@ export default function BugsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim()) {
-      toast.error('Please fill in all required fields');
+    if (!title.trim()) {
+      toast.error('Please fill in the title');
       return;
     }
 
@@ -60,6 +62,8 @@ export default function BugsPage() {
       const newBug = {
         title: title.trim(),
         description: description.trim(),
+        priority,
+        type,
         status: 'active',
         imageUrl,
         createdAt: serverTimestamp(),
@@ -71,15 +75,17 @@ export default function BugsPage() {
       };
 
       await addDoc(collection(db, 'bugs'), newBug);
-      toast.success('Bug reported successfully');
+      toast.success('Report submitted successfully');
       setShowModal(false);
       setTitle('');
       setDescription('');
+      setPriority('medium');
+      setType('bug');
       setSelectedImage(null);
       setPreviewUrl(null);
     } catch (error) {
-      console.error('Error submitting bug:', error);
-      toast.error('Failed to submit bug');
+      console.error('Error submitting report:', error);
+      toast.error('Failed to submit report');
     } finally {
       setIsSubmitting(false);
     }
@@ -90,10 +96,10 @@ export default function BugsPage() {
       await updateDoc(doc(db, 'bugs', bugId), {
         status: 'complete'
       });
-      toast.success('Bug marked as complete');
+      toast.success('Report marked as complete');
     } catch (error) {
-      console.error('Error updating bug:', error);
-      toast.error('Failed to update bug status');
+      console.error('Error updating report:', error);
+      toast.error('Failed to update report status');
     }
   };
 
@@ -117,20 +123,68 @@ export default function BugsPage() {
         order: currentBug.order
       });
     } catch (error) {
-      console.error('Error reordering bugs:', error);
-      toast.error('Failed to reorder bugs');
+      console.error('Error reordering reports:', error);
+      toast.error('Failed to reorder reports');
+    }
+  };
+
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case 'low':
+        return '🟢';
+      case 'medium':
+        return '🟡';
+      case 'high':
+        return '🔴';
+      default:
+        return '🟡';
+    }
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'bug':
+        return '🐛';
+      case 'task':
+        return '📋';
+      default:
+        return '🐛';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'low':
+        return 'bg-green-100 text-green-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'high':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-yellow-100 text-yellow-800';
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'bug':
+        return 'bg-red-100 text-red-800';
+      case 'task':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-red-100 text-red-800';
     }
   };
 
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-        <h1 className="text-3xl font-bold text-gray-800">Bug Tracker</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Bugs and Tasks</h1>
         <button 
           onClick={() => setShowModal(true)}
           className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg w-full md:w-auto hover:cursor-pointer"
         >
-          Submit Bug
+          Submit Report
         </button>
       </div>
 
@@ -183,8 +237,16 @@ export default function BugsPage() {
                   }`}>
                     {bug.status}
                   </span>
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(bug.priority || 'medium')}`}>
+                    {getPriorityIcon(bug.priority || 'medium')} {bug.priority || 'medium'}
+                  </span>
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(bug.type || 'bug')}`}>
+                    {getTypeIcon(bug.type || 'bug')} {bug.type || 'bug'}
+                  </span>
                 </div>
-                <p className="text-gray-600 mb-4">{bug.description}</p>
+                {bug.description && (
+                  <p className="text-gray-600 mb-4">{bug.description}</p>
+                )}
                 {bug.imageUrl && (
                   <div className="mb-4">
                     <Image
@@ -197,7 +259,7 @@ export default function BugsPage() {
                   </div>
                 )}
                 <div className="text-sm text-gray-500">
-                  Reported by {bug.createdBy.name} on {new Date(bug.createdAt?.toDate()).toLocaleDateString()}
+                  Submitted by: {bug.createdBy.name} on {new Date(bug.createdAt?.toDate()).toLocaleDateString()}
                 </div>
               </div>
               {activeTab === 'active' && (
@@ -238,12 +300,14 @@ export default function BugsPage() {
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-lg w-full max-w-lg p-6">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Submit Bug</h3>
+              <h3 className="text-xl font-bold text-gray-900">Submit Report</h3>
               <button
                 onClick={() => {
                   setShowModal(false);
                   setTitle('');
                   setDescription('');
+                  setPriority('medium');
+                  setType('bug');
                   setSelectedImage(null);
                   setPreviewUrl(null);
                 }}
@@ -266,14 +330,47 @@ export default function BugsPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Brief description of the bug"
+                  placeholder="Brief description of the issue"
                   required
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="priority" className="block text-sm font-medium text-gray-900 mb-1">
+                    Priority
+                  </label>
+                  <select
+                    id="priority"
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
+                    <option value="low">🟢 Low</option>
+                    <option value="medium">🟡 Medium</option>
+                    <option value="high">🔴 High</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="type" className="block text-sm font-medium text-gray-900 mb-1">
+                    Type
+                  </label>
+                  <select
+                    id="type"
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
+                    <option value="bug">🐛 Bug</option>
+                    <option value="task">📋 Task</option>
+                  </select>
+                </div>
+              </div>
+
               <div>
                 <label htmlFor="description" className="block text-sm font-medium text-gray-900 mb-1">
-                  Description *
+                  Description (Optional)
                 </label>
                 <textarea
                   id="description"
@@ -281,8 +378,7 @@ export default function BugsPage() {
                   onChange={(e) => setDescription(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   rows={4}
-                  placeholder="Detailed description of the bug"
-                  required
+                  placeholder="Detailed description of the issue (optional)"
                 />
               </div>
 
@@ -350,6 +446,8 @@ export default function BugsPage() {
                     setShowModal(false);
                     setTitle('');
                     setDescription('');
+                    setPriority('medium');
+                    setType('bug');
                     setSelectedImage(null);
                     setPreviewUrl(null);
                   }}
@@ -371,7 +469,7 @@ export default function BugsPage() {
                       {isUploading ? 'Uploading...' : 'Submitting...'}
                     </div>
                   ) : (
-                    'Submit Bug'
+                    'Submit Report'
                   )}
                 </button>
               </div>
