@@ -58,6 +58,14 @@ export default function PaymentsPage() {
   const { documents: transactions = [], loading: loadingTransactions } = useCollection<Transaction>('transactions');
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [showDepositModal, setShowDepositModal] = useState(false);
+  const [depositForm, setDepositForm] = useState({
+    campaignId: '',
+    amount: '',
+    paymentMethod: 'paypal',
+    paymentReference: ''
+  });
+  const [isSubmittingDeposit, setIsSubmittingDeposit] = useState(false);
   
   // Fetch campaigns with proper cleanup
   useEffect(() => {
@@ -201,7 +209,10 @@ export default function PaymentsPage() {
     <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
         <h1 className="text-3xl font-bold text-gray-800">Payments & Finances</h1>
-        <button className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg w-full md:w-auto hover:cursor-pointer">
+        <button 
+          onClick={() => setShowDepositModal(true)}
+          className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg w-full md:w-auto hover:cursor-pointer"
+        >
           Record Deposit
         </button>
       </div>
@@ -1149,6 +1160,193 @@ export default function PaymentsPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Record Deposit Modal */}
+      {showDepositModal && (
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Record Deposit</h3>
+              <button
+                onClick={() => {
+                  setShowDepositModal(false);
+                  setDepositForm({
+                    campaignId: '',
+                    amount: '',
+                    paymentMethod: 'paypal',
+                    paymentReference: ''
+                  });
+                }}
+                className="text-gray-500 hover:text-gray-700 hover:cursor-pointer p-2 rounded-lg hover:bg-gray-100"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (!depositForm.campaignId || !depositForm.amount) {
+                toast.error('Please fill in all required fields');
+                return;
+              }
+
+              const amount = parseFloat(depositForm.amount);
+              if (isNaN(amount) || amount <= 0) {
+                toast.error('Please enter a valid amount');
+                return;
+              }
+
+              setIsSubmittingDeposit(true);
+              try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/record-deposit`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    actorId: user?.uid,
+                    campaignId: depositForm.campaignId,
+                    amount: amount,
+                    paymentMethod: depositForm.paymentMethod,
+                    paymentReference: depositForm.paymentReference || null,
+                  }),
+                });
+
+                if (!response.ok) {
+                  const errorData = await response.json();
+                  throw new Error(errorData.error || 'Failed to record deposit');
+                }
+
+                const data = await response.json();
+                toast.success('Deposit recorded successfully!');
+                
+                // Reset form and close modal
+                setDepositForm({
+                  campaignId: '',
+                  amount: '',
+                  paymentMethod: 'paypal',
+                  paymentReference: ''
+                });
+                setShowDepositModal(false);
+                
+                // The transactions will automatically reload due to the useCollection hook
+              } catch (error) {
+                console.error('Error recording deposit:', error);
+                toast.error(error instanceof Error ? error.message : 'Failed to record deposit');
+              } finally {
+                setIsSubmittingDeposit(false);
+              }
+            }} className="space-y-4">
+              {/* Campaign Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Campaign *
+                </label>
+                <select
+                  value={depositForm.campaignId}
+                  onChange={(e) => setDepositForm(prev => ({ ...prev, campaignId: e.target.value }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary"
+                  required
+                >
+                  <option value="">Select a campaign...</option>
+                  {campaigns.map((campaign) => (
+                    <option key={campaign.id} value={campaign.id}>
+                      {campaign.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Amount */}
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Amount (USD) *
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={depositForm.amount}
+                  onChange={(e) => setDepositForm(prev => ({ ...prev, amount: e.target.value }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+
+              {/* Payment Method */}
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Payment Method *
+                </label>
+                <select
+                  value={depositForm.paymentMethod}
+                  onChange={(e) => setDepositForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary"
+                  required
+                >
+                  <option value="paypal">PayPal</option>
+                  <option value="stripe">Stripe</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="check">Check</option>
+                  <option value="cash">Cash</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              {/* Payment Reference (Optional) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Payment Reference (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={depositForm.paymentReference}
+                  onChange={(e) => setDepositForm(prev => ({ ...prev, paymentReference: e.target.value }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary"
+                  placeholder="Transaction ID, check number, etc."
+                />
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDepositModal(false);
+                    setDepositForm({
+                      campaignId: '',
+                      amount: '',
+                      paymentMethod: 'paypal',
+                      paymentReference: ''
+                    });
+                  }}
+                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:cursor-pointer"
+                  disabled={isSubmittingDeposit}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingDeposit}
+                  className="flex-1 px-4 py-3 bg-primary hover:bg-primary-dark text-white rounded-lg hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmittingDeposit ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      Recording...
+                    </div>
+                  ) : (
+                    'Record Deposit'
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
