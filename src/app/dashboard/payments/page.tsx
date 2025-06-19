@@ -205,6 +205,28 @@ export default function PaymentsPage() {
     fetchCreatorDetails();
   }, [selectedCampaign]);
 
+  // Helper function to update campaign state after payment
+  const updateCampaignAfterPayment = (campaign: Campaign, receiptData: ReceiptData, paidUserIds: string[]) => {
+    const updatedCampaign = {
+      ...campaign,
+      receipts: [...(campaign.receipts || []), receiptData],
+      // Update hasBeenPaid for videos of the paid creators
+      videos: campaign.videos?.map(video => {
+        if (paidUserIds.includes(video.author_id) && video.status === 'approved') {
+          return { ...video, hasBeenPaid: true };
+        }
+        return video;
+      })
+    };
+    
+    setSelectedCampaign(updatedCampaign);
+    
+    // Update the campaigns list
+    setCampaigns(prevCampaigns => 
+      prevCampaigns.map(c => c.id === campaign.id ? updatedCampaign : c)
+    );
+  };
+
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
@@ -544,24 +566,12 @@ export default function PaymentsPage() {
                             }
                             
                             const data = await response.json();
+                            
+                            // Update state immediately after successful payment
+                            updateCampaignAfterPayment(selectedCampaign, data, userIds);
+                            
                             setReceiptData(data);
                             setShowReceiptModal(true);
-                            
-                            // Update the campaign state with the new receipt
-                            if (selectedCampaign) {
-                              const updatedCampaign = {
-                                ...selectedCampaign,
-                                receipts: [...(selectedCampaign.receipts || []), data]
-                              };
-                              setSelectedCampaign(updatedCampaign);
-                              
-                              // Update the campaigns list
-                              setCampaigns(prevCampaigns => 
-                                prevCampaigns.map(campaign => 
-                                  campaign.id === selectedCampaign.id ? updatedCampaign : campaign
-                                )
-                              );
-                            }
                             
                             toast.success('Successfully paid all creators');
                           } catch (error) {
@@ -735,24 +745,12 @@ export default function PaymentsPage() {
                                       }
                                       
                                       const data = await response.json();
+                                      
+                                      // Update state immediately after successful payment
+                                      updateCampaignAfterPayment(selectedCampaign, data, [creator.author_id]);
+                                      
                                       setReceiptData(data);
                                       setShowReceiptModal(true);
-                                      
-                                      // Update the campaign state with the new receipt
-                                      if (selectedCampaign) {
-                                        const updatedCampaign = {
-                                          ...selectedCampaign,
-                                          receipts: [...(selectedCampaign.receipts || []), data]
-                                        };
-                                        setSelectedCampaign(updatedCampaign);
-                                        
-                                        // Update the campaigns list
-                                        setCampaigns(prevCampaigns => 
-                                          prevCampaigns.map(campaign => 
-                                            campaign.id === selectedCampaign.id ? updatedCampaign : campaign
-                                          )
-                                        );
-                                      }
                                       
                                       toast.success('Successfully paid creator');
                                     } catch (error) {
@@ -763,28 +761,63 @@ export default function PaymentsPage() {
                                   disabled={creator.videos
                                     .filter((v: Video) => v.status === 'approved')
                                     .every((v: Video) => v.hasBeenPaid) || 
-                                    creator.videos.some((v: Video) => v.status === 'pending')}
+                                    creator.videos.some((v: Video) => v.status === 'pending') ||
+                                    creator.videos
+                                      .filter((v: Video) => v.status === 'approved')
+                                      .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0}
                                   className={`${
                                     creator.videos
                                       .filter((v: Video) => v.status === 'approved')
                                       .every((v: Video) => v.hasBeenPaid) || 
-                                    creator.videos.some((v: Video) => v.status === 'pending')
+                                    creator.videos.some((v: Video) => v.status === 'pending') ||
+                                    creator.videos
+                                      .filter((v: Video) => v.status === 'approved')
+                                      .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0
                                       ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                                       : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300 hover:cursor-pointer'
                                   } px-4 py-2 rounded-lg border`}
-                                  title={
-                                    creator.videos
-                                      .filter((v: Video) => v.status === 'approved')
-                                      .every((v: Video) => v.hasBeenPaid)
-                                      ? "Creator has been paid"
-                                      : creator.videos.some((v: Video) => v.status === 'pending')
-                                      ? "Please approve or deny any pending videos before paying creator"
-                                      : "Pay Creator"
-                                  }
                                 >
                                   Pay Creator
                                 </button>
                               </div>
+                              
+                              {/* Alert message for disabled button */}
+                              {(creator.videos
+                                .filter((v: Video) => v.status === 'approved')
+                                .every((v: Video) => v.hasBeenPaid) || 
+                                creator.videos.some((v: Video) => v.status === 'pending') ||
+                                creator.videos
+                                  .filter((v: Video) => v.status === 'approved')
+                                  .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0) && (
+                                <div className="mt-3 p-3 rounded-lg text-sm">
+                                  {creator.videos
+                                    .filter((v: Video) => v.status === 'approved')
+                                    .every((v: Video) => v.hasBeenPaid) ? (
+                                    <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded-lg p-3">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                      <span>Creator has been paid</span>
+                                    </div>
+                                  ) : creator.videos.some((v: Video) => v.status === 'pending') ? (
+                                    <div className="flex items-center gap-2 text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                      </svg>
+                                      <span>Please approve or deny any pending videos before paying creator</span>
+                                    </div>
+                                  ) : creator.videos
+                                      .filter((v: Video) => v.status === 'approved')
+                                      .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0 ? (
+                                    <div className="flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                      <span>Cannot send a payment of $0.00</span>
+                                    </div>
+                                  ) : null}
+                                </div>
+                              )}
                             </div>
                           );
                         });
