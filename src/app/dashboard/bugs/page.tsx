@@ -137,7 +137,7 @@ export default function BugsPage() {
 
       if (isEditing && editingBug) {
         // Update existing bug
-        const updateData: any = {
+        const updateData = {
           title: title.trim(),
           description: description.trim(),
           priority,
