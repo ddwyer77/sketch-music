@@ -140,14 +140,35 @@ export default function BugsPage() {
         const updateData = {
           title: title.trim(),
           description: description.trim(),
-          priority,
-          type,
+          priority: priority as 'low' | 'medium' | 'high',
+          type: type as 'bug' | 'task',
           imageUrl,
           updatedAt: serverTimestamp()
         };
 
-        await updateDoc(doc(db, 'bugs', editingBug.id), updateData);
-        toast.success('Report updated successfully');
+        // Immediately update local state for instant UI feedback
+        setLocalBugs(prev => prev.map(bug => 
+          bug.id === editingBug.id 
+            ? { 
+                ...bug, 
+                title: title.trim(),
+                description: description.trim(),
+                priority: priority as 'low' | 'medium' | 'high',
+                type: type as 'bug' | 'task',
+                imageUrl
+              }
+            : bug
+        ));
+
+        try {
+          await updateDoc(doc(db, 'bugs', editingBug.id), updateData);
+          toast.success('Report updated successfully');
+        } catch (error) {
+          console.error('Error updating report:', error);
+          toast.error('Failed to update report');
+          // Revert local state if database update fails
+          setLocalBugs(bugs);
+        }
       } else {
         // Create new bug
         const newBug = {
