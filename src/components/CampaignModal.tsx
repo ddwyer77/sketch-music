@@ -153,11 +153,21 @@ export default function CampaignModal({ onClose, onSave, onDelete, initialData, 
         return;
       }
       
-      const numValue = value === '' ? '' : parseFloat(value) || 0;
-      setFormData({
-        ...formData,
-        [name]: numValue,
-      });
+      // For budget and ratePerMillion, use parseInt to avoid floating point precision issues
+      if (name === 'budget' || name === 'ratePerMillion') {
+        const intValue = value === '' ? '' : parseInt(value) || 0;
+        setFormData({
+          ...formData,
+          [name]: intValue,
+        });
+      } else {
+        // For other numeric fields, use parseFloat
+        const numValue = value === '' ? '' : parseFloat(value) || 0;
+        setFormData({
+          ...formData,
+          [name]: numValue,
+        });
+      }
     } else {
       setFormData({
         ...formData,
@@ -384,6 +394,9 @@ export default function CampaignModal({ onClose, onSave, onDelete, initialData, 
       id: initialData?.id || '', // Let Firestore generate the ID
       createdAt: initialData?.createdAt || Date.now(),
       ...formData,
+      // Ensure budget and ratePerMillion are integers
+      budget: Math.round(Number(formData.budget)),
+      ratePerMillion: Math.round(Number(formData.ratePerMillion)),
       // Preserve the existing campaign_path if it exists
       campaign_path: initialData?.campaign_path || formData.campaign_path,
       // Filter out empty video URLs and ensure all required properties
@@ -572,11 +585,11 @@ export default function CampaignModal({ onClose, onSave, onDelete, initialData, 
                 id="budget"
                 name="budget"
                 min="0"
-                step="0.01"
+                step="1"
                 value={formData.budget}
                 onChange={handleChange}
                 className={`w-full px-3 py-2 border rounded-md text-gray-900 placeholder-gray-500 ${errors.budget ? 'border-red-500' : 'border-gray-300'}`}
-                placeholder="0.00"
+                placeholder="0"
               />
               {errors.budget && <p className="mt-1 text-sm text-red-500">{errors.budget}</p>}
             </div>
@@ -591,11 +604,11 @@ export default function CampaignModal({ onClose, onSave, onDelete, initialData, 
                 id="ratePerMillion"
                 name="ratePerMillion"
                 min="0"
-                step="0.01"
+                step="1"
                 value={formData.ratePerMillion}
                 onChange={handleChange}
                 className={`w-full px-3 py-2 border rounded-md text-gray-900 placeholder-gray-500 ${errors.ratePerMillion ? 'border-red-500' : 'border-gray-300'}`}
-                placeholder="0.00"
+                placeholder="0"
               />
               {errors.ratePerMillion && <p className="mt-1 text-sm text-red-500">{errors.ratePerMillion}</p>}
             </div>
