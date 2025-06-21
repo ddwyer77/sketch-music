@@ -8,13 +8,11 @@ import toast from 'react-hot-toast';
 type CampaignCardProps = {
   campaign: Campaign;
   onEdit: () => void;
-  onDelete: () => void;
-  onManageCreators: () => void;
   onReactivate?: (campaign: Campaign) => void;
   children?: ReactNode;
 };
 
-export default function CampaignCard({ campaign, onEdit, onDelete, onManageCreators, onReactivate, children }: CampaignCardProps) {
+export default function CampaignCard({ campaign, onEdit, onReactivate, children }: CampaignCardProps) {
   const [showReactivateModal, setShowReactivateModal] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [showViewsAlert, setShowViewsAlert] = useState(false);
@@ -75,24 +73,6 @@ export default function CampaignCard({ campaign, onEdit, onDelete, onManageCreat
                   </div>
                 )}
               </button>
-              {campaign.campaignTerminationDetails && (
-                <div className="mt-2 text-center text-white text-sm bg-black/50 px-4 py-2 rounded-lg backdrop-blur-sm max-w-[80%]">
-                  <div className="font-medium mb-1">Reason:</div>
-                  <div>
-                    {campaign.campaignTerminationDetails.budget && "Budget limit reached"}
-                    {campaign.campaignTerminationDetails.date && "End date reached"}
-                    {campaign.campaignTerminationDetails.maxSubmissions && "Maximum submissions reached"}
-                    {campaign.campaignTerminationDetails.manualTermination && "Manually terminated"}
-                    {campaign.campaignTerminationDetails.other && "Other reason"}
-                  </div>
-                  {campaign.campaignTerminationDetails.comments && campaign.campaignTerminationDetails.comments.trim() !== '' && (
-                    <div className="mt-1">
-                      <div className="font-medium">Notes:</div>
-                      <div>{campaign.campaignTerminationDetails.comments}</div>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           )}
           {campaign.imageUrl ? (
@@ -116,22 +96,6 @@ export default function CampaignCard({ campaign, onEdit, onDelete, onManageCreat
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-            </button>
-            <button
-              onClick={onDelete}
-              className="p-1 bg-white rounded-full shadow-md hover:bg-red-100 hover:scale-110 text-gray-500 hover:text-red-500 hover:cursor-pointer transition-all duration-200"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-            <button
-              onClick={onManageCreators}
-              className="p-1 bg-white rounded-full shadow-md hover:bg-gray-100 hover:scale-110 hover:cursor-pointer transition-all duration-200 text-gray-500"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
             </button>
           </div>

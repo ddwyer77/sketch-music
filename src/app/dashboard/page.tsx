@@ -10,7 +10,6 @@ import { Campaign } from '@/types/campaign';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { getDoc } from 'firebase/firestore';
-import CampaignCreatorModal from '../../components/CampaignCreatorModal';
 import { toast } from 'react-hot-toast';
 
 export default function Dashboard() {
@@ -20,8 +19,6 @@ export default function Dashboard() {
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateMessage, setUpdateMessage] = useState<string | null>(null);
-  const [showCreatorModal, setShowCreatorModal] = useState(false);
-  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   
   // Use a stable query reference
   const queryConstraints = useMemo(() => [], []);
@@ -173,11 +170,6 @@ export default function Dashboard() {
     }
   };
   
-  const handleManageCreators = (campaign: Campaign) => {
-    setSelectedCampaign(campaign);
-    setShowCreatorModal(true);
-  };
-  
   const handleReactivateCampaign = async (campaign: Campaign) => {
     try {
       await updateDocument(campaign.id, {
@@ -255,8 +247,6 @@ export default function Dashboard() {
               key={campaign.id} 
               campaign={campaign} 
               onEdit={() => openModal(campaign)}
-              onDelete={() => handleDeleteCampaign(campaign.id)}
-              onManageCreators={() => handleManageCreators(campaign)}
               onReactivate={handleReactivateCampaign}
             >
               <div className="mt-auto pt-4">
@@ -280,18 +270,9 @@ export default function Dashboard() {
         <CampaignModal
           onClose={closeModal}
           onSave={handleSaveCampaign}
+          onDelete={handleDeleteCampaign}
           initialData={editingCampaign}
           isLoading={operationLoading}
-        />
-      )}
-      {showCreatorModal && (
-        <CampaignCreatorModal
-          isOpen={showCreatorModal}
-          onClose={() => {
-            setShowCreatorModal(false);
-            setSelectedCampaign(null);
-          }}
-          selectedCampaign={selectedCampaign || undefined}
         />
       )}
     </div>

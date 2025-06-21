@@ -8,7 +8,6 @@ import VideoModal from '../../../components/VideoModal';
 import CampaignModal from '../../../components/CampaignModal';
 import Image from 'next/image';
 import { Campaign } from '@/types/campaign';
-import CampaignCreatorModal from '../../../components/CampaignCreatorModal';
 
 export default function CampaignsPage() {
   const { user } = useAuth();
@@ -16,7 +15,7 @@ export default function CampaignsPage() {
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [showCampaignModal, setShowCampaignModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [showCreatorModal, setShowCreatorModal] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
 
   // Use a stable query reference
   const queryConstraints = useMemo(() => [], []);
@@ -74,11 +73,18 @@ export default function CampaignsPage() {
   };
 
   const handleCreateCampaign = () => {
+    setEditingCampaign(null);
     setShowCampaignModal(true);
   };
 
   const handleCloseCampaignModal = () => {
     setShowCampaignModal(false);
+    setEditingCampaign(null);
+  };
+
+  const handleEditCampaign = (campaign: Campaign) => {
+    setEditingCampaign(campaign);
+    setShowCampaignModal(true);
   };
 
   const handleSaveCampaign = async (campaign: Campaign) => {
@@ -122,11 +128,6 @@ export default function CampaignsPage() {
     }
   };
 
-  const handleManageCreators = (campaign: Campaign) => {
-    setSelectedCampaign(campaign);
-    setShowCreatorModal(true);
-  };
-
   if (loading) {
     return <div className="p-4 text-center">Loading campaigns data...</div>;
   }
@@ -168,7 +169,7 @@ export default function CampaignsPage() {
                   Videos
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
-                  Creators
+                  Settings
                 </th>
               </tr>
             </thead>
@@ -246,10 +247,10 @@ export default function CampaignsPage() {
                   
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                     <button
-                      onClick={() => handleManageCreators(campaign)}
-                      className="text-primary hover:text-primary/90 font-medium"
+                      onClick={() => handleEditCampaign(campaign)}
+                      className="text-primary hover:text-primary/90 font-medium hover:cursor-pointer"
                     >
-                      Manage
+                      Edit
                     </button>
                   </td>
                 </tr>
@@ -274,19 +275,8 @@ export default function CampaignsPage() {
         <CampaignModal
           onClose={handleCloseCampaignModal}
           onSave={handleSaveCampaign}
-          initialData={null}
+          initialData={editingCampaign}
           isLoading={isSaving}
-        />
-      )}
-
-      {showCreatorModal && (
-        <CampaignCreatorModal
-          isOpen={showCreatorModal}
-          onClose={() => {
-            setShowCreatorModal(false);
-            setSelectedCampaign(null);
-          }}
-          selectedCampaign={selectedCampaign || undefined}
         />
       )}
     </div>

@@ -22,11 +22,12 @@ type TerminationDetails = {
 type CampaignModalProps = {
   onClose: () => void;
   onSave: (campaign: Campaign) => void;
+  onDelete?: (id: string) => void;
   initialData: Campaign | null;
   isLoading?: boolean;
 };
 
-export default function CampaignModal({ onClose, onSave, initialData, isLoading = false }: CampaignModalProps) {
+export default function CampaignModal({ onClose, onSave, onDelete, initialData, isLoading = false }: CampaignModalProps) {
   const { user } = useAuth();
   const [formData, setFormData] = useState<Omit<Campaign, 'id' | 'createdAt'>>({
     name: '',
@@ -887,18 +888,43 @@ export default function CampaignModal({ onClose, onSave, initialData, isLoading 
             </div>
 
             {showDangerZone && (
-              <div className="mt-4 p-4 border border-red-200 rounded-lg bg-red-50">
-                <h3 className="text-lg font-medium text-red-900 mb-4">End Campaign</h3>
-                <p className="text-sm text-red-700 mb-4">
-                  Users will no longer be able to submit to this campaign and it will no longer be listed in discord/the creator dashboard.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowTerminationModal(true)}
-                  className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md transition-colors hover:cursor-pointer"
-                >
-                  End Campaign Now
-                </button>
+              <div className="mt-4 space-y-4">
+                {/* Delete Campaign */}
+                {initialData && onDelete && (
+                  <div className="p-4 border border-red-200 rounded-lg bg-red-50">
+                    <h3 className="text-lg font-medium text-red-900 mb-4">Delete Campaign</h3>
+                    <p className="text-sm text-red-700 mb-4">
+                      This action will permanently archive this campaign. This action cannot be undone.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm('Are you sure you want to archive this campaign? This action cannot be undone.')) {
+                          onDelete(initialData.id);
+                          onClose();
+                        }
+                      }}
+                      className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md transition-colors hover:cursor-pointer"
+                    >
+                      Delete Campaign
+                    </button>
+                  </div>
+                )}
+
+                {/* End Campaign */}
+                <div className="p-4 border border-red-200 rounded-lg bg-red-50">
+                  <h3 className="text-lg font-medium text-red-900 mb-4">End Campaign</h3>
+                  <p className="text-sm text-red-700 mb-4">
+                    Users will no longer be able to submit to this campaign and it will no longer be listed in discord/the creator dashboard.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowTerminationModal(true)}
+                    className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md transition-colors hover:cursor-pointer"
+                  >
+                    End Campaign Now
+                  </button>
+                </div>
               </div>
             )}
           </div>
