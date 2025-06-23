@@ -8,8 +8,10 @@ import { useQuery, useCollection } from '@/hooks';
 import { Campaign, Video, Transaction } from '@/types/campaign';
 import { useAuth } from '@/contexts/AuthContext';
 import { User } from '@/types/user';
-import { doc, getDoc, collection, onSnapshot, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, onSnapshot, Timestamp, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import VideoModal from '@/components/VideoModal';
+import CampaignModal from '@/components/CampaignModal';
 
 interface ReceiptData {
   receiptId: string;
@@ -66,6 +68,10 @@ export default function PaymentsPage() {
     paymentReference: ''
   });
   const [isSubmittingDeposit, setIsSubmittingDeposit] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
   
   // Fetch campaigns with proper cleanup
   useEffect(() => {
@@ -540,15 +546,35 @@ export default function PaymentsPage() {
                     <h3 className="text-xl font-bold text-gray-900">{selectedCampaign.name}</h3>
                     <p className="text-sm text-gray-600">Campaign ID: {selectedCampaign.id}</p>
                   </div>
-                  <button
-                    onClick={() => setShowCampaignReceiptsModal(true)}
-                    className="ml-auto bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2 rounded-lg flex items-center gap-2 hover:cursor-pointer"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                    </svg>
-                    <span>{selectedCampaign.receipts?.length || 0} Receipts</span>
-                  </button>
+                  <div className="flex items-center gap-2 ml-auto">
+                    <button
+                      onClick={() => setShowVideoModal(true)}
+                      className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2 rounded-lg flex items-center gap-2 hover:cursor-pointer"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      <span>Manage Videos</span>
+                    </button>
+                    <button
+                      onClick={() => setShowCampaignModal(true)}
+                      className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2 rounded-lg flex items-center gap-2 hover:cursor-pointer"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      <span>Edit Campaign</span>
+                    </button>
+                    <button
+                      onClick={() => setShowCampaignReceiptsModal(true)}
+                      className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2 rounded-lg flex items-center gap-2 hover:cursor-pointer"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                      </svg>
+                      <span>{selectedCampaign.receipts?.length || 0} Receipts</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-4 gap-4 text-sm">
@@ -583,168 +609,172 @@ export default function PaymentsPage() {
               ) : (
                 <>
                   {/* Creators List */}
-                  <div className="mb-6">
-                    <div className="flex justify-between items-center mb-4">
-                      <h2 className="text-lg font-medium text-gray-900">Creators</h2>
-                      <button
-                        onClick={async () => {
-                          if (!selectedCampaign.videos?.length) return;
-                          
-                          const userIds = Array.from(new Set(selectedCampaign.videos.map((v: Video) => v.author_id)));
-                          try {
-                            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/pay-creators`, {
-                              method: 'POST',
-                              headers: {
-                                'Content-Type': 'application/json',
-                              },
-                              body: JSON.stringify({
-                                userIds,
-                                campaignId: selectedCampaign.id,
-                                actorId: user?.uid,
-                              }),
-                            });
-                            
-                            if (!response.ok) {
-                              throw new Error('Failed to pay creators');
-                            }
-                            
-                            const data = await response.json();
-                            
-                            // Update state immediately after successful payment
-                            updateCampaignAfterPayment(selectedCampaign, data, userIds);
-                            
-                            setReceiptData(data);
-                            setShowReceiptModal(true);
-                            
-                            toast.success('Successfully paid all creators');
-                          } catch (error) {
-                            console.error('Error paying creators:', error);
-                            toast.error('Failed to pay creators');
-                          }
-                        }}
-                        disabled={(() => {
-                          if (!selectedCampaign.videos?.length) return true;
-                          
-                          // Group videos by author_id and check for disabling conditions
-                          const creatorMap = new Map();
-                          selectedCampaign.videos.forEach(video => {
-                            if (!video.author_id) return;
-                            
-                            const existing = creatorMap.get(video.author_id) || {
-                              author_id: video.author_id,
-                              totalEarnings: 0,
-                              videos: [],
-                              allPaid: true,
-                            };
-                            
-                            existing.totalEarnings += video.earnings || 0;
-                            existing.videos.push(video);
-                            if (!video.hasBeenPaid) {
-                              existing.allPaid = false;
-                            }
-                            
-                            creatorMap.set(video.author_id, existing);
-                          });
-
-                          // Check if any creator has disabling conditions (same logic as individual buttons)
-                          return Array.from(creatorMap.values()).some(creator => {
-                            return creator.videos
-                              .filter((v: Video) => v.status === 'approved')
-                              .every((v: Video) => v.hasBeenPaid) || // All approved videos already paid
-                              creator.videos.some((v: Video) => v.status === 'pending') || // Has pending videos
-                              creator.videos
-                                .filter((v: Video) => v.status === 'approved')
-                                .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0; // No earnings from approved videos
-                          });
-                        })()}
-                        className={`${
-                          (() => {
-                            if (!selectedCampaign.videos?.length) return true;
-                            
-                            // Group videos by author_id and check for disabling conditions
-                            const creatorMap = new Map();
-                            selectedCampaign.videos.forEach(video => {
-                              if (!video.author_id) return;
-                              
-                              const existing = creatorMap.get(video.author_id) || {
-                                author_id: video.author_id,
-                                totalEarnings: 0,
-                                videos: [],
-                                allPaid: true,
-                              };
-                              
-                              existing.totalEarnings += video.earnings || 0;
-                              existing.videos.push(video);
-                              if (!video.hasBeenPaid) {
-                                existing.allPaid = false;
-                              }
-                              
-                              creatorMap.set(video.author_id, existing);
-                            });
-
-                            // Check if any creator has disabling conditions (same logic as individual buttons)
-                            return Array.from(creatorMap.values()).some(creator => {
-                              return creator.videos
-                                .filter((v: Video) => v.status === 'approved')
-                                .every((v: Video) => v.hasBeenPaid) || // All approved videos already paid
-                                creator.videos.some((v: Video) => v.status === 'pending') || // Has pending videos
-                                creator.videos
-                                  .filter((v: Video) => v.status === 'approved')
-                                  .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0; // No earnings from approved videos
-                            });
-                          })()
-                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                            : 'bg-primary hover:bg-primary-dark text-white hover:cursor-pointer'
-                        } px-4 py-2 rounded-lg`}
-                      >
-                        Pay All Users
-                      </button>
-                    </div>
-
-                    {/* Alert message for disabled "Pay All Users" button */}
-                    {(() => {
-                      if (!selectedCampaign.videos?.length) return null;
-                      
-                      // Group videos by author_id and check for disabling conditions
-                      const creatorMap = new Map();
-                      selectedCampaign.videos.forEach(video => {
-                        if (!video.author_id) return;
+                  <div className="mb-8">
+                    <div className="w-full">
+                      {/* Total Payout Display */}
+                      {(() => {
+                        const totalPayout = selectedCampaign.videos
+                          ?.filter((v: Video) => v.status === 'approved')
+                          .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) || 0;
                         
-                        const existing = creatorMap.get(video.author_id) || {
-                          author_id: video.author_id,
-                          totalEarnings: 0,
-                          videos: [],
-                          allPaid: true,
-                        };
-                        
-                        existing.totalEarnings += video.earnings || 0;
-                        existing.videos.push(video);
-                        if (!video.hasBeenPaid) {
-                          existing.allPaid = false;
-                        }
-                        
-                        creatorMap.set(video.author_id, existing);
-                      });
-
-                      const creatorsWithIssues = Array.from(creatorMap.values()).filter(creator => {
-                        return creator.videos
-                          .filter((v: Video) => v.status === 'approved')
-                          .every((v: Video) => v.hasBeenPaid) || // All approved videos already paid
-                          creator.videos.some((v: Video) => v.status === 'pending') || // Has pending videos
-                          creator.videos
-                            .filter((v: Video) => v.status === 'approved')
-                            .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0; // No earnings from approved videos
-                      });
-
-                      if (creatorsWithIssues.length > 0) {
                         return (
-                          <div className="mt-2 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-center">
-                            <p className="text-gray-600 text-sm">Pay all users button unavailable. Payment not applicable for some users</p>
+                          <div className="mb-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl">
+                            <div className="text-center">
+                              <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Released To Creators</h3>
+                              <p className="text-4xl font-bold text-green-600">${totalPayout.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                              <p className="text-sm text-gray-600 mt-2">This amount will be distributed to all approved creators</p>
+                            </div>
                           </div>
                         );
-                      }
-                      return null;
-                    })()}
+                      })()}
+
+                      {/* Only show release payments button if payments haven't been released yet */}
+                      {!selectedCampaign.fundsReleased && !selectedCampaign.paymentsReleased && (
+                        <button
+                          onClick={async () => {
+                            if (!selectedCampaign.videos?.length) return;
+                            
+                            // Calculate total payout for confirmation
+                            const totalPayout = selectedCampaign.videos
+                              .filter((v: Video) => v.status === 'approved')
+                              .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0);
+                            
+                            // Show confirmation modal
+                            setShowConfirmationModal(true);
+                          }}
+                          disabled={(() => {
+                            // Check if no videos in campaign
+                            if (!selectedCampaign.videos?.length) return true;
+                            
+                            // Check if any videos are still pending
+                            return selectedCampaign.videos.some((v: Video) => v.status === 'pending');
+                          })()}
+                          className={`${
+                            (() => {
+                              // Check if no videos in campaign
+                              if (!selectedCampaign.videos?.length) return true;
+                              
+                              // Check if any videos are still pending
+                              return selectedCampaign.videos.some((v: Video) => v.status === 'pending');
+                            })()
+                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              : isPaymentSuccess
+                              ? 'bg-green-500 text-white transform scale-105 shadow-lg'
+                              : 'bg-primary hover:bg-primary-dark text-white hover:cursor-pointer transform hover:scale-105 transition-all duration-200'
+                          } w-full px-12 py-6 rounded-2xl text-xl font-bold shadow-lg flex flex-col items-center gap-2 relative overflow-hidden`}
+                        >
+                          {/* Confetti animation */}
+                          {isPaymentSuccess && (
+                            <>
+                              <div className="absolute inset-0 pointer-events-none">
+                                {/* Top confetti */}
+                                <div className="absolute top-0 left-1/4 w-2 h-2 bg-yellow-400 rounded-full animate-ping" style={{ animationDelay: '0s', animationDuration: '1s' }}></div>
+                                <div className="absolute top-0 left-1/2 w-2 h-2 bg-pink-400 rounded-full animate-ping" style={{ animationDelay: '0.2s', animationDuration: '1s' }}></div>
+                                <div className="absolute top-0 left-3/4 w-2 h-2 bg-blue-400 rounded-full animate-ping" style={{ animationDelay: '0.4s', animationDuration: '1s' }}></div>
+                                
+                                {/* Bottom confetti */}
+                                <div className="absolute bottom-0 right-1/4 w-2 h-2 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '0.6s', animationDuration: '1s' }}></div>
+                                <div className="absolute bottom-0 right-1/2 w-2 h-2 bg-purple-400 rounded-full animate-ping" style={{ animationDelay: '0.8s', animationDuration: '1s' }}></div>
+                                
+                                {/* Left confetti */}
+                                <div className="absolute left-0 top-1/3 w-2 h-2 bg-red-400 rounded-full animate-ping" style={{ animationDelay: '0.3s', animationDuration: '1s' }}></div>
+                                <div className="absolute left-0 bottom-1/3 w-2 h-2 bg-orange-400 rounded-full animate-ping" style={{ animationDelay: '0.7s', animationDuration: '1s' }}></div>
+                                
+                                {/* Right confetti */}
+                                <div className="absolute right-0 top-1/3 w-2 h-2 bg-indigo-400 rounded-full animate-ping" style={{ animationDelay: '0.5s', animationDuration: '1s' }}></div>
+                                <div className="absolute right-0 bottom-1/3 w-2 h-2 bg-teal-400 rounded-full animate-ping" style={{ animationDelay: '0.9s', animationDuration: '1s' }}></div>
+                                
+                                {/* Diagonal confetti */}
+                                <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-yellow-300 rounded-full animate-ping" style={{ animationDelay: '0.1s', animationDuration: '1.2s' }}></div>
+                                <div className="absolute top-1/4 right-1/4 w-2 h-2 bg-pink-300 rounded-full animate-ping" style={{ animationDelay: '0.3s', animationDuration: '1.2s' }}></div>
+                                <div className="absolute bottom-1/4 left-1/4 w-2 h-2 bg-blue-300 rounded-full animate-ping" style={{ animationDelay: '0.5s', animationDuration: '1.2s' }}></div>
+                                <div className="absolute bottom-1/4 right-1/4 w-2 h-2 bg-green-300 rounded-full animate-ping" style={{ animationDelay: '0.7s', animationDuration: '1.2s' }}></div>
+                              </div>
+                            </>
+                          )}
+                          
+                          {isPaymentSuccess ? (
+                            <>
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              <div className="text-center">
+                                <div className="text-xl font-bold">Payments Successfully Released</div>
+                                <div className="text-sm font-normal opacity-90">All payments have been distributed</div>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <div className="text-center">
+                                <div className="text-xl font-bold">Release Payments</div>
+                                <div className="text-sm font-normal opacity-90">Send payments to creator wallets</div>
+                              </div>
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      {/* Show success message when payments have been released */}
+                      {(selectedCampaign.fundsReleased || selectedCampaign.paymentsReleased) && (
+                        <div className="w-full px-12 py-6 rounded-2xl text-xl font-bold shadow-lg flex flex-col items-center gap-2 bg-green-500 text-white transform scale-105">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          <div className="text-center">
+                            <div className="text-xl font-bold">Payments Successfully Released</div>
+                            <div className="text-sm font-normal opacity-90">All payments have been distributed</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Debug info - remove this after testing */}
+                      <div className="mt-4 p-2 bg-gray-100 rounded text-xs">
+                        Debug: fundsReleased={String(selectedCampaign.fundsReleased)}, paymentsReleased={String(selectedCampaign.paymentsReleased)}
+                      </div>
+
+                      {/* Disabled notification - only show when button is visible but disabled */}
+                      {!selectedCampaign.fundsReleased && !selectedCampaign.paymentsReleased && (() => {
+                        // Check if no videos in campaign
+                        if (!selectedCampaign.videos?.length) {
+                          return (
+                            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                              <div className="flex items-center gap-2 text-red-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span className="font-medium">Cannot release payments: No videos found in this campaign</span>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        // Check if any videos are still pending
+                        if (selectedCampaign.videos.some((v: Video) => v.status === 'pending')) {
+                          const pendingCount = selectedCampaign.videos.filter((v: Video) => v.status === 'pending').length;
+                          return (
+                            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                              <div className="flex items-center gap-2 text-yellow-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
+                                <span className="font-medium">
+                                  Cannot release payments: {pendingCount} video{pendingCount > 1 ? 's' : ''} still pending review. Please approve or deny all videos first.
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
+                        return null;
+                      })()}
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    <h2 className="text-lg font-medium text-gray-900 mb-4">Creators</h2>
                   </div>
 
                   <div className="space-y-4">
@@ -805,11 +835,6 @@ export default function PaymentsPage() {
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm text-gray-600">Total Earnings:</span>
-                                  <span className="text-sm font-medium text-gray-900">${creator.totalEarnings.toFixed(2)}</span>
-                                </div>
-
-                                <div className="flex items-center gap-2">
                                   <span className="text-sm text-gray-600">Videos Submitted:</span>
                                   <span className="text-sm font-medium text-gray-900">{creator.videos.length}</span>
                                 </div>
@@ -859,127 +884,8 @@ export default function PaymentsPage() {
                                     </div>
                                   )}
                                 </div>
-
-                                <div className="flex items-center gap-2">
-                                  <span className={`text-sm ${
-                                    creator.videos
-                                      .filter((v: Video) => v.status === 'approved')
-                                      .every((v: Video) => v.hasBeenPaid) 
-                                      ? 'text-green-600' 
-                                      : 'text-yellow-600'
-                                  }`}>
-                                    {creator.videos
-                                      .filter((v: Video) => v.status === 'approved')
-                                      .every((v: Video) => v.hasBeenPaid)
-                                      ? 'Paid'
-                                      : 'Unpaid'}
-                                  </span>
-                                  {!creator.videos
-                                    .filter((v: Video) => v.status === 'approved')
-                                    .every((v: Video) => v.hasBeenPaid) && 
-                                    creator.videos
-                                      .filter((v: Video) => v.status === 'approved')
-                                      .some((v: Video) => v.hasBeenPaid) && (
-                                    <span className="text-sm text-yellow-600">
-                                      (Partial payment detected)
-                                    </span>
-                                  )}
-                                </div>
                               </div>
-
-                              <button
-                                onClick={async () => {
-                                  try {
-                                    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/pay-creators`, {
-                                      method: 'POST',
-                                      headers: {
-                                        'Content-Type': 'application/json',
-                                      },
-                                      body: JSON.stringify({
-                                        userIds: [creator.author_id],
-                                        campaignId: selectedCampaign.id,
-                                        actorId: user?.uid,
-                                      }),
-                                    });
-                                    
-                                    if (!response.ok) {
-                                      throw new Error('Failed to pay creator');
-                                    }
-                                    
-                                    const data = await response.json();
-                                    
-                                    // Update state immediately after successful payment
-                                    updateCampaignAfterPayment(selectedCampaign, data, [creator.author_id]);
-                                    
-                                    setReceiptData(data);
-                                    setShowReceiptModal(true);
-                                    
-                                    toast.success('Successfully paid creator');
-                                  } catch (error) {
-                                    console.error('Error paying creator:', error);
-                                    toast.error('Failed to pay creator');
-                                  }
-                                }}
-                                disabled={creator.videos
-                                  .filter((v: Video) => v.status === 'approved')
-                                  .every((v: Video) => v.hasBeenPaid) || 
-                                  creator.videos.some((v: Video) => v.status === 'pending') ||
-                                  creator.videos
-                                    .filter((v: Video) => v.status === 'approved')
-                                    .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0}
-                                className={`${
-                                  creator.videos
-                                    .filter((v: Video) => v.status === 'approved')
-                                    .every((v: Video) => v.hasBeenPaid) || 
-                                    creator.videos.some((v: Video) => v.status === 'pending') ||
-                                    creator.videos
-                                      .filter((v: Video) => v.status === 'approved')
-                                      .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0
-                                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                                    : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300 hover:cursor-pointer'
-                                } px-4 py-2 rounded-lg border`}
-                              >
-                                Pay Creator
-                              </button>
                             </div>
-                            
-                            {/* Alert message for disabled button */}
-                            {(creator.videos
-                              .filter((v: Video) => v.status === 'approved')
-                              .every((v: Video) => v.hasBeenPaid) || 
-                              creator.videos.some((v: Video) => v.status === 'pending') ||
-                              creator.videos
-                                .filter((v: Video) => v.status === 'approved')
-                                .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0) && (
-                              <div className="mt-3 p-3 rounded-lg text-sm">
-                                {creator.videos
-                                  .filter((v: Video) => v.status === 'approved')
-                                  .every((v: Video) => v.hasBeenPaid) ? (
-                                  <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded-lg p-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                    <span>Creator has been paid</span>
-                                  </div>
-                                ) : creator.videos.some((v: Video) => v.status === 'pending') ? (
-                                  <div className="flex items-center gap-2 text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                    </svg>
-                                    <span>Please approve or deny any pending videos before paying creator</span>
-                                  </div>
-                                ) : creator.videos
-                                    .filter((v: Video) => v.status === 'approved')
-                                    .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) === 0 ? (
-                                  <div className="flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <span>Cannot send a payment of $0.00</span>
-                                  </div>
-                                ) : null}
-                              </div>
-                            )}
                           </div>
                         );
                       });
@@ -998,30 +904,108 @@ export default function PaymentsPage() {
         </div>
       )}
 
-      {/* Receipt Modal */}
-      {showReceiptModal && (
+      {/* Confirmation Modal */}
+      {showConfirmationModal && (
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-lg w-full max-w-lg p-6">
-            <div className="space-y-4">
-              <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <h4 className="text-xl font-semibold text-gray-900 mb-2">Payment Successful!</h4>
-                <p className="text-gray-600">
-                  You can see payment information by clicking the receipts button next to the campaign on this page or see your transactions in the overview tab.
-                </p>
-              </div>
-            </div>
-            <div className="mt-6 flex justify-end">
+          <div className="bg-white rounded-xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Confirm Payment Release</h3>
               <button
-                type="button"
-                onClick={() => setShowReceiptModal(false)}
-                className="px-4 py-2 bg-primary hover:bg-primary-dark text-white font-medium rounded-md transition-colors hover:cursor-pointer"
+                onClick={() => setShowConfirmationModal(false)}
+                className="text-gray-500 hover:text-gray-700 hover:cursor-pointer p-2 rounded-lg hover:bg-gray-100"
               >
-                Close
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">Are you sure?</h4>
+              <p className="text-gray-600 mb-4">
+                You are about to release payments totaling{' '}
+                <span className="font-bold text-blue-600">
+                  ${(() => {
+                    const totalPayout = selectedCampaign?.videos
+                      ?.filter((v: Video) => v.status === 'approved')
+                      .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0) || 0;
+                    return totalPayout.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                  })()}
+                </span>
+              </p>
+              <p className="text-sm text-gray-500">
+                This action cannot be undone. All approved creators will receive their payments immediately.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirmationModal(false)}
+                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  setShowConfirmationModal(false);
+                  
+                  if (!selectedCampaign?.videos?.length) return;
+                  
+                  const userIds = Array.from(new Set(selectedCampaign.videos.map((v: Video) => v.author_id)));
+                  try {
+                    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/release-campaign-payments`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        userIds,
+                        campaignId: selectedCampaign.id,
+                        actorId: user?.uid,
+                      }),
+                    });
+                    
+                    if (!response.ok) {
+                      throw new Error('Failed to release payments');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Update campaign with receipt data
+                    const updatedCampaign: Campaign = {
+                      ...selectedCampaign,
+                      receipts: [...(selectedCampaign.receipts || []), data]
+                    };
+                    setSelectedCampaign(updatedCampaign);
+                    
+                    // Update the campaigns list
+                    setCampaigns(prevCampaigns => 
+                      prevCampaigns.map(c => c.id === selectedCampaign.id ? updatedCampaign : c)
+                    );
+                    
+                    // Show success animation
+                    setIsPaymentSuccess(true);
+                    
+                    toast.success('Successfully released payments to all creators');
+                    
+                    // Reset success state after 5 seconds
+                    setTimeout(() => {
+                      setIsPaymentSuccess(false);
+                    }, 5000);
+                    
+                  } catch (error) {
+                    console.error('Error releasing payments:', error);
+                    toast.error('Failed to release payments');
+                  }
+                }}
+                className="flex-1 px-4 py-3 bg-primary hover:bg-primary-dark text-white rounded-lg hover:cursor-pointer"
+              >
+                Confirm Release
               </button>
             </div>
           </div>
@@ -1233,7 +1217,7 @@ export default function PaymentsPage() {
                 <div className="bg-gray-50 rounded-xl p-4">
                   <h5 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2m0 0V9a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
                     To (Recipient)
                   </h5>
@@ -1536,6 +1520,51 @@ export default function PaymentsPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Video Modal */}
+      {showVideoModal && selectedCampaign && (
+        <VideoModal
+          campaignId={selectedCampaign.id}
+          videoUrls={selectedCampaign.videos || []}
+          onClose={() => setShowVideoModal(false)}
+          onVideosUpdated={() => {
+            // The VideoModal component will handle the database update internally
+            // We just need to refresh our local state by triggering a re-fetch
+            // The existing useEffect with onSnapshot will automatically update the campaigns
+            toast.success('Videos updated successfully!');
+          }}
+        />
+      )}
+
+      {/* Campaign Modal */}
+      {showCampaignModal && selectedCampaign && (
+        <CampaignModal
+          initialData={selectedCampaign}
+          onClose={() => setShowCampaignModal(false)}
+          onSave={async (updatedCampaign) => {
+            try {
+              // Update the campaign in the database
+              const campaignRef = doc(db, 'campaigns', updatedCampaign.id);
+              await updateDoc(campaignRef, {
+                ...updatedCampaign,
+                lastUpdated: Date.now()
+              });
+              
+              // Update the campaigns list with the edited campaign
+              setCampaigns(prevCampaigns => 
+                prevCampaigns.map(c => c.id === updatedCampaign.id ? updatedCampaign : c)
+              );
+              setSelectedCampaign(updatedCampaign);
+              setShowCampaignModal(false);
+              toast.success('Campaign updated successfully!');
+            } catch (error) {
+              console.error('Error updating campaign:', error);
+              toast.error('Failed to update campaign. Please try again.');
+            }
+          }}
+          isLoading={false}
+        />
       )}
     </div>
   );

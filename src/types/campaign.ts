@@ -24,6 +24,8 @@ export interface Campaign {
   owner_id: string;
   maxSubmissions?: number; // Maximum number of video submissions allowed
   isComplete: boolean;
+  fundsReleased?: boolean;
+  paymentsReleased?: boolean;
   receipts?: Array<{
     receiptId: string;
     creator: {
