@@ -13,53 +13,20 @@ import { db } from '@/lib/firebase';
 import VideoModal from '@/components/VideoModal';
 import CampaignModal from '@/components/CampaignModal';
 
-interface ReceiptData {
-  receiptId: string;
-  creator: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    paymentEmail: string;
-  };
-  processedBy: {
-    id: string;
-    name: string;
-  };
-  payment: {
-    amount: number;
-    currency: string;
-    method: string;
-    status: string;
-    batchId: string;
-    timestamp: number;
-  };
-  summary: {
-    netAmount: number;
-    platformFee: number;
-    totalVideos: number;
-    totalViews: number;
-    unpaidVideosCount: number;
-  };
-  metadata: {
-    paymentReference: string;
-  };
-}
+
 
 export default function PaymentsPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
-  const [showReceiptModal, setShowReceiptModal] = useState(false);
-  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [isLoadingCampaign, setIsLoadingCampaign] = useState(false);
   const [creatorDetails, setCreatorDetails] = useState<Record<string, User>>({});
   const [isLoadingCreators, setIsLoadingCreators] = useState(false);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [showCampaignReceiptsModal, setShowCampaignReceiptsModal] = useState(false);
   const { documents: transactions = [], loading: loadingTransactions } = useCollection<Transaction>('transactions');
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [showPaymentReceiptModal, setShowPaymentReceiptModal] = useState(false);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [depositForm, setDepositForm] = useState({
     campaignId: '',
@@ -72,6 +39,8 @@ export default function PaymentsPage() {
   const [showCampaignModal, setShowCampaignModal] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
+  const [isReleasingPayments, setIsReleasingPayments] = useState(false);
+  const [expandedCreators, setExpandedCreators] = useState<Set<string>>(new Set());
   
   // Fetch campaigns with proper cleanup
   useEffect(() => {
@@ -240,26 +209,19 @@ export default function PaymentsPage() {
     fetchCreatorDetails();
   }, [selectedCampaign]);
 
-  // Helper function to update campaign state after payment
-  const updateCampaignAfterPayment = (campaign: Campaign, receiptData: ReceiptData, paidUserIds: string[]) => {
-    const updatedCampaign = {
-      ...campaign,
-      receipts: [...(campaign.receipts || []), receiptData],
-      // Update hasBeenPaid for videos of the paid creators
-      videos: campaign.videos?.map(video => {
-        if (paidUserIds.includes(video.author_id) && video.status === 'approved') {
-          return { ...video, hasBeenPaid: true };
-        }
-        return video;
-      })
-    };
-    
-    setSelectedCampaign(updatedCampaign);
-    
-    // Update the campaigns list
-    setCampaigns(prevCampaigns => 
-      prevCampaigns.map(c => c.id === campaign.id ? updatedCampaign : c)
-    );
+
+
+  // Helper function to toggle creator expansion
+  const toggleCreatorExpansion = (creatorId: string) => {
+    setExpandedCreators(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(creatorId)) {
+        newSet.delete(creatorId);
+      } else {
+        newSet.add(creatorId);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -504,6 +466,9 @@ export default function PaymentsPage() {
                 const selectedCampaign = campaigns.find(c => c.id === campaignId);
                 if (selectedCampaign) {
                   setSelectedCampaign(selectedCampaign);
+                  // Reset payment states when selecting a new campaign
+                  setIsPaymentSuccess(false);
+                  setIsReleasingPayments(false);
                 }
               }}
             >
@@ -565,15 +530,7 @@ export default function PaymentsPage() {
                       </svg>
                       <span>Edit Campaign</span>
                     </button>
-                    <button
-                      onClick={() => setShowCampaignReceiptsModal(true)}
-                      className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2 rounded-lg flex items-center gap-2 hover:cursor-pointer"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                      </svg>
-                      <span>{selectedCampaign.receipts?.length || 0} Receipts</span>
-                    </button>
+
                   </div>
                 </div>
 
@@ -647,20 +604,33 @@ export default function PaymentsPage() {
                             if (!selectedCampaign.videos?.length) return true;
                             
                             // Check if any videos are still pending
-                            return selectedCampaign.videos.some((v: Video) => v.status === 'pending');
+                            if (selectedCampaign.videos.some((v: Video) => v.status === 'pending')) return true;
+                            
+                            // Check if currently releasing payments
+                            if (isReleasingPayments) return true;
+                            
+                            return false;
                           })()}
                           className={`${
                             (() => {
-                              // Check if no videos in campaign
-                              if (!selectedCampaign.videos?.length) return true;
+                              // Check if no videos in campaign or pending videos
+                              if (!selectedCampaign.videos?.length || selectedCampaign.videos.some((v: Video) => v.status === 'pending')) {
+                                return 'bg-gray-300 text-gray-500 cursor-not-allowed';
+                              }
                               
-                              // Check if any videos are still pending
-                              return selectedCampaign.videos.some((v: Video) => v.status === 'pending');
+                              // Check if currently releasing payments
+                              if (isReleasingPayments) {
+                                return 'bg-blue-500 text-white cursor-not-allowed';
+                              }
+                              
+                              // Check if payment was successful
+                              if (isPaymentSuccess) {
+                                return 'bg-green-500 text-white transform scale-105 shadow-lg';
+                              }
+                              
+                              // Default state
+                              return 'bg-primary hover:bg-primary-dark text-white hover:cursor-pointer transform hover:scale-105 transition-all duration-200';
                             })()
-                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                              : isPaymentSuccess
-                              ? 'bg-green-500 text-white transform scale-105 shadow-lg'
-                              : 'bg-primary hover:bg-primary-dark text-white hover:cursor-pointer transform hover:scale-105 transition-all duration-200'
                           } w-full px-12 py-6 rounded-2xl text-xl font-bold shadow-lg flex flex-col items-center gap-2 relative overflow-hidden`}
                         >
                           {/* Confetti animation */}
@@ -693,7 +663,15 @@ export default function PaymentsPage() {
                             </>
                           )}
                           
-                          {isPaymentSuccess ? (
+                          {isReleasingPayments ? (
+                            <>
+                              <div className="animate-spin rounded-full h-8 w-8 border-4 border-white border-t-transparent"></div>
+                              <div className="text-center">
+                                <div className="text-xl font-bold">Releasing Payments...</div>
+                                <div className="text-sm font-normal opacity-90">Please wait while we process payments</div>
+                              </div>
+                            </>
+                          ) : isPaymentSuccess ? (
                             <>
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -719,7 +697,7 @@ export default function PaymentsPage() {
 
                       {/* Show success message when payments have been released */}
                       {(selectedCampaign.fundsReleased || selectedCampaign.paymentsReleased) && (
-                        <div className="w-full px-12 py-6 rounded-2xl text-xl font-bold shadow-lg flex flex-col items-center gap-2 bg-green-500 text-white transform scale-105">
+                        <div className="w-full px-12 py-6 rounded-2xl text-xl font-bold shadow-lg flex flex-col items-center gap-2 bg-green-500 text-white">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
@@ -727,6 +705,21 @@ export default function PaymentsPage() {
                             <div className="text-xl font-bold">Payments Successfully Released</div>
                             <div className="text-sm font-normal opacity-90">All payments have been distributed</div>
                           </div>
+                        </div>
+                      )}
+
+                      {/* View Released Payments Receipt Button */}
+                      {(selectedCampaign.fundsReleased || selectedCampaign.paymentsReleased) && (
+                        <div className="mt-6">
+                          <button
+                            onClick={() => setShowPaymentReceiptModal(true)}
+                            className="w-full px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl text-lg font-semibold shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-3 hover:cursor-pointer"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            View Released Payments Receipt
+                          </button>
                         </div>
                       )}
 
@@ -777,7 +770,7 @@ export default function PaymentsPage() {
                     <h2 className="text-lg font-medium text-gray-900 mb-4">Creators</h2>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {(() => {
                       // Group videos by author_id and calculate total earnings
                       const creatorMap = new Map();
@@ -803,81 +796,126 @@ export default function PaymentsPage() {
                       return Array.from(creatorMap.values()).map(creator => {
                         const userDetails = creatorDetails[creator.author_id];
                         const paymentEmail = userDetails?.paymentEmail;
+                        const isExpanded = expandedCreators.has(creator.author_id);
+                        
+                        // Calculate additional metrics
+                        const approvedVideos = creator.videos.filter((v: Video) => v.status === 'approved');
+                        const deniedVideos = creator.videos.filter((v: Video) => v.status === 'denied');
+                        const totalViews = creator.videos.reduce((sum: number, v: Video) => sum + (v.views || 0), 0);
+                        const totalPayout = approvedVideos.reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0);
                         
                         return (
-                          <div key={creator.author_id} className="border border-gray-200 rounded-lg p-4">
-                            <div className="flex justify-between items-start">
-                              <div className="space-y-2">
-                                <div>
-                                  <h4 className="font-medium text-gray-900">
-                                    {userDetails ? `${userDetails.firstName} ${userDetails.lastName}` : 'Unknown User'}
-                                  </h4>
-                                  <p className="text-sm text-gray-600">{userDetails?.email || 'No email available'}</p>
-                                </div>
-                                
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm text-gray-600">Payment Email:</span>
-                                  {paymentEmail ? (
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-sm text-gray-900">{paymentEmail}</span>
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                      </svg>
+                          <div key={creator.author_id} className="border border-gray-200 rounded-lg overflow-hidden">
+                            {/* Collapsed Header - Clickable */}
+                            <div 
+                              className="p-4 hover:bg-gray-50 hover:cursor-pointer transition-colors"
+                              onClick={() => toggleCreatorExpansion(creator.author_id)}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-3">
+                                      <h4 className="font-medium text-gray-900 text-sm">
+                                        {userDetails ? `${userDetails.firstName} ${userDetails.lastName}` : 'Unknown User'}
+                                      </h4>
+                                      <span className="text-xs text-gray-500">•</span>
+                                      <span className="text-xs text-gray-600">{userDetails?.email || 'No email'}</span>
                                     </div>
-                                  ) : (
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-sm text-gray-500">N/A</span>
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                      </svg>
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm text-gray-600">Videos Submitted:</span>
-                                  <span className="text-sm font-medium text-gray-900">{creator.videos.length}</span>
-                                </div>
-
-                                {/* Video Itemization */}
-                                <div className="mt-2 space-y-2">
-                                  {creator.videos.map((video: Video, index: number) => (
-                                    <div key={video.id} className="text-sm">
-                                      <a 
-                                        href={video.url} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="text-primary hover:text-primary-dark hover:cursor-pointer"
-                                      >
-                                        Video {index + 1}
-                                      </a>
-                                      {' - '}
-                                      <span className="text-gray-600">{video.title || 'Untitled Video'}</span>
-                                      {' - '}
-                                      <span className="font-medium text-gray-800">${video.status === 'approved' ? (video.earnings || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}</span>
-                                      {' '}
-                                      <span className={`${
-                                        video.status === 'approved' ? 'text-green-600' :
-                                        video.status === 'denied' ? 'text-red-600' :
-                                        'text-yellow-500 font-bold'
-                                      }`}>
-                                        {video.status?.charAt(0).toUpperCase() + video.status?.slice(1) || 'Pending'}
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-semibold text-green-600">
+                                        ${totalPayout.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                       </span>
-                                      {' - '}
-                                      <span className="text-gray-600">{video.views?.toLocaleString() || 0} views</span>
+                                      <svg 
+                                        xmlns="http://www.w3.org/2000/svg" 
+                                        className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                                        fill="none" 
+                                        viewBox="0 0 24 24" 
+                                        stroke="currentColor"
+                                      >
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-6 text-xs text-gray-600">
+                                    <div className="flex items-center gap-1">
+                                      <span>Payment:</span>
+                                      {paymentEmail ? (
+                                        <div className="flex items-center gap-1">
+                                          <span className="text-gray-900">{paymentEmail}</span>
+                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                          </svg>
+                                        </div>
+                                      ) : (
+                                        <span className="text-red-500 font-medium">Missing</span>
+                                      )}
+                                    </div>
+                                    <div>
+                                      <span>{creator.videos.length} videos</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-green-600">{approvedVideos.length} approved</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-red-600">{deniedVideos.length} denied</span>
+                                    </div>
+                                    <div>
+                                      <span>{totalViews.toLocaleString()} views</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Expanded Content */}
+                            {isExpanded && (
+                              <div className="border-t border-gray-200 p-4 bg-gray-50">
+                                {/* Video Itemization */}
+                                <div className="space-y-2">
+                                  <h5 className="text-sm font-medium text-gray-900 mb-3">Video Details:</h5>
+                                  {creator.videos.map((video: Video, index: number) => (
+                                    <div key={video.id} className="text-sm bg-white rounded p-3 border border-gray-200">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex-1">
+                                          <a 
+                                            href={video.url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="text-primary hover:text-primary-dark hover:cursor-pointer font-medium"
+                                          >
+                                            Video {index + 1}
+                                          </a>
+                                          <span className="text-gray-600 ml-2">{video.title || 'Untitled Video'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-4 text-xs">
+                                          <span className="font-medium text-gray-800">
+                                            ${video.status === 'approved' ? (video.earnings || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
+                                          </span>
+                                          <span className={`px-2 py-1 rounded-full font-medium ${
+                                            video.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                            video.status === 'denied' ? 'bg-red-100 text-red-700' :
+                                            'bg-yellow-100 text-yellow-700'
+                                          }`}>
+                                            {video.status?.charAt(0).toUpperCase() + video.status?.slice(1) || 'Pending'}
+                                          </span>
+                                          <span className="text-gray-600">{video.views?.toLocaleString() || 0} views</span>
+                                        </div>
+                                      </div>
                                     </div>
                                   ))}
-                                  <div className="pt-1 border-t border-gray-200">
-                                    <span className="text-sm text-gray-600">Total Payout: </span>
-                                    <span className="text-sm font-bold text-gray-800">
-                                      ${creator.videos
-                                        .filter((v: Video) => v.status === 'approved')
-                                        .reduce((sum: number, v: Video) => sum + (v.earnings || 0), 0)
-                                        .toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    </span>
+                                  
+                                  <div className="pt-3 border-t border-gray-300 bg-white rounded p-3 mt-3">
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-sm font-medium text-gray-900">Total Payout:</span>
+                                      <span className="text-lg font-bold text-green-600">
+                                        ${totalPayout.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                      </span>
+                                    </div>
                                   </div>
+                                  
                                   {creator.videos.some((v: Video) => v.status === 'pending') && (
-                                    <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                                    <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
                                       <p className="text-sm text-yellow-800">
                                         ⚠️ You have videos still pending. Please approve or deny all videos before submitting payment.
                                       </p>
@@ -885,7 +923,7 @@ export default function PaymentsPage() {
                                   )}
                                 </div>
                               </div>
-                            </div>
+                            )}
                           </div>
                         );
                       });
@@ -954,7 +992,42 @@ export default function PaymentsPage() {
                 onClick={async () => {
                   setShowConfirmationModal(false);
                   
-                  if (!selectedCampaign?.videos?.length) return;
+                  if (!selectedCampaign?.videos?.length) {
+                    toast.error('No videos found in this campaign');
+                    return;
+                  }
+                  
+                  // Check if payments have already been released (frontend state)
+                  if (selectedCampaign.paymentsReleased || selectedCampaign.fundsReleased) {
+                    toast.error('Payments have already been released for this campaign');
+                    return;
+                  }
+                  
+                  setIsReleasingPayments(true);
+                  
+                  // Double-check database state before sending request
+                  try {
+                    const campaignDoc = await getDoc(doc(db, 'campaigns', selectedCampaign.id));
+                    if (!campaignDoc.exists()) {
+                      toast.error('Campaign not found');
+                      setIsReleasingPayments(false);
+                      return;
+                    }
+                    
+                    const latestCampaignData = campaignDoc.data() as Campaign;
+                    if (latestCampaignData.paymentsReleased || latestCampaignData.fundsReleased) {
+                      toast.error('Payments have already been released for this campaign (verified from database)');
+                      setIsReleasingPayments(false);
+                      // Update local state to match database
+                      setSelectedCampaign(prev => prev ? { ...prev, paymentsReleased: latestCampaignData.paymentsReleased, fundsReleased: latestCampaignData.fundsReleased } : null);
+                      return;
+                    }
+                  } catch (dbError) {
+                    console.error('Error checking campaign status:', dbError);
+                    toast.error('Failed to verify campaign status. Please try again.');
+                    setIsReleasingPayments(false);
+                    return;
+                  }
                   
                   const userIds = Array.from(new Set(selectedCampaign.videos.map((v: Video) => v.author_id)));
                   try {
@@ -971,15 +1044,27 @@ export default function PaymentsPage() {
                     });
                     
                     if (!response.ok) {
-                      throw new Error('Failed to release payments');
+                      const errorData = await response.json();
+                      throw new Error(errorData.error || 'Failed to release payments');
                     }
                     
                     const data = await response.json();
                     
-                    // Update campaign with receipt data
+                    // Update campaign with payment release data and mark as paid
                     const updatedCampaign: Campaign = {
                       ...selectedCampaign,
-                      receipts: [...(selectedCampaign.receipts || []), data]
+                      paymentsReleased: true,
+                      fundsReleased: true,
+                      paymentsReleasedBy: user?.uid,
+                      paymentsReleasedAt: Date.now(),
+                      paymentReleaseReceipt: data.paymentReleaseReceipt,
+                      // Update hasBeenPaid for all approved videos
+                      videos: selectedCampaign.videos?.map(video => {
+                        if (video.status === 'approved') {
+                          return { ...video, hasBeenPaid: true };
+                        }
+                        return video;
+                      })
                     };
                     setSelectedCampaign(updatedCampaign);
                     
@@ -988,132 +1073,177 @@ export default function PaymentsPage() {
                       prevCampaigns.map(c => c.id === selectedCampaign.id ? updatedCampaign : c)
                     );
                     
-                    // Show success animation
+                    // Show success animation (don't reset it)
                     setIsPaymentSuccess(true);
                     
-                    toast.success('Successfully released payments to all creators');
-                    
-                    // Reset success state after 5 seconds
-                    setTimeout(() => {
-                      setIsPaymentSuccess(false);
-                    }, 5000);
+                    toast.success(data.message || 'Successfully released payments to all creators');
                     
                   } catch (error) {
                     console.error('Error releasing payments:', error);
-                    toast.error('Failed to release payments');
+                    toast.error(error instanceof Error ? error.message : 'Failed to release payments');
+                  } finally {
+                    setIsReleasingPayments(false);
                   }
                 }}
-                className="flex-1 px-4 py-3 bg-primary hover:bg-primary-dark text-white rounded-lg hover:cursor-pointer"
+                disabled={isReleasingPayments}
+                className={`flex-1 px-4 py-3 rounded-lg ${
+                  isReleasingPayments
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                    : 'bg-primary hover:bg-primary-dark text-white hover:cursor-pointer'
+                }`}
               >
-                Confirm Release
+                {isReleasingPayments ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
+                    Processing...
+                  </div>
+                ) : (
+                  'Confirm Release'
+                )}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Campaign Receipts Modal */}
-      {showCampaignReceiptsModal && (
+      {/* Payment Receipt Modal */}
+      {showPaymentReceiptModal && selectedCampaign && (
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-lg w-full max-w-4xl p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Campaign Receipts</h3>
-              <button
-                onClick={() => setShowCampaignReceiptsModal(false)}
-                className="text-gray-500 hover:text-gray-700 hover:cursor-pointer"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+          <div className="bg-white rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-8 py-6 rounded-t-xl">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">Payment Release Receipt</h3>
+                  <p className="text-sm text-gray-600 mt-1">Campaign: {selectedCampaign.name}</p>
+                </div>
+                <button
+                  onClick={() => setShowPaymentReceiptModal(false)}
+                  className="text-gray-500 hover:text-gray-700 hover:cursor-pointer p-2 rounded-lg hover:bg-gray-100"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
-            
-            <div className="space-y-4">
-              {selectedCampaign?.receipts?.map((receipt: ReceiptData, index: number) => (
-                <div key={receipt.receiptId} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h4 className="text-lg font-semibold text-gray-900">Receipt #{index + 1}</h4>
-                      <p className="text-sm text-gray-600">ID: {receipt.receiptId}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-600">Processed by: {receipt.processedBy?.name || 'Unknown'}</p>
-                      <p className="text-sm text-gray-600">
-                        {new Date(receipt.payment.timestamp).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
+
+            <div className="p-8 space-y-8">
+              {/* Payment Summary */}
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-4">
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
                     </div>
                   </div>
+                  <h4 className="text-xl font-bold text-gray-900 mb-2">Payments Successfully Released</h4>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Released on: {selectedCampaign.paymentsReleasedAt ? new Date(selectedCampaign.paymentsReleasedAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    }) : 'N/A'}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Released by: {selectedCampaign.paymentsReleasedBy || 'Unknown'}
+                  </p>
+                </div>
+              </div>
 
-                  <div className="grid grid-cols-2 gap-6 mb-4">
-                    <div>
-                      <h5 className="text-sm font-medium text-gray-900 mb-2">Creator Details</h5>
-                      <div className="space-y-1">
-                        <p className="text-sm text-gray-600">
-                          Name: {receipt.creator.firstName} {receipt.creator.lastName}
-                        </p>
-                        <p className="text-sm text-gray-600">Email: {receipt.creator.email}</p>
-                        <p className="text-sm text-gray-600">Payment Email: {receipt.creator.paymentEmail}</p>
+              {/* Wallet Updates */}
+              {selectedCampaign.paymentReleaseReceipt?.walletUpdates && (
+                <div className="bg-white border border-gray-200 rounded-xl p-6">
+                  <h5 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    Wallet Updates ({selectedCampaign.paymentReleaseReceipt.walletUpdates.length} creators)
+                  </h5>
+                  
+                  <div className="grid gap-4">
+                    {selectedCampaign.paymentReleaseReceipt.walletUpdates.map((update: any, index: number) => (
+                      <div key={update.userId} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex-1">
+                            <h6 className="font-semibold text-gray-900 text-lg">
+                              {update.userData.firstName} {update.userData.lastName}
+                            </h6>
+                            <p className="text-sm text-gray-600">{update.userData.email}</p>
+                            <p className="text-sm text-gray-600">Payment: {update.userData.paymentEmail}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-green-600">
+                              +${update.payoutAmount.toFixed(2)}
+                            </p>
+                            <p className="text-sm text-gray-600">Payout Amount</p>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+                          <div className="text-center">
+                            <p className="text-sm text-gray-600">Previous Wallet</p>
+                            <p className="text-lg font-semibold text-gray-900">${update.previousWallet.toFixed(2)}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm text-gray-600">Payout Amount</p>
+                            <p className="text-lg font-semibold text-green-600">+${update.payoutAmount.toFixed(2)}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm text-gray-600">New Wallet</p>
+                            <p className="text-lg font-semibold text-blue-600">${update.newWallet.toFixed(2)}</p>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <h5 className="text-sm font-medium text-gray-900 mb-2">Payment Details</h5>
-                      <div className="space-y-1">
-                        <p className="text-sm text-gray-600">
-                          Amount: ${receipt.payment.amount.toFixed(2)} {receipt.payment.currency}
-                        </p>
-                        <p className="text-sm text-gray-600">Method: {receipt.payment.method}</p>
-                        <p className="text-sm text-gray-600">Status: {receipt.payment.status}</p>
-                        <p className="text-sm text-gray-600">Batch ID: {receipt.payment.batchId}</p>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-
-                  <div className="border-t border-gray-200 pt-4">
-                    <h5 className="text-sm font-medium text-gray-900 mb-2">Summary</h5>
-                    <div className="grid grid-cols-4 gap-4">
-                      <div>
-                        <p className="text-sm text-gray-600">Net Amount</p>
-                        <p className="text-sm font-medium text-gray-900">${receipt.summary.netAmount.toFixed(2)}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Platform Fee</p>
-                        <p className="text-sm font-medium text-gray-900">${receipt.summary.platformFee.toFixed(2)}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Total Videos</p>
-                        <p className="text-sm font-medium text-gray-900">{receipt.summary.totalVideos}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Total Views</p>
-                        <p className="text-sm font-medium text-gray-900">{receipt.summary.totalViews.toLocaleString()}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">Paid Videos:</span>
-                        <span className="text-sm font-medium text-green-600">
-                          {receipt.summary.totalVideos - receipt.summary.unpaidVideosCount}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">Unpaid Videos:</span>
-                        <span className="text-sm font-medium text-yellow-600">
-                          {receipt.summary.unpaidVideosCount}
-                        </span>
-                      </div>
+                  
+                  {/* Total Summary */}
+                  <div className="mt-6 pt-6 border-t border-gray-300 bg-white rounded-lg p-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-semibold text-gray-900">Total Distributed:</span>
+                      <span className="text-2xl font-bold text-green-600">
+                        ${selectedCampaign.paymentReleaseReceipt.walletUpdates.reduce((sum: number, update: any) => sum + update.payoutAmount, 0).toFixed(2)}
+                      </span>
                     </div>
                   </div>
                 </div>
-              ))}
+              )}
+
+              {/* Unpaid Videos */}
+              {selectedCampaign.paymentReleaseReceipt?.unpaidVideos && selectedCampaign.paymentReleaseReceipt.unpaidVideos.length > 0 && (
+                <div className="bg-white border border-gray-200 rounded-xl p-6">
+                  <h5 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Unpaid Videos ({selectedCampaign.paymentReleaseReceipt.unpaidVideos.length})
+                  </h5>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Videos that either made $0.00 or were rejected
+                  </p>
+                  <div className="space-y-2">
+                    {selectedCampaign.paymentReleaseReceipt.unpaidVideos.map((unpaidVideo: any, index: number) => (
+                      <div key={unpaidVideo.video?.id || index} className="bg-gray-50 rounded p-3 border border-gray-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-gray-900">{unpaidVideo.video?.title || 'Untitled Video'}</p>
+                            <p className="text-sm text-gray-600">Status: {unpaidVideo.video?.status || 'Unknown'}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-gray-600">{unpaidVideo.video?.views?.toLocaleString() || 0} views</p>
+                            <p className="text-sm text-gray-600">Potential: ${(unpaidVideo.video?.earnings || 0).toFixed(2)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

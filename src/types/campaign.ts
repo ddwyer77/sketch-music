@@ -26,38 +26,24 @@ export interface Campaign {
   isComplete: boolean;
   fundsReleased?: boolean;
   paymentsReleased?: boolean;
-  receipts?: Array<{
-    receiptId: string;
-    creator: {
-      id: string;
-      firstName: string;
-      lastName: string;
-      email: string;
-      paymentEmail: string;
-    };
-    processedBy: {
-      id: string;
-      name: string;
-    };
-    payment: {
-      amount: number;
-      currency: string;
-      method: string;
-      status: string;
-      batchId: string;
-      timestamp: number;
-    };
-    summary: {
-      netAmount: number;
-      platformFee: number;
-      totalVideos: number;
-      totalViews: number;
-      unpaidVideosCount: number;
-    };
-    metadata: {
-      paymentReference: string;
-    };
-  }>;
+  paymentsReleasedBy?: string;
+  paymentsReleasedAt?: number;
+  paymentReleaseReceipt?: {
+    unpaidVideos: Video[];
+    walletUpdates: Array<{
+      userId: string;
+      previousWallet: number;
+      payoutAmount: number;
+      newWallet: number;
+      userData: {
+        email: string;
+        firstName: string;
+        lastName: string;
+        paymentEmail: string;
+        wallet: number;
+      };
+    }>;
+  };
   campaignTerminationDetails?: {
     date: boolean;
     budget: boolean;
