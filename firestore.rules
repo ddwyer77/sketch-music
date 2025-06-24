@@ -108,5 +108,13 @@ service cloud.firestore {
       // Only admins can read and write bugs
       allow read, write: if isAdmin();
     }
+
+    // System info collection rules
+    match /system_info/{docId} {
+      // Allow authenticated users to read system info (for last updated timestamps)
+      allow read: if isAuthenticated();
+      // Only admins can write to system info
+      allow create, update, delete: if isAdmin();
+    }
   }
 } 

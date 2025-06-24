@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateMessage, setUpdateMessage] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   
   // Use a stable query reference
   const queryConstraints = useMemo(() => [], []);
@@ -34,6 +35,46 @@ export default function Dashboard() {
     deleteDocument, 
     loading: operationLoading 
   } = useFirestoreOperations<Omit<Campaign, 'id'>>('campaigns');
+  
+  // Function to fetch last updated time from system_info
+  const fetchLastUpdated = useCallback(async () => {
+    try {
+      const systemInfoRef = doc(db, 'system_info', 'crons');
+      const systemInfoDoc = await getDoc(systemInfoRef);
+      
+      if (systemInfoDoc.exists()) {
+        const data = systemInfoDoc.data();
+        const updateMetrics = data.updateMetrics;
+        if (updateMetrics && updateMetrics.lastUpdated) {
+          // Check if it's a Firestore Timestamp object
+          if (updateMetrics.lastUpdated.toDate) {
+            // Convert Firestore Timestamp to readable string
+            const date = updateMetrics.lastUpdated.toDate();
+            const formattedDate = date.toLocaleString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
+              second: '2-digit',
+              timeZoneName: 'short'
+            });
+            setLastUpdated(formattedDate);
+          } else {
+            // If it's already a string, use it directly
+            setLastUpdated(updateMetrics.lastUpdated);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching last updated time:', error);
+    }
+  }, []);
+
+  // Fetch last updated time on component mount
+  useEffect(() => {
+    fetchLastUpdated();
+  }, [fetchLastUpdated]);
   
   // Redirect if not an admin
   useEffect(() => {
@@ -72,6 +113,9 @@ export default function Dashboard() {
       // Refresh campaigns list with updated data
       await refresh();
       
+      // Fetch updated last updated time
+      await fetchLastUpdated();
+      
       setUpdateMessage('Metrics updated successfully');
       
       // Clear message after 3 seconds
@@ -89,7 +133,7 @@ export default function Dashboard() {
     } finally {
       setIsUpdating(false);
     }
-  }, [campaigns, isUpdating, refresh]);
+  }, [campaigns, isUpdating, refresh, fetchLastUpdated]);
   
   const openModal = (campaign?: Campaign) => {
     if (campaign) {
@@ -189,12 +233,17 @@ export default function Dashboard() {
     <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8 flex-wrap">
         <h1 className="text-3xl font-bold w-full md:w-auto mb-2 md:mb-0 text-gray-900">Dashboard</h1>
-        <div className="flex gap-3 flex-wrap w-full md:w-auto">
+        <div className="flex gap-3 flex-wrap w-full md:w-auto items-center">
           {updateMessage && (
             <div className={`py-2 px-3 rounded-md text-sm font-medium ${
               updateMessage.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
             }`}>
               {updateMessage}
+            </div>
+          )}
+          {lastUpdated && (
+            <div className="text-sm text-gray-600">
+              Last updated: {lastUpdated}
             </div>
           )}
           <button

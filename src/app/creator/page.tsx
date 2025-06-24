@@ -38,6 +38,7 @@ export default function CreatorDashboard() {
   const [isSavingEmail, setIsSavingEmail] = useState(false);
   const [emailSaveError, setEmailSaveError] = useState<string | null>(null);
   const [emailSaveSuccess, setEmailSaveSuccess] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   const discordCommands = [
     {
@@ -150,6 +151,44 @@ export default function CreatorDashboard() {
     
     checkLinkToken();
   }, [user]);
+
+  useEffect(() => {
+    const fetchLastUpdated = async () => {
+      try {
+        const systemInfoRef = doc(db, 'system_info', 'crons');
+        const systemInfoDoc = await getDoc(systemInfoRef);
+        
+        if (systemInfoDoc.exists()) {
+          const data = systemInfoDoc.data();
+          const updateMetrics = data.updateMetrics;
+          if (updateMetrics && updateMetrics.lastUpdated) {
+            // Check if it's a Firestore Timestamp object
+            if (updateMetrics.lastUpdated.toDate) {
+              // Convert Firestore Timestamp to readable string
+              const date = updateMetrics.lastUpdated.toDate();
+              const formattedDate = date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                second: '2-digit',
+                timeZoneName: 'short'
+              });
+              setLastUpdated(formattedDate);
+            } else {
+              // If it's already a string, use it directly
+              setLastUpdated(updateMetrics.lastUpdated);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching last updated time:', error);
+      }
+    };
+    
+    fetchLastUpdated();
+  }, []);
 
   const handleGenerateToken = async () => {
     if (!user?.uid) return;
@@ -335,7 +374,14 @@ export default function CreatorDashboard() {
         {activeTab === 'campaigns' && (
           <>
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Campaigns</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-gray-800">Campaigns</h2>
+                {lastUpdated && (
+                  <div className="text-sm text-gray-600">
+                    Campaigns are automatically updated every 15 minutes. Last update: {lastUpdated}
+                  </div>
+                )}
+              </div>
               <div className="relative">
                 <input
                   type="text"
