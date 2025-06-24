@@ -199,8 +199,7 @@ export default function PaymentsPage() {
       const startDate = result[0].date;
       const endDate = result[result.length - 1].date;
       
-      // Fill in missing periods
-      const filledResult = [];
+      // eslint-disable-next-line prefer-const
       let currentDate = new Date(startDate);
       
       while (currentDate <= endDate) {
@@ -1335,7 +1334,19 @@ export default function PaymentsPage() {
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-semibold text-gray-900">Total Distributed:</span>
                       <span className="text-2xl font-bold text-green-600">
-                        ${selectedCampaign.paymentReleaseReceipt.walletUpdates.reduce((sum: number, update: any) => sum + update.payoutAmount, 0).toFixed(2)}
+                        ${selectedCampaign.paymentReleaseReceipt.walletUpdates.reduce((sum: number, update: {
+                          userId: string;
+                          previousWallet: number;
+                          payoutAmount: number;
+                          newWallet: number;
+                          userData: {
+                            email: string;
+                            firstName: string;
+                            lastName: string;
+                            paymentEmail: string;
+                            wallet: number;
+                          };
+                        }) => sum + update.payoutAmount, 0).toFixed(2)}
                       </span>
                     </div>
                   </div>
