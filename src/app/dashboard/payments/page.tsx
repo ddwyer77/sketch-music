@@ -201,6 +201,7 @@ export default function PaymentsPage() {
       
       // eslint-disable-next-line prefer-const
       let currentDate = new Date(startDate);
+      const filledResult: typeof result = [];
       
       while (currentDate <= endDate) {
         const key = formatLabel(currentDate);
@@ -1293,6 +1294,7 @@ export default function PaymentsPage() {
                   </h5>
                   
                   <div className="grid gap-4">
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     {selectedCampaign.paymentReleaseReceipt.walletUpdates.map((update: any, index: number) => (
                       <div key={update.userId} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                         <div className="flex items-center justify-between mb-4">
@@ -1366,6 +1368,7 @@ export default function PaymentsPage() {
                     Videos that either made $0.00 or were rejected
                   </p>
                   <div className="space-y-2">
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     {selectedCampaign.paymentReleaseReceipt.unpaidVideos.map((unpaidVideo: any, index: number) => (
                       <div key={unpaidVideo.video?.id || index} className="bg-gray-50 rounded p-3 border border-gray-200">
                         <div className="flex items-center justify-between">
