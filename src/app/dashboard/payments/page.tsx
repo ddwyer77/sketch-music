@@ -57,92 +57,181 @@ export default function PaymentsPage() {
     return () => unsubscribe();
   }, []);
 
-  // Calculate financial metrics
-  const totalRevenue = transactions
-    .filter(t => {
-      const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
-      return amount > 0;
-    })
-    .reduce((sum, t) => {
-      const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
-      return sum + (typeof amount === 'number' && !isNaN(amount) ? amount : 0);
-    }, 0);
+  // Calculate financial metrics with proper rounding
+  const parseAndRoundAmount = (amount: string | number): number => {
+    const parsed = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return typeof parsed === 'number' && !isNaN(parsed) ? Math.round(parsed * 100) / 100 : 0;
+  };
 
-  const totalExpenses = transactions
-    .filter(t => {
-      const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
-      return amount < 0;
-    })
-    .reduce((sum, t) => {
-      const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
-      return sum + (typeof amount === 'number' && !isNaN(amount) ? Math.abs(amount) : 0);
-    }, 0);
+  const totalRevenue = Math.round(
+    transactions
+      .filter(t => {
+        const amount = parseAndRoundAmount(t.amount);
+        return amount > 0;
+      })
+      .reduce((sum, t) => {
+        const amount = parseAndRoundAmount(t.amount);
+        return sum + amount;
+      }, 0) * 100
+  ) / 100;
 
-  const netIncome = totalRevenue - totalExpenses;
-  const availableBalance = totalRevenue - totalExpenses;
+  const totalExpenses = Math.round(
+    transactions
+      .filter(t => {
+        const amount = parseAndRoundAmount(t.amount);
+        return amount < 0;
+      })
+      .reduce((sum, t) => {
+        const amount = parseAndRoundAmount(t.amount);
+        return sum + Math.abs(amount);
+      }, 0) * 100
+  ) / 100;
+
+  const netIncome = Math.round((totalRevenue - totalExpenses) * 100) / 100;
+  const availableBalance = netIncome;
 
   // Sort transactions by date (most recent first)
   const sortedTransactions = React.useMemo(() => {
     return [...transactions].sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
   }, [transactions]);
 
-  // Group transactions by month for the graph
+  // Generate graph data with better date handling and appropriate time granularity
   const graphData = React.useMemo(() => {
-    // Helper to get month label
-    const getMonthLabel = (date: Date) =>
-      date.toLocaleString('en-US', { month: 'short', year: '2-digit' });
-    // Helper to get month index from short name
-    const monthIndex: Record<string, number> = {
-      Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
-    };
-    // Group by month
-    const map = new Map<string, { income: number; expenses: number }>();
-    transactions.forEach((t) => {
-      // Handle different timestamp formats
-      let d: Date;
-      if (t.createdAt && typeof t.createdAt === 'object' && 'toDate' in t.createdAt) {
-        // Firestore timestamp
-        d = (t.createdAt as Timestamp).toDate();
-      } else if (typeof t.createdAt === 'string') {
-        // String timestamp
-        d = new Date(t.createdAt);
-      } else if (typeof t.createdAt === 'number') {
-        // Number timestamp (milliseconds)
-        d = new Date(t.createdAt);
-      } else {
-        // Fallback to current date
-        d = new Date();
+    if (!transactions.length) return [];
+
+    // Helper to safely parse dates
+    const parseTransactionDate = (dateInput: string | number | Timestamp | undefined): Date => {
+      if (!dateInput) return new Date();
+      
+      if (typeof dateInput === 'object' && 'toDate' in dateInput) {
+        return dateInput.toDate();
+      } else if (typeof dateInput === 'string') {
+        return new Date(dateInput);
+      } else if (typeof dateInput === 'number') {
+        return new Date(dateInput);
       }
+      return new Date();
+    };
+
+    // Helper to safely parse and round amounts
+    const parseAmount = (amount: string | number): number => {
+      const parsed = typeof amount === 'string' ? parseFloat(amount) : amount;
+      return typeof parsed === 'number' && !isNaN(parsed) ? Math.round(parsed * 100) / 100 : 0;
+    };
+
+    // Sort transactions by date first
+    const sortedTransactions = [...transactions].sort((a, b) => {
+      const dateA = parseTransactionDate(a.createdAt);
+      const dateB = parseTransactionDate(b.createdAt);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    // Determine if we should group by day, week, or month based on data span
+    const firstDate = parseTransactionDate(sortedTransactions[0]?.createdAt);
+    const lastDate = parseTransactionDate(sortedTransactions[sortedTransactions.length - 1]?.createdAt);
+    const daysDiff = Math.ceil((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    let groupBy: 'day' | 'week' | 'month';
+    let formatLabel: (date: Date) => string;
+
+    if (daysDiff <= 30) {
+      // Less than 30 days: group by day
+      groupBy = 'day';
+      formatLabel = (date: Date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } else if (daysDiff <= 180) {
+      // Less than 6 months: group by week
+      groupBy = 'week';
+      formatLabel = (date: Date) => {
+        const startOfWeek = new Date(date);
+        startOfWeek.setDate(date.getDate() - date.getDay());
+        return `${startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+      };
+    } else {
+      // More than 6 months: group by month
+      groupBy = 'month';
+      formatLabel = (date: Date) => date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    }
+
+    // Group transactions
+    const dataMap = new Map<string, { income: number; expenses: number; date: Date }>();
+
+    sortedTransactions.forEach((transaction) => {
+      const date = parseTransactionDate(transaction.createdAt);
+      let groupKey: string;
+      let groupDate: Date;
+
+      if (groupBy === 'day') {
+        groupDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        groupKey = formatLabel(groupDate);
+      } else if (groupBy === 'week') {
+        groupDate = new Date(date);
+        groupDate.setDate(date.getDate() - date.getDay()); // Start of week
+        groupKey = formatLabel(groupDate);
+      } else {
+        groupDate = new Date(date.getFullYear(), date.getMonth(), 1);
+        groupKey = formatLabel(groupDate);
+      }
+
+      const entry = dataMap.get(groupKey) || { income: 0, expenses: 0, date: groupDate };
+      const amount = parseAmount(transaction.amount);
+
+      if (amount > 0) {
+        entry.income = Math.round((entry.income + amount) * 100) / 100;
+      } else if (amount < 0) {
+        entry.expenses = Math.round((entry.expenses + Math.abs(amount)) * 100) / 100;
+      }
+
+      dataMap.set(groupKey, entry);
+    });
+
+    // Convert to array and sort by date
+    const result = Array.from(dataMap.entries())
+      .map(([period, data]) => ({
+        period,
+        income: data.income,
+        expenses: data.expenses,
+        date: data.date
+      }))
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    // If we still have less than 3 data points, fill in some gaps to make the chart more readable
+    if (result.length < 3 && result.length > 0) {
+      const startDate = result[0].date;
+      const endDate = result[result.length - 1].date;
       
-      const label = getMonthLabel(d);
-      const entry = map.get(label) || { income: 0, expenses: 0 };
+      // Fill in missing periods
+      const filledResult = [];
+      let currentDate = new Date(startDate);
       
-      // Handle potential string amounts and ensure proper number conversion
-      const amount = typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount;
-      
-      // Positive amounts are income, negative amounts are expenses
-      if (typeof amount === 'number' && !isNaN(amount)) {
-        if (amount > 0) {
-          entry.income += amount;
-        } else if (amount < 0) {
-          entry.expenses += Math.abs(amount);
+      while (currentDate <= endDate) {
+        const key = formatLabel(currentDate);
+        const existing = result.find(r => r.period === key);
+        
+        if (existing) {
+          filledResult.push(existing);
+        } else {
+          filledResult.push({
+            period: key,
+            income: 0,
+            expenses: 0,
+            date: new Date(currentDate)
+          });
+        }
+        
+        // Increment date based on groupBy
+        if (groupBy === 'day') {
+          currentDate.setDate(currentDate.getDate() + 1);
+        } else if (groupBy === 'week') {
+          currentDate.setDate(currentDate.getDate() + 7);
+        } else {
+          currentDate.setMonth(currentDate.getMonth() + 1);
         }
       }
       
-      map.set(label, entry);
-    });
-    // Sort by date (ascending)
-    const sorted = Array.from(map.entries())
-      .map(([month, vals]) => ({ month, ...vals }))
-      .sort((a, b) => {
-        // Parse year and month for sorting
-        const [aMonth, aYear] = a.month.split(' ');
-        const [bMonth, bYear] = b.month.split(' ');
-        const aDate = new Date(2000 + parseInt(aYear, 10), monthIndex[aMonth]);
-        const bDate = new Date(2000 + parseInt(bYear, 10), monthIndex[bMonth]);
-        return aDate.getTime() - bDate.getTime();
-      });
-    return sorted;
+      return filledResult;
+    }
+
+    return result;
   }, [transactions]);
 
   // Function to format currency
@@ -313,27 +402,66 @@ export default function PaymentsPage() {
           <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
             <h2 className="text-lg font-medium text-gray-900 mb-4">Financial Overview</h2>
             <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={graphData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      color: '#374151'
-                    }}
-                    labelStyle={{
-                      color: '#374151',
-                      fontWeight: '600'
-                    }}
-                  />
-                  <Line type="monotone" dataKey="income" stroke="#10B981" name="Income" />
-                  <Line type="monotone" dataKey="expenses" stroke="#EF4444" name="Expenses" />
-                </LineChart>
-              </ResponsiveContainer>
+              {graphData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={graphData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="period" 
+                      tick={{ fontSize: 12 }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis 
+                      tickFormatter={(value) => `$${value.toFixed(0)}`}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        color: '#374151'
+                      }}
+                      labelStyle={{
+                        color: '#374151',
+                        fontWeight: '600'
+                      }}
+                      formatter={(value: number, name: string) => [
+                        `$${value.toFixed(2)}`,
+                        name === 'income' ? 'Income' : 'Expenses'
+                      ]}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="income" 
+                      stroke="#10B981" 
+                      strokeWidth={2}
+                      dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
+                      name="Income" 
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="expenses" 
+                      stroke="#EF4444" 
+                      strokeWidth={2}
+                      dot={{ fill: '#EF4444', strokeWidth: 2, r: 4 }}
+                      name="Expenses" 
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Financial Data</h3>
+                    <p className="text-gray-600">Financial overview will appear here after transactions are recorded.</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
