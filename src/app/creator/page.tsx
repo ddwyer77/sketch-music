@@ -314,8 +314,10 @@ export default function CreatorDashboard() {
 
   // Helper function to format dates for receipts
   const formatReceiptDate = (dateInput: string | number | { toDate: () => Date } | undefined) => {
+    if (!dateInput) return 'N/A';
+    
     let date: Date;
-    if (dateInput && typeof dateInput === 'object' && 'toDate' in dateInput) {
+    if (typeof dateInput === 'object' && 'toDate' in dateInput) {
       // Firestore timestamp
       date = dateInput.toDate();
     } else if (typeof dateInput === 'string') {
@@ -336,6 +338,25 @@ export default function CreatorDashboard() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  // Helper function to safely convert any date input to a Date object
+  const safeDateConversion = (dateInput: string | number | { toDate: () => Date } | undefined): Date => {
+    if (!dateInput) return new Date();
+    
+    if (typeof dateInput === 'object' && 'toDate' in dateInput) {
+      // Firestore timestamp
+      return dateInput.toDate();
+    } else if (typeof dateInput === 'string') {
+      // String timestamp
+      return new Date(dateInput);
+    } else if (typeof dateInput === 'number') {
+      // Number timestamp (milliseconds)
+      return new Date(dateInput);
+    } else {
+      // Fallback to current date
+      return new Date();
+    }
   };
 
   const handleLinkTikTok = async () => {
@@ -1199,7 +1220,7 @@ export default function CreatorDashboard() {
                       // Sort by completedAt if available, otherwise by createdAt
                       const dateA = a.completedAt || a.createdAt;
                       const dateB = b.completedAt || b.createdAt;
-                      return new Date(dateB).getTime() - new Date(dateA).getTime();
+                      return safeDateConversion(dateB).getTime() - safeDateConversion(dateA).getTime();
                     })
                     .map((transaction) => (
                       <div key={transaction.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">

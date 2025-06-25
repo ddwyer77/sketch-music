@@ -91,28 +91,32 @@ export default function PaymentsPage() {
   const netIncome = Math.round((totalRevenue - totalExpenses) * 100) / 100;
   const availableBalance = netIncome;
 
+  // Helper to safely parse dates
+  const parseTransactionDate = (dateInput: string | number | { toDate: () => Date } | undefined): Date => {
+    if (!dateInput) return new Date();
+    
+    if (typeof dateInput === 'object' && 'toDate' in dateInput) {
+      return dateInput.toDate();
+    } else if (typeof dateInput === 'string') {
+      return new Date(dateInput);
+    } else if (typeof dateInput === 'number') {
+      return new Date(dateInput);
+    }
+    return new Date();
+  };
+
   // Sort transactions by date (most recent first)
   const sortedTransactions = React.useMemo(() => {
-    return [...transactions].sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
+    return [...transactions].sort((a, b) => {
+      const dateA = parseTransactionDate(a.createdAt);
+      const dateB = parseTransactionDate(b.createdAt);
+      return dateB.getTime() - dateA.getTime();
+    });
   }, [transactions]);
 
   // Generate graph data with better date handling and appropriate time granularity
   const graphData = React.useMemo(() => {
     if (!transactions.length) return [];
-
-    // Helper to safely parse dates
-    const parseTransactionDate = (dateInput: string | number | Timestamp | undefined): Date => {
-      if (!dateInput) return new Date();
-      
-      if (typeof dateInput === 'object' && 'toDate' in dateInput) {
-        return dateInput.toDate();
-      } else if (typeof dateInput === 'string') {
-        return new Date(dateInput);
-      } else if (typeof dateInput === 'number') {
-        return new Date(dateInput);
-      }
-      return new Date();
-    };
 
     // Helper to safely parse and round amounts
     const parseAmount = (amount: string | number): number => {
@@ -244,7 +248,7 @@ export default function PaymentsPage() {
   };
 
   // Function to format date
-  const formatDate = (dateInput: string | number | Timestamp) => {
+  const formatDate = (dateInput: string | number | { toDate: () => Date }) => {
     let date: Date;
     if (dateInput && typeof dateInput === 'object' && 'toDate' in dateInput) {
       // Firestore timestamp
