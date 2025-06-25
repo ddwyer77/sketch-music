@@ -24,4 +24,5 @@ export type User = {
   discord_id?: string;
   tiktokData?: TikTokData;
   tiktokVerified?: boolean;
+  wallet?: number;
 };

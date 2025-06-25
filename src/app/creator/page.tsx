@@ -13,7 +13,7 @@ import FAQTable from '@/components/FAQTable';
 import Link from 'next/link';
 import CampaignCardReadOnly from '@/components/CampaignCardReadOnly';
 
-type Tab = 'campaigns' | 'settings' | 'discord' | 'submissions' | 'myinfo';
+type Tab = 'campaigns' | 'settings' | 'discord' | 'wallet' | 'myinfo';
 
 const ITEMS_PER_PAGE = 15;
 
@@ -39,6 +39,9 @@ export default function CreatorDashboard() {
   const [emailSaveError, setEmailSaveError] = useState<string | null>(null);
   const [emailSaveSuccess, setEmailSaveSuccess] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [withdrawSuccessModal, setWithdrawSuccessModal] = useState<{ show: boolean; amount: number }>({ show: false, amount: 0 });
 
   const discordCommands = [
     {
@@ -248,6 +251,50 @@ export default function CreatorDashboard() {
     }
   };
 
+  const handleWithdrawFunds = async () => {
+    if (!user?.uid) return;
+    
+    setIsWithdrawing(true);
+    setWithdrawError(null);
+    
+    try {
+      // Get the current user's Firebase ID token
+      const idToken = await user.getIdToken();
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/pay-creator`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}` // Firebase ID token
+        },
+        body: JSON.stringify({
+          userId: user.uid // The user's Firebase UID
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log('Payment successful!', data);
+        // Show success modal with the withdrawal amount
+        setWithdrawSuccessModal({ show: true, amount: userData?.wallet || 0 });
+      } else {
+        console.error('Payment failed:', data.error);
+        throw new Error(data.error || 'Failed to withdraw funds');
+      }
+    } catch (error) {
+      console.error('Request failed:', error);
+      setWithdrawError(error instanceof Error ? error.message : 'An error occurred while withdrawing funds');
+      
+      // Clear error after 10 seconds
+      setTimeout(() => {
+        setWithdrawError(null);
+      }, 10000);
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -343,9 +390,9 @@ export default function CreatorDashboard() {
               Discord
             </button>
             <button
-              onClick={() => setActiveTab('submissions')}
+              onClick={() => setActiveTab('wallet')}
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 hover:cursor-pointer ${
-                activeTab === 'submissions'
+                activeTab === 'wallet'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
@@ -353,7 +400,7 @@ export default function CreatorDashboard() {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
               </svg>
-              My Submissions
+              Wallet
             </button>
             <button
               onClick={() => setActiveTab('myinfo')}
@@ -757,118 +804,189 @@ export default function CreatorDashboard() {
           </div>
         )}
 
-        {activeTab === 'submissions' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">My Submissions</h2>
-            
-            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
+        {activeTab === 'wallet' && (
+          <div className="space-y-8">
+            {/* Wallet Header and Balance */}
+            <div className="text-center">
+              <h1 className="text-4xl font-bold text-gray-800 mb-6">Wallet</h1>
+              
+              {/* Wallet Icon */}
+              <div className="flex justify-center mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="h-32 w-32 text-primary">
+                  <g transform="translate(0,0)">
+                    <path d="M200.4 27.39 180.9 183h42.8l49.1-146.57-72.4-9.04zm91.7 8L242.7 183l149.7.1 34.3-102.61-134.6-45.1zM180 46.03l-71.9 7.84L122.2 183h40.7L180 46.03zM64 153c-11.5 0-19.18 8.8-21.27 17.2-1.04 4.2-.45 7.6.73 9.5 1.17 1.8 2.79 3.3 8.54 3.3h52.1l-3.3-30H64zm357.4 0-10 30h47.5c-2.6-5-3.7-10.3-3-15.6.7-5.2 2.7-9.9 5.3-14.4h-39.8zM41 201v246.9c0 5.1 2.79 11.1 7.37 15.7C52.96 468.2 59 471 64 471l384 .1c5 0 11-2.8 15.6-7.4 4.6-4.6 7.4-10.6 7.4-15.7v-71h-87c-44 0-44-82 0-82h87v-93.9L41 201zm343 112c-20 0-20 46 0 46h22.3c-9-3.8-15.3-12.7-15.3-23s6.3-19.2 15.3-23H384zm41.7 0c9 3.8 15.3 12.7 15.3 23s-6.3 19.2-15.3 23H487v-46h-61.3zm-9.7 16c-4 0-7 3-7 7s3 7 7 7 7-3 7-7-3-7-7-7z" fill="currentColor"/>
+                  </g>
+                </svg>
+              </div>
+              
+              {/* Balance Display */}
+              <div className="mb-8">
+                <div className="text-6xl font-bold text-gray-800 mb-2">
+                  ${(userData?.wallet || 0).toFixed(2)}
                 </div>
-                <div className="ml-3">
-                  <p className="text-sm text-yellow-700">
-                    <strong className="font-medium text-yellow-800">Important Notice:</strong> All earnings shown are estimates and may be adjusted based on campaign criteria and final review. Final payment amounts are subject to verification and approval.
-                  </p>
+                <p className="text-lg text-gray-600">Available Balance</p>
+              </div>
+              
+              {/* Withdrawal Button */}
+              <div className="mb-8">
+                <button
+                  onClick={handleWithdrawFunds}
+                  disabled={isWithdrawing || (userData?.wallet || 0) < 25 || !userData?.paymentEmail}
+                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-xl font-bold py-4 px-8 rounded-lg transition-colors hover:cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                >
+                  {isWithdrawing ? (
+                    <>
+                      <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="h-6 w-6 text-white">
+                        <g transform="translate(0,0)">
+                          <path d="M327.027 65.816 229.79 128.23l9.856 5.397 86.51-55.53 146.735 83.116-84.165 54.023 4.1 2.244v6.848l65.923-42.316 13.836 7.838-79.76 51.195v11.723l64.633-41.487 15.127 8.57-79.76 51.195v11.723l64.633-41.487 15.127 8.57-79.76 51.195v11.723l100.033-64.21-24.828-14.062 24.827-15.937-24.828-14.064 24.827-15.937-23.537-13.333 23.842-15.305-166.135-94.106zm31.067 44.74c-21.038 10.556-49.06 12.342-68.79 4.383l-38.57 24.757 126.903 69.47 36.582-23.48c-14.41-11.376-13.21-28.35 2.942-41.67l-59.068-33.46zM227.504 147.5l-70.688 46.094 135.61 78.066 1.33-.85c2.5-1.61 6.03-3.89 10.242-6.613 8.42-5.443 19.563-12.66 30.674-19.86 16.002-10.37 24.248-15.72 31.916-20.694L227.504 147.5zm115.467 1.17a8.583 14.437 82.068 0 1 .003 0 8.583 14.437 82.068 0 1 8.32 1.945 8.583 14.437 82.068 0 1-.87 12.282 8.583 14.437 82.068 0 1-20.273 1.29 8.583 14.437 82.068 0 1 .87-12.28 8.583 14.437 82.068 0 1 11.95-3.237zm-218.423 47.115L19.143 263.44l23.537 13.333-23.842 15.305 24.828 14.063-24.828 15.938 24.828 14.063-24.828 15.938 166.135 94.106L285.277 381.8v-11.72l-99.433 63.824L39.11 350.787l14.255-9.15 131.608 74.547L285.277 351.8v-11.72l-99.433 63.824L39.11 320.787l14.255-9.15 131.608 74.547L285.277 321.8v-11.72l-99.433 63.824L39.11 290.787l13.27-8.52 132.9 75.28 99.997-64.188v-5.05l-5.48-3.154-93.65 60.11-146.73-83.116 94.76-60.824-9.63-5.543zm20.46 11.78-46.92 30.115c14.41 11.374 13.21 28.348-2.942 41.67l59.068 33.46c21.037-10.557 49.057-12.342 68.787-4.384l45.965-29.504-123.96-71.358zm229.817 32.19c-8.044 5.217-15.138 9.822-30.363 19.688a36221.458 36221.458 0 0 1-30.69 19.873c-4.217 2.725-7.755 5.01-10.278 6.632-.09.06-.127.08-.215.137v85.924l71.547-48.088v-84.166zm-200.99 17.48a8.583 14.437 82.068 0 1 8.32 1.947 8.583 14.437 82.068 0 1-.87 12.28 8.583 14.437 82.068 0 1-20.27 1.29 8.583 14.437 82.068 0 1 .87-12.28 8.583 14.437 82.068 0 1 11.95-3.236z" fill="currentColor"/>
+                        </g>
+                      </svg>
+                      <span>Withdraw Funds</span>
+                    </>
+                  )}
+                </button>
+                
+                {/* Minimum Withdrawal Notice */}
+                <div className={`mt-4 text-center ${(userData?.wallet || 0) < 25 || !userData?.paymentEmail ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
+                  {!userData?.paymentEmail 
+                    ? 'Payment email is required to withdraw funds. Please set your payment email in the "My Info" tab.'
+                    : 'Minimum withdrawal amount: $25.00'
+                  }
                 </div>
+                
+                {/* Error Message */}
+                {withdrawError && (
+                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-red-600">
+                      <span>⚠️</span>
+                      <span>{withdrawError}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-
-            {campaigns.length === 0 ? (
-              <div className="bg-white rounded-lg shadow-md p-10 text-center">
-                <h2 className="text-xl font-medium mb-4 text-gray-800">No submissions found</h2>
-                <p className="text-gray-900 mb-6">You haven&apos;t submitted any videos to campaigns yet.</p>
+            
+            {/* Submissions Section */}
+            <div className="border-t border-gray-200 pt-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">My Submissions</h2>
+              
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-yellow-700">
+                      <strong className="font-medium text-yellow-800">Important Notice:</strong> All earnings shown are estimates and may be adjusted based on campaign criteria and final review. Final payment amounts are subject to verification and approval.
+                    </p>
+                  </div>
+                </div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {campaigns.map((campaign) => {
-                  const userVideos = campaign.videos?.filter(video => video.author_id === user?.uid) || [];
-                  if (userVideos.length === 0) return null;
 
-                  return (
-                    <div key={`campaign-${campaign.id}`} className="bg-white rounded-lg shadow-md overflow-hidden">
-                      <div className="p-4 border-b border-gray-200">
-                        <h3 className="text-lg font-semibold text-gray-800">{campaign.name}</h3>
-                      </div>
-                      <div className="divide-y divide-gray-200">
-                        {userVideos.map((video) => (
-                          <div key={`video-${video.id}`} className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1 min-w-0">
-                                <a 
-                                  href={video.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-gray-800 hover:text-primary hover:cursor-pointer font-medium truncate block"
-                                >
-                                  {video.title || 'Untitled Video'}
-                                </a>
-                              </div>
-                              <div className="flex items-center gap-4 ml-4">
-                                <div className="flex items-center gap-1">
-                                  {video.soundIdMatch ? (
-                                    <svg key="sound-match" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                  ) : (
-                                    <svg key="sound-mismatch" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                    </svg>
-                                  )}
-                                  <span className="text-sm text-gray-600">Sound Match</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm text-gray-600">Submission Status:</span>
-                                  <div className={`px-2 py-1 rounded-full text-sm font-medium ${
-                                    video.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                    video.status === 'denied' ? 'bg-red-100 text-red-800' :
-                                    'bg-yellow-100 text-yellow-800'
-                                  }`}>
-                                    {video.status.charAt(0).toUpperCase() + video.status.slice(1)}
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm text-gray-600">Estimated Earnings:</span>
-                                  <span className={`text-sm font-medium ${
-                                    video.status === 'denied' ? 'text-red-600' : 
-                                    video.status === 'approved' ? 'text-green-600' : 
-                                    'text-gray-800'
-                                  }`}>
-                                    ${video.status === 'denied' ? '0.00' : (video.hasBeenPaid ? video.payoutAmountForVideo?.toFixed(2) : video.earnings?.toFixed(2) || '0.00')}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm text-gray-600">Payment Status:</span>
-                                  <span className={`px-2 py-1 rounded-full text-sm font-medium ${
-                                    video.hasBeenPaid ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                                  }`}>
-                                    {video.hasBeenPaid ? 'Paid' : 'Pending'}
-                                  </span>
-                                </div>
-                                {video.status === 'denied' && (
-                                  <button
-                                    key={`denial-${video.id}`}
-                                    onClick={() => {
-                                      setSelectedDenialReason(video.reasonForDenial || 'N/A - No reason provided.');
-                                      setDenialModalOpen(true);
-                                    }}
-                                    className="text-sm text-red-600 hover:text-red-800 hover:cursor-pointer"
+              {campaigns.length === 0 ? (
+                <div className="bg-white rounded-lg shadow-md p-10 text-center">
+                  <h2 className="text-xl font-medium mb-4 text-gray-800">No submissions found</h2>
+                  <p className="text-gray-900 mb-6">You haven&apos;t submitted any videos to campaigns yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {campaigns.map((campaign) => {
+                    const userVideos = campaign.videos?.filter(video => video.author_id === user?.uid) || [];
+                    if (userVideos.length === 0) return null;
+
+                    return (
+                      <div key={`campaign-${campaign.id}`} className="bg-white rounded-lg shadow-md overflow-hidden">
+                        <div className="p-4 border-b border-gray-200">
+                          <h3 className="text-lg font-semibold text-gray-800">{campaign.name}</h3>
+                        </div>
+                        <div className="divide-y divide-gray-200">
+                          {userVideos.map((video) => (
+                            <div key={`video-${video.id}`} className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <a 
+                                    href={video.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-gray-800 hover:text-primary hover:cursor-pointer font-medium truncate block"
                                   >
-                                    Why was this denied?
-                                  </button>
-                                )}
+                                    {video.title || 'Untitled Video'}
+                                  </a>
+                                </div>
+                                <div className="flex items-center gap-4 ml-4">
+                                  <div className="flex items-center gap-1">
+                                    {video.soundIdMatch ? (
+                                      <svg key="sound-match" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                      </svg>
+                                    ) : (
+                                      <svg key="sound-mismatch" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                      </svg>
+                                    )}
+                                    <span className="text-sm text-gray-600">Sound Match</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-600">Submission Status:</span>
+                                    <div className={`px-2 py-1 rounded-full text-sm font-medium ${
+                                      video.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                      video.status === 'denied' ? 'bg-red-100 text-red-800' :
+                                      'bg-yellow-100 text-yellow-800'
+                                    }`}>
+                                      {video.status.charAt(0).toUpperCase() + video.status.slice(1)}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-600">Estimated Earnings:</span>
+                                    <span className={`text-sm font-medium ${
+                                      video.status === 'denied' ? 'text-red-600' : 
+                                      video.status === 'approved' ? 'text-green-600' : 
+                                      'text-gray-800'
+                                    }`}>
+                                      ${video.status === 'denied' ? '0.00' : (video.hasBeenPaid ? video.payoutAmountForVideo?.toFixed(2) : video.earnings?.toFixed(2) || '0.00')}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-600">Payment Status:</span>
+                                    <span className={`px-2 py-1 rounded-full text-sm font-medium ${
+                                      video.hasBeenPaid ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                    }`}>
+                                      {video.hasBeenPaid ? 'Paid' : 'Pending'}
+                                    </span>
+                                  </div>
+                                  {video.status === 'denied' && (
+                                    <button
+                                      key={`denial-${video.id}`}
+                                      onClick={() => {
+                                        setSelectedDenialReason(video.reasonForDenial || 'N/A - No reason provided.');
+                                        setDenialModalOpen(true);
+                                      }}
+                                      className="text-sm text-red-600 hover:text-red-800 hover:cursor-pointer"
+                                    >
+                                      Why was this denied?
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -1000,6 +1118,39 @@ export default function CreatorDashboard() {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Withdrawal Success Modal */}
+      {withdrawSuccessModal.show && (
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-md p-8 text-center">
+            {/* Success Icon */}
+            <div className="flex justify-center mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+            
+            {/* Success Message */}
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Withdraw Successful!</h3>
+            <p className="text-gray-600 mb-6">
+              ${withdrawSuccessModal.amount.toFixed(2)} has been sent to your payment email.
+            </p>
+            
+            {/* OK Button */}
+            <button
+              onClick={() => {
+                setWithdrawSuccessModal({ show: false, amount: 0 });
+                window.location.reload();
+              }}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-colors hover:cursor-pointer"
+            >
+              OK
+            </button>
           </div>
         </div>
       )}
