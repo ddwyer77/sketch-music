@@ -822,7 +822,7 @@ export default function PaymentsPage() {
                                 <span className="font-medium">Cannot release payments: No videos found in this campaign</span>
                               </div>
                               <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
-                                <p className="text-sm text-blue-700">💡 If you recently added videos and don't see them here, please refresh the page to see your changes.</p>
+                                <p className="text-sm text-blue-700">💡 If you recently added videos and don&apos;t see them here, please refresh the page to see your changes.</p>
                               </div>
                             </div>
                           );
@@ -842,7 +842,7 @@ export default function PaymentsPage() {
                                 </span>
                               </div>
                               <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
-                                <p className="text-sm text-blue-700">💡 If you recently approved or denied videos and don't see the updated status, please refresh the page to see your changes.</p>
+                                <p className="text-sm text-blue-700">💡 If you recently approved or denied videos and don&apos;t see the updated status, please refresh the page to see your changes.</p>
                               </div>
                             </div>
                           );

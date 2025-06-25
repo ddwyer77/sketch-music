@@ -87,8 +87,8 @@ export interface Transaction {
   actorId: string;
   actorName: string;
   amount: number;
-  completedAt?: any; // timestamp
-  createdAt: any; // timestamp
+  completedAt?: string | number | { toDate: () => Date }; // timestamp
+  createdAt: string | number | { toDate: () => Date }; // timestamp
   currency: string;
   isTestPayment?: boolean;
   metadata?: {

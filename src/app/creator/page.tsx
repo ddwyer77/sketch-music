@@ -24,7 +24,7 @@ export default function CreatorDashboard() {
   // Memoize query constraints to prevent infinite loops
   const transactionConstraints = useMemo(() => {
     return user ? [createConstraints.filter('targetUserId', '==', user.uid)] : [];
-  }, [user?.uid]);
+  }, [user]);
   
   // Query for user's transactions
   const { documents: transactions = [], loading: loadingTransactions } = useQuery<Transaction>(
@@ -313,7 +313,7 @@ export default function CreatorDashboard() {
   };
 
   // Helper function to format dates for receipts
-  const formatReceiptDate = (dateInput: any) => {
+  const formatReceiptDate = (dateInput: string | number | { toDate: () => Date } | undefined) => {
     let date: Date;
     if (dateInput && typeof dateInput === 'object' && 'toDate' in dateInput) {
       // Firestore timestamp
@@ -1114,13 +1114,13 @@ export default function CreatorDashboard() {
                       </div>
                       
                       <div className="space-y-6">
-                        {Object.entries(userData.tiktokData).map(([username, accountData]: [string, any]) => (
-                          <div key={username} className="flex items-start gap-6 p-4 bg-gray-50 rounded-lg">
+                        {userData.tiktokData && (
+                          <div className="flex items-start gap-6 p-4 bg-gray-50 rounded-lg">
                             <div className="flex-shrink-0">
-                              {accountData.profileImage ? (
+                              {userData.tiktokData.profileImage ? (
                                 <Image
-                                  src={accountData.profileImage}
-                                  alt={`${accountData.uniqueId || username}'s profile`}
+                                  src={userData.tiktokData.profileImage}
+                                  alt={`${userData.tiktokData.uniqueId}'s profile`}
                                   width={100}
                                   height={100}
                                   className="rounded-full"
@@ -1135,29 +1135,29 @@ export default function CreatorDashboard() {
                               ) : null}
                               {/* Fallback avatar when image fails to load or is missing */}
                               <div 
-                                className={`w-[100px] h-[100px] rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium text-lg ${accountData.profileImage ? 'hidden' : 'flex'}`}
-                                style={{ display: accountData.profileImage ? 'none' : 'flex' }}
+                                className={`w-[100px] h-[100px] rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium text-lg ${userData.tiktokData.profileImage ? 'hidden' : 'flex'}`}
+                                style={{ display: userData.tiktokData.profileImage ? 'none' : 'flex' }}
                               >
-                                {(accountData.uniqueId || username).charAt(0).toUpperCase()}
+                                {userData.tiktokData.uniqueId.charAt(0).toUpperCase()}
                               </div>
                             </div>
                             
                             <div className="flex-1 space-y-2">
                               <div>
                                 <h4 className="text-lg font-medium text-gray-800">
-                                  @{accountData.uniqueId || username}
+                                  @{userData.tiktokData.uniqueId}
                                 </h4>
-                                <p className="text-gray-600">{accountData.title || 'No title'}</p>
+                                <p className="text-gray-600">{userData.tiktokData.title || 'No title'}</p>
                               </div>
                               
-                              {accountData.description && (
+                              {userData.tiktokData.description && (
                                 <p className="text-gray-700 text-sm">
-                                  {accountData.description}
+                                  {userData.tiktokData.description}
                                 </p>
                               )}
                             </div>
                           </div>
-                        ))}
+                        )}
                       </div>
                     </div>
                   </div>
