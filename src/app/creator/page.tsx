@@ -1105,7 +1105,7 @@ export default function CreatorDashboard() {
                   <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                     <div className="p-6">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-800">TikTok Account</h3>
+                        <h3 className="text-lg font-semibold text-gray-800">TikTok Accounts</h3>
                         {userData.tiktokVerified && (
                           <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
                             Verified ✓
@@ -1113,29 +1113,51 @@ export default function CreatorDashboard() {
                         )}
                       </div>
                       
-                      <div className="flex items-start gap-6">
-                        <div className="flex-shrink-0">
-                          <Image
-                            src={userData.tiktokData.profileImage}
-                            alt={`${userData.tiktokData.uniqueId}'s profile`}
-                            width={100}
-                            height={100}
-                            className="rounded-full"
-                          />
-                        </div>
-                        
-                        <div className="flex-1 space-y-2">
-                          <div>
-                            <h4 className="text-lg font-medium text-gray-800">
-                              @{userData.tiktokData.uniqueId}
-                            </h4>
-                            <p className="text-gray-600">{userData.tiktokData.title}</p>
+                      <div className="space-y-6">
+                        {Object.entries(userData.tiktokData).map(([username, accountData]: [string, any]) => (
+                          <div key={username} className="flex items-start gap-6 p-4 bg-gray-50 rounded-lg">
+                            <div className="flex-shrink-0">
+                              {accountData.profileImage ? (
+                                <Image
+                                  src={accountData.profileImage}
+                                  alt={`${accountData.uniqueId || username}'s profile`}
+                                  width={100}
+                                  height={100}
+                                  className="rounded-full"
+                                  onError={(e) => {
+                                    // Fallback to a default avatar if image fails to load
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    const fallback = target.nextElementSibling as HTMLElement;
+                                    if (fallback) fallback.style.display = 'flex';
+                                  }}
+                                />
+                              ) : null}
+                              {/* Fallback avatar when image fails to load or is missing */}
+                              <div 
+                                className={`w-[100px] h-[100px] rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium text-lg ${accountData.profileImage ? 'hidden' : 'flex'}`}
+                                style={{ display: accountData.profileImage ? 'none' : 'flex' }}
+                              >
+                                {(accountData.uniqueId || username).charAt(0).toUpperCase()}
+                              </div>
+                            </div>
+                            
+                            <div className="flex-1 space-y-2">
+                              <div>
+                                <h4 className="text-lg font-medium text-gray-800">
+                                  @{accountData.uniqueId || username}
+                                </h4>
+                                <p className="text-gray-600">{accountData.title || 'No title'}</p>
+                              </div>
+                              
+                              {accountData.description && (
+                                <p className="text-gray-700 text-sm">
+                                  {accountData.description}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                          
-                          <p className="text-gray-700 text-sm">
-                            {userData.tiktokData.description}
-                          </p>
-                        </div>
+                        ))}
                       </div>
                     </div>
                   </div>
