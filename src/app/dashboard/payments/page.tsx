@@ -41,6 +41,7 @@ export default function PaymentsPage() {
   const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
   const [isReleasingPayments, setIsReleasingPayments] = useState(false);
   const [expandedCreators, setExpandedCreators] = useState<Set<string>>(new Set());
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   
   // Fetch campaigns with proper cleanup
   useEffect(() => {
@@ -525,10 +526,7 @@ export default function PaymentsPage() {
                     </tr>
                   ) : (
                     sortedTransactions.map((transaction) => {
-                      const recipient =
-                        (transaction as Transaction & { targetFirstName?: string; targetLastName?: string }).targetFirstName || (transaction as Transaction & { targetFirstName?: string; targetLastName?: string }).targetLastName
-                          ? `${(transaction as Transaction & { targetFirstName?: string; targetLastName?: string }).targetFirstName || ''} ${(transaction as Transaction & { targetFirstName?: string; targetLastName?: string }).targetLastName || ''}`.trim() || 'N/A'
-                          : 'N/A';
+                      const recipient = transaction.targetUserName || 'N/A';
                       const isTestPayment = (transaction as Transaction & { isTestPayment?: boolean }).isTestPayment === true;
                       return (
                         <tr
@@ -751,62 +749,17 @@ export default function PaymentsPage() {
                                 return 'bg-blue-500 text-white cursor-not-allowed';
                               }
                               
-                              // Check if payment was successful
-                              if (isPaymentSuccess) {
-                                return 'bg-green-500 text-white transform scale-105 shadow-lg';
-                              }
-                              
                               // Default state
                               return 'bg-primary hover:bg-primary-dark text-white hover:cursor-pointer transform hover:scale-105 transition-all duration-200';
                             })()
                           } w-full px-12 py-6 rounded-2xl text-xl font-bold shadow-lg flex flex-col items-center gap-2 relative overflow-hidden`}
                         >
-                          {/* Confetti animation */}
-                          {isPaymentSuccess && (
-                            <>
-                              <div className="absolute inset-0 pointer-events-none">
-                                {/* Top confetti */}
-                                <div className="absolute top-0 left-1/4 w-2 h-2 bg-yellow-400 rounded-full animate-ping" style={{ animationDelay: '0s', animationDuration: '1s' }}></div>
-                                <div className="absolute top-0 left-1/2 w-2 h-2 bg-pink-400 rounded-full animate-ping" style={{ animationDelay: '0.2s', animationDuration: '1s' }}></div>
-                                <div className="absolute top-0 left-3/4 w-2 h-2 bg-blue-400 rounded-full animate-ping" style={{ animationDelay: '0.4s', animationDuration: '1s' }}></div>
-                                
-                                {/* Bottom confetti */}
-                                <div className="absolute bottom-0 right-1/4 w-2 h-2 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '0.6s', animationDuration: '1s' }}></div>
-                                <div className="absolute bottom-0 right-1/2 w-2 h-2 bg-purple-400 rounded-full animate-ping" style={{ animationDelay: '0.8s', animationDuration: '1s' }}></div>
-                                
-                                {/* Left confetti */}
-                                <div className="absolute left-0 top-1/3 w-2 h-2 bg-red-400 rounded-full animate-ping" style={{ animationDelay: '0.3s', animationDuration: '1s' }}></div>
-                                <div className="absolute left-0 bottom-1/3 w-2 h-2 bg-orange-400 rounded-full animate-ping" style={{ animationDelay: '0.7s', animationDuration: '1s' }}></div>
-                                
-                                {/* Right confetti */}
-                                <div className="absolute right-0 top-1/3 w-2 h-2 bg-indigo-400 rounded-full animate-ping" style={{ animationDelay: '0.5s', animationDuration: '1s' }}></div>
-                                <div className="absolute right-0 bottom-1/3 w-2 h-2 bg-teal-400 rounded-full animate-ping" style={{ animationDelay: '0.9s', animationDuration: '1s' }}></div>
-                                
-                                {/* Diagonal confetti */}
-                                <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-yellow-300 rounded-full animate-ping" style={{ animationDelay: '0.1s', animationDuration: '1.2s' }}></div>
-                                <div className="absolute top-1/4 right-1/4 w-2 h-2 bg-pink-300 rounded-full animate-ping" style={{ animationDelay: '0.3s', animationDuration: '1.2s' }}></div>
-                                <div className="absolute bottom-1/4 left-1/4 w-2 h-2 bg-blue-300 rounded-full animate-ping" style={{ animationDelay: '0.5s', animationDuration: '1.2s' }}></div>
-                                <div className="absolute bottom-1/4 right-1/4 w-2 h-2 bg-green-300 rounded-full animate-ping" style={{ animationDelay: '0.7s', animationDuration: '1.2s' }}></div>
-                              </div>
-                            </>
-                          )}
-                          
                           {isReleasingPayments ? (
                             <>
                               <div className="animate-spin rounded-full h-8 w-8 border-4 border-white border-t-transparent"></div>
                               <div className="text-center">
                                 <div className="text-xl font-bold">Releasing Payments...</div>
                                 <div className="text-sm font-normal opacity-90">Please wait while we process payments</div>
-                              </div>
-                            </>
-                          ) : isPaymentSuccess ? (
-                            <>
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                              <div className="text-center">
-                                <div className="text-xl font-bold">Payments Successfully Released</div>
-                                <div className="text-sm font-normal opacity-90">All payments have been distributed</div>
                               </div>
                             </>
                           ) : (
@@ -868,6 +821,9 @@ export default function PaymentsPage() {
                                 </svg>
                                 <span className="font-medium">Cannot release payments: No videos found in this campaign</span>
                               </div>
+                              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
+                                <p className="text-sm text-blue-700">💡 If you recently added videos and don't see them here, please refresh the page to see your changes.</p>
+                              </div>
                             </div>
                           );
                         }
@@ -884,6 +840,9 @@ export default function PaymentsPage() {
                                 <span className="font-medium">
                                   Cannot release payments: {pendingCount} video{pendingCount > 1 ? 's' : ''} still pending review. Please approve or deny all videos first.
                                 </span>
+                              </div>
+                              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
+                                <p className="text-sm text-blue-700">💡 If you recently approved or denied videos and don't see the updated status, please refresh the page to see your changes.</p>
                               </div>
                             </div>
                           );
@@ -1201,8 +1160,8 @@ export default function PaymentsPage() {
                       prevCampaigns.map(c => c.id === selectedCampaign.id ? updatedCampaign : c)
                     );
                     
-                    // Show success animation (don't reset it)
-                    setIsPaymentSuccess(true);
+                    // Show success modal
+                    setShowSuccessModal(true);
                     
                     toast.success(data.message || 'Successfully released payments to all creators');
                     
@@ -1228,6 +1187,34 @@ export default function PaymentsPage() {
                 ) : (
                   'Confirm Release'
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl w-full max-w-md p-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Payments Successful!</h3>
+              <p className="text-gray-600 mb-6">
+                All payments have been successfully released to the creators.
+              </p>
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  window.location.reload();
+                }}
+                className="w-full px-4 py-3 bg-primary hover:bg-primary-dark text-white rounded-lg hover:cursor-pointer"
+              >
+                OK
               </button>
             </div>
           </div>
@@ -1495,13 +1482,11 @@ export default function PaymentsPage() {
                   </h5>
                   <div className="space-y-2">
                     <p className="text-lg font-medium text-gray-900">
-                      {(selectedTransaction as Transaction & { targetFirstName?: string; targetLastName?: string }).targetFirstName || (selectedTransaction as Transaction & { targetFirstName?: string; targetLastName?: string }).targetLastName
-                        ? `${(selectedTransaction as Transaction & { targetFirstName?: string; targetLastName?: string }).targetFirstName || ''} ${(selectedTransaction as Transaction & { targetFirstName?: string; targetLastName?: string }).targetLastName || ''}`.trim() || 'N/A'
-                        : 'N/A'}
+                      {selectedTransaction.targetUserName || 'N/A'}
                     </p>
                     <p className="text-sm text-gray-600">ID: {selectedTransaction.targetUserId}</p>
-                    {selectedTransaction.metadata?.paymentEmail && (
-                      <p className="text-sm text-gray-600">Email: {selectedTransaction.metadata.paymentEmail}</p>
+                    {selectedTransaction.paymentEmail && (
+                      <p className="text-sm text-gray-600">Email: {selectedTransaction.paymentEmail}</p>
                     )}
                   </div>
                 </div>
@@ -1535,37 +1520,6 @@ export default function PaymentsPage() {
                 </div>
               </div>
 
-              {/* Financial Breakdown */}
-              {selectedTransaction.metadata && (
-                <div className="bg-white border border-gray-200 rounded-xl p-4">
-                  <h5 className="text-sm font-semibold text-gray-900 mb-4">Financial Breakdown</h5>
-                  <div className="space-y-3">
-                    {selectedTransaction.metadata.netAmount && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Net Amount</span>
-                        <span className="font-medium text-gray-900">
-                          {formatCurrency(typeof selectedTransaction.metadata.netAmount === 'string' ? parseFloat(selectedTransaction.metadata.netAmount) : selectedTransaction.metadata.netAmount)}
-                        </span>
-                      </div>
-                    )}
-                    {selectedTransaction.metadata.platformFee && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Platform Fee</span>
-                        <span className="font-medium text-gray-900">
-                          {formatCurrency(typeof selectedTransaction.metadata.platformFee === 'string' ? parseFloat(selectedTransaction.metadata.platformFee) : selectedTransaction.metadata.platformFee)}
-                        </span>
-                      </div>
-                    )}
-                    {selectedTransaction.metadata.ratePerMillion && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Rate per Million</span>
-                        <span className="font-medium text-gray-900">${selectedTransaction.metadata.ratePerMillion}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
               {/* Video Information */}
               {selectedTransaction.metadata?.videoCount && selectedTransaction.metadata.videoCount > 0 && (
                 <div className="bg-white border border-gray-200 rounded-xl p-4">
@@ -1597,14 +1551,34 @@ export default function PaymentsPage() {
               <div className="bg-gray-50 rounded-xl p-4">
                 <h5 className="text-sm font-semibold text-gray-900 mb-3">Additional Information</h5>
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-600">Payment Status</p>
-                    <p className="font-medium text-gray-900">{selectedTransaction.metadata?.paymentStatus || 'N/A'}</p>
-                  </div>
-                  {selectedTransaction.metadata?.timestamp && (
+                  {selectedTransaction.completedAt && (
                     <div>
-                      <p className="text-gray-600">Timestamp</p>
-                      <p className="font-medium text-gray-900">{formatDate(selectedTransaction.metadata.timestamp)}</p>
+                      <p className="text-gray-600">Completed At</p>
+                      <p className="font-medium text-gray-900">{formatDate(selectedTransaction.completedAt)}</p>
+                    </div>
+                  )}
+                  {selectedTransaction.payoutBatchId && (
+                    <div>
+                      <p className="text-gray-600">Payout Batch ID</p>
+                      <p className="font-medium text-gray-900">{selectedTransaction.payoutBatchId}</p>
+                    </div>
+                  )}
+                  {selectedTransaction.reconciliationId && (
+                    <div>
+                      <p className="text-gray-600">Reconciliation ID</p>
+                      <p className="font-medium text-gray-900">{selectedTransaction.reconciliationId}</p>
+                    </div>
+                  )}
+                  {selectedTransaction.walletAmount && (
+                    <div>
+                      <p className="text-gray-600">Wallet Amount</p>
+                      <p className="font-medium text-gray-900">{formatCurrency(selectedTransaction.walletAmount)}</p>
+                    </div>
+                  )}
+                  {selectedTransaction.isTestPayment && (
+                    <div>
+                      <p className="text-gray-600">Test Payment</p>
+                      <p className="font-medium text-yellow-600">Yes</p>
                     </div>
                   )}
                 </div>
