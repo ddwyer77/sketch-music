@@ -87,27 +87,35 @@ export interface Transaction {
   actorId: string;
   actorName: string;
   amount: number;
-  campaignId: string;
-  createdAt: number; // timestamp (ms)
+  completedAt?: any; // timestamp
+  createdAt: any; // timestamp
   currency: string;
-  metadata: {
-    netAmount: number;
-    paymentEmail: string;
-    paymentStatus: string;
-    payoutBatchId: string;
-    platformFee: number;
-    ratePerMillion: number;
-    reconciliationId: string;
-    timestamp: number;
-    totalViews: number;
-    videoCount: number;
-    videoIds: string[];
-    views: number[];
+  isTestPayment?: boolean;
+  metadata?: {
+    netAmount?: number;
+    paymentEmail?: string;
+    paymentStatus?: string;
+    payoutBatchId?: string;
+    platformFee?: number;
+    ratePerMillion?: number;
+    reconciliationId?: string;
+    timestamp?: number;
+    totalViews?: number;
+    videoCount?: number;
+    videoIds?: string[];
+    views?: number[];
   };
+  paymentEmail?: string;
+  paymentStatus?: string;
+  payoutBatchId?: string;
+  reconciliationId?: string;
+  walletAmount?: number;
   paymentMethod: string;
   paymentReference: string;
   source: string;
   status: string;
   targetUserId: string;
+  targetUserName?: string;
   type: string;
+  campaignId?: string;
 } 

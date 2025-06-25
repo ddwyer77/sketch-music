@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { useCollection } from '@/hooks';
-import { Campaign } from '@/types/campaign';
+import { useState, useEffect, useMemo } from 'react';
+import { useCollection, useQuery, createConstraints } from '@/hooks';
+import { Campaign, Transaction } from '@/types/campaign';
 import { useAuth } from '@/contexts/AuthContext';
 import Image from 'next/image';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -13,13 +13,25 @@ import FAQTable from '@/components/FAQTable';
 import Link from 'next/link';
 import CampaignCardReadOnly from '@/components/CampaignCardReadOnly';
 
-type Tab = 'campaigns' | 'settings' | 'discord' | 'wallet' | 'myinfo';
+type Tab = 'campaigns' | 'settings' | 'discord' | 'wallet' | 'myinfo' | 'receipts';
 
 const ITEMS_PER_PAGE = 15;
 
 export default function CreatorDashboard() {
   const { user } = useAuth();
   const { documents: campaigns = [], refresh } = useCollection<Campaign>('campaigns');
+  
+  // Memoize query constraints to prevent infinite loops
+  const transactionConstraints = useMemo(() => {
+    return user ? [createConstraints.filter('targetUserId', '==', user.uid)] : [];
+  }, [user?.uid]);
+  
+  // Query for user's transactions
+  const { documents: transactions = [], loading: loadingTransactions } = useQuery<Transaction>(
+    'transactions',
+    transactionConstraints
+  );
+  
   const [activeTab, setActiveTab] = useState<Tab>('campaigns');
   const [userData, setUserData] = useState<User | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -300,6 +312,32 @@ export default function CreatorDashboard() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Helper function to format dates for receipts
+  const formatReceiptDate = (dateInput: any) => {
+    let date: Date;
+    if (dateInput && typeof dateInput === 'object' && 'toDate' in dateInput) {
+      // Firestore timestamp
+      date = dateInput.toDate();
+    } else if (typeof dateInput === 'string') {
+      // String timestamp
+      date = new Date(dateInput);
+    } else if (typeof dateInput === 'number') {
+      // Number timestamp (milliseconds)
+      date = new Date(dateInput);
+    } else {
+      // Fallback to current date
+      date = new Date();
+    }
+    
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const handleLinkTikTok = async () => {
     if (!user?.uid || !tiktokUsername || !linkToken) return;
     
@@ -398,9 +436,22 @@ export default function CreatorDashboard() {
               }`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" />
               </svg>
               Wallet
+            </button>
+            <button
+              onClick={() => setActiveTab('receipts')}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 hover:cursor-pointer ${
+                activeTab === 'receipts'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+              </svg>
+              Receipts
             </button>
             <button
               onClick={() => setActiveTab('myinfo')}
@@ -1090,6 +1141,108 @@ export default function CreatorDashboard() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'receipts' && (
+          <div className="space-y-8">
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Payment Receipts</h2>
+              
+              {loadingTransactions ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="flex items-center gap-3">
+                    <svg className="animate-spin h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span className="text-gray-600">Loading receipts...</span>
+                  </div>
+                </div>
+              ) : transactions.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="flex justify-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-800 mb-2">No receipts yet</h3>
+                  <p className="text-gray-600">Once you withdraw funds from your wallet, your payment receipts will appear here for your records.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {transactions
+                    .sort((a, b) => {
+                      // Sort by completedAt if available, otherwise by createdAt
+                      const dateA = a.completedAt || a.createdAt;
+                      const dateB = b.completedAt || b.createdAt;
+                      return new Date(dateB).getTime() - new Date(dateA).getTime();
+                    })
+                    .map((transaction) => (
+                      <div key={transaction.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                </svg>
+                                <span className="font-medium text-gray-800">
+                                  {transaction.type === 'creatorPayout' ? 'Creator Payout' : 
+                                   transaction.type === 'withdrawal' ? 'Wallet Withdrawal' :
+                                   transaction.type}
+                                </span>
+                              </div>
+                              {transaction.isTestPayment && (
+                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
+                                  Test Payment
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                              <div>
+                                <span className="text-gray-600">Payment Reference:</span>
+                                <p className="font-mono text-gray-800">{transaction.paymentReference}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">Date:</span>
+                                <p className="text-gray-800">{formatReceiptDate(transaction.completedAt || transaction.createdAt)}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">Status:</span>
+                                <div className="flex items-center gap-2">
+                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                    transaction.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                    transaction.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-red-100 text-red-800'
+                                  }`}>
+                                    {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {transaction.paymentEmail && (
+                              <div className="mt-2 text-sm">
+                                <span className="text-gray-600">Payment Email:</span>
+                                <p className="text-gray-800">{transaction.paymentEmail}</p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="text-right ml-4">
+                            <div className="text-2xl font-bold text-green-600">
+                              ${Math.abs(transaction.amount).toFixed(2)}
+                            </div>
+                            <div className="text-sm text-gray-600">{transaction.currency}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
             </div>
           </div>
         )}
