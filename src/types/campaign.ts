@@ -7,6 +7,7 @@ export interface Campaign {
   soundUrl?: string;
   requireSound?: boolean;
   notes?: string;
+  type?: string; // Campaign type from configuration
   createdAt: number;
   updatedAt: number;
   videos?: Video[];

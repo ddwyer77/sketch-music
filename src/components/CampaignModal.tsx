@@ -6,7 +6,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Image from 'next/image';
 import { Campaign } from '@/types/campaign';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Server } from '@/types/server';
 
@@ -39,6 +39,7 @@ export default function CampaignModal({ onClose, onSave, onDelete, initialData, 
     soundUrl: '',
     requireSound: false,
     notes: '',
+    type: '',
     campaign_path: '',
     videos: [{
       id: crypto.randomUUID(),
@@ -79,6 +80,7 @@ export default function CampaignModal({ onClose, onSave, onDelete, initialData, 
     other: false,
     comments: ''
   });
+  const [campaignTypes, setCampaignTypes] = useState<string[]>([]);
   
   // Initialize form with editing data if available
   useEffect(() => {
@@ -93,6 +95,7 @@ export default function CampaignModal({ onClose, onSave, onDelete, initialData, 
         soundUrl: initialData.soundUrl || '',
         requireSound: initialData.requireSound || false,
         notes: initialData.notes || '',
+        type: initialData.type || '',
         campaign_path: initialData.campaign_path,
         videos: initialData.videos?.length ? initialData.videos : [{
           id: crypto.randomUUID(),
@@ -116,30 +119,37 @@ export default function CampaignModal({ onClose, onSave, onDelete, initialData, 
     }
   }, [initialData]);
   
-  // Fetch servers
+  // Fetch servers and campaign types
   useEffect(() => {
-    const fetchServers = async () => {
+    const fetchData = async () => {
       if (!user) return;
       
       try {
+        // Fetch servers
         const serversQuery = collection(db, 'servers');
-        
-        const querySnapshot = await getDocs(serversQuery);
-        const serversData = querySnapshot.docs.map(doc => ({
+        const serversSnapshot = await getDocs(serversQuery);
+        const serversData = serversSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Server[];
-        
         setServers(serversData);
+
+        // Fetch campaign types
+        const configDoc = doc(db, 'configuration', 'campaigns');
+        const configSnapshot = await getDoc(configDoc);
+        if (configSnapshot.exists()) {
+          const data = configSnapshot.data();
+          setCampaignTypes(data.campaignTypes || []);
+        }
       } catch (error) {
-        console.error('Error fetching servers:', error);
+        console.error('Error fetching data:', error);
       }
     };
 
-    fetchServers();
+    fetchData();
   }, [user]);
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     
     // Convert numeric fields to numbers
@@ -457,6 +467,27 @@ export default function CampaignModal({ onClose, onSave, onDelete, initialData, 
               placeholder="Enter campaign name"
             />
             {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
+          </div>
+          
+          {/* Campaign Type */}
+          <div>
+            <label htmlFor="type" className="block text-sm font-medium text-gray-900 mb-1">
+              Campaign Type
+            </label>
+            <select
+              id="type"
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              <option value="">Select a campaign type</option>
+              {campaignTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
           </div>
           
           {/* Sound Settings Group */}

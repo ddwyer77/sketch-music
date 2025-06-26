@@ -72,6 +72,11 @@ export default function CampaignCardReadOnly({ campaign, children }: CampaignCar
         <div className="p-5 flex-1 flex flex-col">
           {/* Campaign Name */}
           <h3 className="font-bold text-lg text-gray-800">{campaign.name}</h3>
+          {campaign.type && (
+            <span className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full mb-2">
+              {campaign.type}
+            </span>
+          )}
           {campaign.campaign_path && (
             <button
               onClick={handleCampaignUrlClick}

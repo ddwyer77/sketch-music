@@ -1,335 +1,302 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore';
+import toast from 'react-hot-toast';
 
 export default function SettingsPage() {
-  // Active tab state
-  const [activeTab, setActiveTab] = useState('account');
-  
-  // Placeholder user data
-  const userData = {
-    name: 'John Smith',
-    email: 'john.smith@example.com',
-    username: 'johnsmith',
-    phone: '+1 (555) 123-4567',
-    company: 'Music Productions Inc.',
-    role: 'Administrator',
-    timezone: 'America/New_York',
-    notifications: {
-      email: true,
-      push: true,
-      sms: false,
-      marketing: true
-    },
-    security: {
-      twoFactor: false,
-      lastPasswordChange: '2023-03-15',
-      sessions: 2
+  const { user } = useAuth();
+  const [campaignTypes, setCampaignTypes] = useState<string[]>([]);
+  const [newType, setNewType] = useState('');
+  const [editingType, setEditingType] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // Fetch campaign types from configuration collection
+  useEffect(() => {
+    const fetchCampaignTypes = async () => {
+      if (!user) return;
+      
+      try {
+        setLoading(true);
+        const configDoc = doc(db, 'configuration', 'campaigns');
+        const configSnapshot = await getDoc(configDoc);
+        
+        if (configSnapshot.exists()) {
+          const data = configSnapshot.data();
+          setCampaignTypes(data.campaignTypes || []);
+        } else {
+          // Initialize with empty array if document doesn't exist
+          setCampaignTypes([]);
+        }
+      } catch (error) {
+        console.error('Error fetching campaign types:', error);
+        toast.error('Failed to load campaign types');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCampaignTypes();
+  }, [user]);
+
+  const addCampaignType = async () => {
+    if (!newType.trim()) {
+      toast.error('Please enter a campaign type name');
+      return;
+    }
+
+    if (campaignTypes.includes(newType.trim())) {
+      toast.error('This campaign type already exists');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const configDoc = doc(db, 'configuration', 'campaigns');
+      
+      // Check if document exists, if not create it
+      const configSnapshot = await getDoc(configDoc);
+      if (!configSnapshot.exists()) {
+        // Create the document with initial data
+        await setDoc(configDoc, {
+          campaignTypes: [newType.trim()]
+        });
+      } else {
+        // Add to existing array
+        await updateDoc(configDoc, {
+          campaignTypes: arrayUnion(newType.trim())
+        });
+      }
+      
+      setCampaignTypes(prev => [...prev, newType.trim()]);
+      setNewType('');
+      toast.success('Campaign type added successfully');
+    } catch (error) {
+      console.error('Error adding campaign type:', error);
+      toast.error('Failed to add campaign type');
+    } finally {
+      setSaving(false);
     }
   };
+
+  const startEditType = (type: string) => {
+    setEditingType(type);
+    setEditValue(type);
+  };
+
+  const saveEditType = async () => {
+    if (!editingType || !editValue.trim()) {
+      toast.error('Please enter a valid campaign type name');
+      return;
+    }
+
+    if (campaignTypes.includes(editValue.trim()) && editValue.trim() !== editingType) {
+      toast.error('This campaign type already exists');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const configDoc = doc(db, 'configuration', 'campaigns');
+      
+      // Check if document exists
+      const configSnapshot = await getDoc(configDoc);
+      if (!configSnapshot.exists()) {
+        toast.error('Configuration document not found');
+        return;
+      }
+      
+      // Remove old type and add new type
+      await updateDoc(configDoc, {
+        campaignTypes: arrayRemove(editingType)
+      });
+      await updateDoc(configDoc, {
+        campaignTypes: arrayUnion(editValue.trim())
+      });
+      
+      setCampaignTypes(prev => 
+        prev.map(type => type === editingType ? editValue.trim() : type)
+      );
+      setEditingType(null);
+      setEditValue('');
+      toast.success('Campaign type updated successfully');
+    } catch (error) {
+      console.error('Error updating campaign type:', error);
+      toast.error('Failed to update campaign type');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const cancelEditType = () => {
+    setEditingType(null);
+    setEditValue('');
+  };
+
+  const deleteCampaignType = async (type: string) => {
+    if (!window.confirm(`Are you sure you want to delete the campaign type "${type}"?`)) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const configDoc = doc(db, 'configuration', 'campaigns');
+      
+      // Check if document exists
+      const configSnapshot = await getDoc(configDoc);
+      if (!configSnapshot.exists()) {
+        toast.error('Configuration document not found');
+        return;
+      }
+      
+      await updateDoc(configDoc, {
+        campaignTypes: arrayRemove(type)
+      });
+      
+      setCampaignTypes(prev => prev.filter(t => t !== type));
+      toast.success('Campaign type deleted successfully');
+    } catch (error) {
+      console.error('Error deleting campaign type:', error);
+      toast.error('Failed to delete campaign type');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+          <h1 className="text-3xl font-bold text-gray-800">Configuration</h1>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="ml-2 text-gray-600">Loading campaign types...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-        <h1 className="text-3xl font-bold text-gray-800">Settings</h1>
-      </div>
-      
-      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
-        <span className="block sm:inline">Page Under Maintenance</span>
+        <h1 className="text-3xl font-bold text-gray-800">Configuration</h1>
       </div>
       
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        {/* Tabs Navigation */}
+        {/* Tab Navigation */}
         <div className="border-b border-gray-200">
           <nav className="flex -mb-px">
-            {['account', 'notifications', 'security', 'billing', 'api', 'advanced'].map((tab) => (
-              <button
-                key={tab}
-                className={`py-4 px-6 text-sm font-medium border-b-2 focus:outline-none ${
-                  activeTab === tab
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-900 hover:text-gray-700 hover:border-gray-300'
-                }`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
+            <button className="py-4 px-6 text-sm font-medium border-b-2 border-primary text-primary">
+              Campaigns
+            </button>
           </nav>
         </div>
         
         {/* Tab Content */}
         <div className="p-6">
-          {/* Account Settings */}
-          {activeTab === 'account' && (
-            <div>
-              <h2 className="text-lg font-medium text-gray-900 mb-6">Account Information</h2>
-              
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-1">Full Name</label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                      defaultValue={userData.name}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-1">Email Address</label>
-                    <input
-                      type="email"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                      defaultValue={userData.email}
-                    />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-1">Username</label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                      defaultValue={userData.username}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-1">Phone Number</label>
-                    <input
-                      type="tel"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                      defaultValue={userData.phone}
-                    />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-1">Company</label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                      defaultValue={userData.company}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-1">Timezone</label>
-                    <select
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                      defaultValue={userData.timezone}
-                    >
-                      <option value="America/New_York">Eastern Time (US & Canada)</option>
-                      <option value="America/Chicago">Central Time (US & Canada)</option>
-                      <option value="America/Denver">Mountain Time (US & Canada)</option>
-                      <option value="America/Los_Angeles">Pacific Time (US & Canada)</option>
-                      <option value="Europe/London">London</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-1">Bio</label>
-                  <textarea
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    rows={4}
-                    placeholder="Tell us about yourself..."
-                  ></textarea>
-                </div>
-                
-                <div className="flex justify-end space-x-3">
-                  <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg">
-                    Cancel
-                  </button>
-                  <button className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg">
-                    Save Changes
+          <div>
+            <h2 className="text-lg font-medium text-gray-900 mb-6">Campaign Types</h2>
+            
+            <div className="space-y-6">
+              {/* Add New Campaign Type */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h3 className="text-md font-medium text-gray-900 mb-4">Add New Campaign Type</h3>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="text"
+                    value={newType}
+                    onChange={(e) => setNewType(e.target.value)}
+                    placeholder="Enter campaign type name"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    onKeyPress={(e) => e.key === 'Enter' && addCampaignType()}
+                  />
+                  <button
+                    onClick={addCampaignType}
+                    disabled={saving || !newType.trim()}
+                    className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer"
+                  >
+                    {saving ? 'Adding...' : 'Add Type'}
                   </button>
                 </div>
               </div>
-            </div>
-          )}
-          
-          {/* Notifications Settings */}
-          {activeTab === 'notifications' && (
-            <div>
-              <h2 className="text-lg font-medium text-gray-900 mb-6">Notification Preferences</h2>
               
-              <div className="space-y-6">
-                <div className="border-b border-gray-200 pb-5">
-                  <h3 className="text-md font-medium text-gray-900 mb-4">Email Notifications</h3>
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">Campaign Updates</p>
-                        <p className="text-sm text-gray-900">Get notified when there&apos;s activity in your campaigns</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          className="sr-only peer" 
-                          defaultChecked={userData.notifications.email}
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">Analytics Reports</p>
-                        <p className="text-sm text-gray-900">Receive weekly report summaries</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          className="sr-only peer" 
-                          defaultChecked={userData.notifications.email}
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
-                    </div>
-                  </div>
+              {/* Campaign Types List */}
+              <div className="border border-gray-200 rounded-lg">
+                <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                  <h3 className="text-md font-medium text-gray-900">Existing Campaign Types</h3>
                 </div>
                 
-                <div className="border-b border-gray-200 pb-5">
-                  <h3 className="text-md font-medium text-gray-900 mb-4">Push Notifications</h3>
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">Real-time Alerts</p>
-                        <p className="text-sm text-gray-900">Get notified immediately about important events</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          className="sr-only peer" 
-                          defaultChecked={userData.notifications.push}
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
-                    </div>
+                {campaignTypes.length === 0 ? (
+                  <div className="p-6 text-center text-gray-500">
+                    No campaign types configured yet. Add your first campaign type above.
                   </div>
-                </div>
-                
-                <div>
-                  <h3 className="text-md font-medium text-gray-900 mb-4">Marketing Communications</h3>
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">New Features & Updates</p>
-                        <p className="text-sm text-gray-900">Learn about new features and product updates</p>
+                ) : (
+                  <div className="divide-y divide-gray-200">
+                    {campaignTypes.map((type, index) => (
+                      <div key={index} className="p-4 flex items-center justify-between">
+                        {editingType === type ? (
+                          <div className="flex items-center gap-3 flex-1">
+                            <input
+                              type="text"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                              onKeyPress={(e) => e.key === 'Enter' && saveEditType()}
+                            />
+                            <button
+                              onClick={saveEditType}
+                              disabled={saving}
+                              className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={cancelEditType}
+                              disabled={saving}
+                              className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <span className="text-gray-900 font-medium">{type}</span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => startEditType(type)}
+                                disabled={saving}
+                                className="p-1 text-blue-600 hover:text-blue-800 hover:cursor-pointer disabled:opacity-50"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => deleteCampaignType(type)}
+                                disabled={saving}
+                                className="p-1 text-red-600 hover:text-red-800 hover:cursor-pointer disabled:opacity-50"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          className="sr-only peer" 
-                          defaultChecked={userData.notifications.marketing}
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
-                    </div>
+                    ))}
                   </div>
-                </div>
-                
-                <div className="flex justify-end space-x-3">
-                  <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg">
-                    Cancel
-                  </button>
-                  <button className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg">
-                    Save Preferences
-                  </button>
-                </div>
+                )}
               </div>
             </div>
-          )}
-          
-          {/* Security Settings */}
-          {activeTab === 'security' && (
-            <div>
-              <h2 className="text-lg font-medium text-gray-900 mb-6">Security Settings</h2>
-              
-              <div className="space-y-8">
-                <div>
-                  <h3 className="text-md font-medium text-gray-900 mb-4">Change Password</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
-                      <input
-                        type="password"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                        placeholder="••••••••"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                      <input
-                        type="password"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                        placeholder="••••••••"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-                      <input
-                        type="password"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                        placeholder="••••••••"
-                      />
-                    </div>
-                    <div>
-                      <button className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg">
-                        Update Password
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-md font-medium text-gray-900 mb-4">Two-Factor Authentication</h3>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-700">
-                        Add an extra layer of security to your account by enabling two-factor authentication.
-                      </p>
-                      <p className="text-sm text-gray-900 mt-1">
-                        Current status: <span className={userData.security.twoFactor ? "text-green-600" : "text-red-600"}>
-                          {userData.security.twoFactor ? "Enabled" : "Disabled"}
-                        </span>
-                      </p>
-                    </div>
-                    <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg">
-                      {userData.security.twoFactor ? "Disable" : "Enable"}
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-md font-medium text-gray-900 mb-4">Active Sessions</h3>
-                  <p className="text-sm text-gray-700 mb-3">
-                    You currently have {userData.security.sessions} active sessions on different devices.
-                  </p>
-                  <button className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg">
-                    Sign Out All Other Sessions
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Other tabs would show placeholders */}
-          {(activeTab === 'billing' || activeTab === 'api' || activeTab === 'advanced') && (
-            <div className="py-10 flex flex-col items-center justify-center">
-              <p className="text-gray-900 mb-4">This section is coming soon!</p>
-              <button 
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg"
-                onClick={() => setActiveTab('account')}
-              >
-                Go back to Account Settings
-              </button>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

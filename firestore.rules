@@ -116,5 +116,13 @@ service cloud.firestore {
       // Only admins can write to system info
       allow create, update, delete: if isAdmin();
     }
+
+    // Configuration collection rules
+    match /configuration/{docId} {
+      // Allow authenticated users to read configuration
+      allow read: if isAuthenticated();
+      // Only admins can write to configuration
+      allow create, update, delete: if isAdmin();
+    }
   }
 } 

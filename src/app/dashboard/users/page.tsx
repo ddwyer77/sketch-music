@@ -160,8 +160,10 @@ export default function UsersPage() {
         let newRoles: userRole[];
         
         if (checked) {
-          newRoles = [...currentRoles, role];
+          // Add role and remove duplicates
+          newRoles = [...new Set([...currentRoles, role])];
         } else {
+          // Remove role
           newRoles = currentRoles.filter((r: userRole) => r !== role);
         }
         
@@ -249,8 +251,8 @@ export default function UsersPage() {
                       {user.firstName} {user.lastName}
                     </h2>
                     <div className="flex space-x-1">
-                      {user.roles?.map(role => (
-                        <RoleBadge key={role} role={role} />
+                      {user.roles?.filter((role, index, self) => self.indexOf(role) === index).map((role, index) => (
+                        <RoleBadge key={`${user.id}-${role}-${index}`} role={role} />
                       ))}
                     </div>
                   </div>
