@@ -121,6 +121,12 @@ export default function CampaignCardReadOnly({ campaign, children }: CampaignCar
               <p className="font-medium text-gray-900">${campaign.ratePerMillion.toFixed(2)}</p>
             </div>
             <div>
+              <p className="text-gray-500">Max Earnings/Post</p>
+              <p className="font-medium text-gray-900">
+                {campaign.maxCreatorEarningsPerPost === null || campaign.maxCreatorEarningsPerPost === undefined ? 'No limit' : `$${campaign.maxCreatorEarningsPerPost.toFixed(2)}`}
+              </p>
+            </div>
+            <div>
               <p className="text-gray-500">Views</p>
               <p className="font-medium text-gray-900">{formatNumber(views)}</p>
             </div>

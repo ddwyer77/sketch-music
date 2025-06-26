@@ -16,6 +16,7 @@ export interface Campaign {
   budget: number;
   budgetUsed: number;
   ratePerMillion: number;
+  maxCreatorEarningsPerPost?: number | null; // Maximum earnings per post (null = no limit/infinity)
   views: number;
   shares: number;
   comments: number;

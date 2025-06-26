@@ -148,6 +148,12 @@ export default function CampaignCard({ campaign, onEdit, onReactivate, children 
               <p className="text-gray-500">Rate per 1M</p>
               <p className="font-medium text-gray-900">${campaign.ratePerMillion.toFixed(2)}</p>
             </div>
+            <div>
+              <p className="text-gray-500">Max Earnings/Post</p>
+              <p className="font-medium text-gray-900">
+                {campaign.maxCreatorEarningsPerPost === null || campaign.maxCreatorEarningsPerPost === undefined ? 'No limit' : `$${campaign.maxCreatorEarningsPerPost.toFixed(2)}`}
+              </p>
+            </div>
             <div className="relative">
               <div className="flex items-center gap-1">
                 <p className="text-gray-500">Views</p>

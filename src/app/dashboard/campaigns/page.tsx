@@ -205,6 +205,9 @@ export default function CampaignsPage() {
                     <div className="text-xs text-gray-900">
                       Rate: {formatCurrency(campaign.ratePerMillion)} per 1M
                     </div>
+                    <div className="text-xs text-gray-900">
+                      Max: {campaign.maxCreatorEarningsPerPost === null || campaign.maxCreatorEarningsPerPost === undefined ? 'No limit' : formatCurrency(campaign.maxCreatorEarningsPerPost)}
+                    </div>
                   </td>
                   
                   <td className="px-6 py-4 whitespace-nowrap">

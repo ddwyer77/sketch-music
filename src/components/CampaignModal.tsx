@@ -34,6 +34,7 @@ export default function CampaignModal({ onClose, onSave, onDelete, initialData, 
     budget: 0,
     budgetUsed: 0,
     ratePerMillion: 0,
+    maxCreatorEarningsPerPost: null,
     imageUrl: '',
     soundId: '',
     soundUrl: '',
@@ -90,6 +91,7 @@ export default function CampaignModal({ onClose, onSave, onDelete, initialData, 
         budget: initialData.budget,
         budgetUsed: initialData.budgetUsed,
         ratePerMillion: initialData.ratePerMillion,
+        maxCreatorEarningsPerPost: initialData.maxCreatorEarningsPerPost || null,
         imageUrl: initialData.imageUrl,
         soundId: initialData.soundId || '',
         soundUrl: initialData.soundUrl || '',
@@ -190,6 +192,32 @@ export default function CampaignModal({ onClose, onSave, onDelete, initialData, 
       setErrors({
         ...errors,
         [name]: '',
+      });
+    }
+  };
+  
+  const handleMaxEarningsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    
+    // Handle special case for "no limit"
+    if (value === '') {
+      setFormData({
+        ...formData,
+        maxCreatorEarningsPerPost: null,
+      });
+    } else {
+      const intValue = parseInt(value) || 0;
+      setFormData({
+        ...formData,
+        maxCreatorEarningsPerPost: intValue,
+      });
+    }
+    
+    // Clear error for this field
+    if (errors.maxCreatorEarningsPerPost) {
+      setErrors({
+        ...errors,
+        maxCreatorEarningsPerPost: '',
       });
     }
   };
@@ -659,6 +687,25 @@ export default function CampaignModal({ onClose, onSave, onDelete, initialData, 
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
                 placeholder="0"
               />
+            </div>
+
+            {/* Max Creator Earnings Per Post */}
+            <div>
+              <label htmlFor="maxCreatorEarningsPerPost" className="block text-sm font-medium text-gray-900 mb-1">
+                Max Creator Earnings Per Post ($)
+              </label>
+              <input
+                type="number"
+                id="maxCreatorEarningsPerPost"
+                name="maxCreatorEarningsPerPost"
+                min="0"
+                step="1"
+                value={formData.maxCreatorEarningsPerPost === null ? '' : formData.maxCreatorEarningsPerPost}
+                onChange={handleMaxEarningsChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500"
+                placeholder="No limit"
+              />
+              <p className="mt-1 text-xs text-gray-500">Leave empty for no limit</p>
             </div>
           </div>
           

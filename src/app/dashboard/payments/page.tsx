@@ -674,6 +674,12 @@ export default function PaymentsPage() {
                     <p className="font-medium text-gray-900">${selectedCampaign.ratePerMillion.toFixed(2)}</p>
                   </div>
                   <div>
+                    <p className="text-gray-500">Max Earnings/Post</p>
+                    <p className="font-medium text-gray-900">
+                      {selectedCampaign.maxCreatorEarningsPerPost === null || selectedCampaign.maxCreatorEarningsPerPost === undefined ? 'No limit' : `$${selectedCampaign.maxCreatorEarningsPerPost.toFixed(2)}`}
+                    </p>
+                  </div>
+                  <div>
                     <p className="text-gray-500">Views</p>
                     <p className="font-medium text-gray-900">{selectedCampaign.views.toLocaleString()}</p>
                   </div>
