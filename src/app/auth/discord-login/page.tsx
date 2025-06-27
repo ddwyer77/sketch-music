@@ -68,12 +68,16 @@ export default function DiscordLogin() {
       try {
         setIsLoading(true);
         
+        // Get the ID token for authorization
+        const idToken = await user.getIdToken();
+        
         // Make POST request to verify token
         const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/verify-token`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
+            'Authorization': `Bearer ${idToken}`,
             'Origin': window.location.origin
           },
           credentials: 'include',

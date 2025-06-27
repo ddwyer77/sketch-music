@@ -367,10 +367,14 @@ export default function CreatorDashboard() {
     setLinkingSuccess(null);
     
     try {
+      // Get the current user's Firebase ID token
+      const idToken = await user.getIdToken();
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/link-tiktok-account/${tiktokUsername}?firebaseUserId=${user.uid}&token=${linkToken}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}` // Add Firebase ID token
         }
       });
       
