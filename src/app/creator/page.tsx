@@ -13,7 +13,7 @@ import FAQTable from '@/components/FAQTable';
 import Link from 'next/link';
 import CampaignCardReadOnly from '@/components/CampaignCardReadOnly';
 
-type Tab = 'campaigns' | 'settings' | 'discord' | 'wallet' | 'myinfo' | 'receipts';
+type Tab = 'campaigns' | 'settings' | 'discord' | 'wallet' | 'receipts';
 
 const ITEMS_PER_PAGE = 15;
 
@@ -478,19 +478,6 @@ export default function CreatorDashboard() {
               </svg>
               Receipts
             </button>
-            <button
-              onClick={() => setActiveTab('myinfo')}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 hover:cursor-pointer ${
-                activeTab === 'myinfo'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-              </svg>
-              My Info
-            </button>
           </nav>
         </div>
 
@@ -646,25 +633,134 @@ export default function CreatorDashboard() {
         )}
 
         {activeTab === 'settings' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Account Settings</h2>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-800 mb-1">Email</label>
-                <p className="text-gray-800">{userData?.email}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-800 mb-1">Name</label>
-                <p className="text-gray-800">{userData?.firstName} {userData?.lastName}</p>
-              </div>
-              {/* Payment Email Section */}
-              {userData?.paymentEmail && (
-                <div className="bg-white rounded-lg p-4 shadow-sm">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Payment Email</h3>
-                  <p className="text-gray-800">{userData.paymentEmail}</p>
+          <div className="space-y-8">
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Account Settings</h2>
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Email</label>
+                  <p className="text-gray-800">{userData?.email}</p>
                 </div>
-              )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Name</label>
+                  <p className="text-gray-800">{userData?.firstName} {userData?.lastName}</p>
+                </div>
+                
+                {/* Payment Email Section */}
+                <div>
+                  <label htmlFor="payment-email" className="block text-sm font-medium text-gray-800 mb-1">
+                    Payment Email
+                  </label>
+                  <div className="flex gap-4">
+                    <input
+                      type="email"
+                      id="payment-email"
+                      value={paymentEmail}
+                      onChange={(e) => setPaymentEmail(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="Enter your payment email"
+                    />
+                    <button
+                      onClick={handleSavePaymentEmail}
+                      disabled={isSavingEmail || paymentEmail === userData?.paymentEmail}
+                      className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-md font-medium transition-colors hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {isSavingEmail ? (
+                        <>
+                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>💾</span>
+                          <span>Save Changes</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  {emailSaveError && (
+                    <p className="mt-2 text-sm text-red-600">{emailSaveError}</p>
+                  )}
+                  {emailSaveSuccess && (
+                    <p className="mt-2 text-sm text-green-600">{emailSaveSuccess}</p>
+                  )}
+                </div>
+
+                {/* Discord ID Section */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">
+                    Discord ID
+                  </label>
+                  <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-gray-800">
+                    {userData?.discord_id || 'Not linked'}
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {/* TikTok Information Section */}
+            {userData?.tiktokData && Object.keys(userData.tiktokData).length > 0 && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800">TikTok Accounts</h3>
+                  {userData.tiktokVerified && (
+                    <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                      Verified ✓
+                    </span>
+                  )}
+                </div>
+                
+                <div className="space-y-6">
+                  {userData.tiktokData && Object.entries(userData.tiktokData).map(([username, tiktokAccount]) => (
+                    <div key={username} className="flex items-start gap-6 p-4 bg-gray-50 rounded-lg">
+                      <div className="flex-shrink-0">
+                        {tiktokAccount.profileImage ? (
+                          <Image
+                            src={tiktokAccount.profileImage}
+                            alt={`${tiktokAccount.uniqueId}'s profile`}
+                            width={100}
+                            height={100}
+                            className="rounded-full"
+                            onError={(e) => {
+                              // Fallback to a default avatar if image fails to load
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const fallback = target.nextElementSibling as HTMLElement;
+                              if (fallback) fallback.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        {/* Fallback avatar when image fails to load or is missing */}
+                        <div 
+                          className={`w-[100px] h-[100px] rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium text-lg ${tiktokAccount.profileImage ? 'hidden' : 'flex'}`}
+                          style={{ display: tiktokAccount.profileImage ? 'none' : 'flex' }}
+                        >
+                          {tiktokAccount.uniqueId ? tiktokAccount.uniqueId.charAt(0).toUpperCase() : username.charAt(0).toUpperCase()}
+                        </div>
+                      </div>
+                      
+                      <div className="flex-1 space-y-2">
+                        <div>
+                          <h4 className="text-lg font-medium text-gray-800">
+                            @{tiktokAccount.uniqueId || username}
+                          </h4>
+                          <p className="text-gray-600">{tiktokAccount.title || 'No title'}</p>
+                        </div>
+                        
+                        {tiktokAccount.description && (
+                          <p className="text-gray-700 text-sm">
+                            {tiktokAccount.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1060,132 +1156,6 @@ export default function CreatorDashboard() {
                   })}
                 </div>
               )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'myinfo' && (
-          <div className="space-y-8">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">My Information</h2>
-              
-              <div className="space-y-6">
-                {/* Payment Email Section */}
-                <div>
-                  <label htmlFor="payment-email" className="block text-sm font-medium text-gray-800 mb-1">
-                    Payment Email
-                  </label>
-                  <div className="flex gap-4">
-                    <input
-                      type="email"
-                      id="payment-email"
-                      value={paymentEmail}
-                      onChange={(e) => setPaymentEmail(e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                      placeholder="Enter your payment email"
-                    />
-                    <button
-                      onClick={handleSavePaymentEmail}
-                      disabled={isSavingEmail || paymentEmail === userData?.paymentEmail}
-                      className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-md font-medium transition-colors hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                    >
-                      {isSavingEmail ? (
-                        <>
-                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          <span>Saving...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>💾</span>
-                          <span>Save Changes</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  {emailSaveError && (
-                    <p className="mt-2 text-sm text-red-600">{emailSaveError}</p>
-                  )}
-                  {emailSaveSuccess && (
-                    <p className="mt-2 text-sm text-green-600">{emailSaveSuccess}</p>
-                  )}
-                </div>
-
-                {/* Discord ID Section */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-800 mb-1">
-                    Discord ID
-                  </label>
-                  <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-gray-800">
-                    {userData?.discord_id || 'Not linked'}
-                  </div>
-                </div>
-
-                {/* TikTok Information Section */}
-                {userData?.tiktokData && (
-                  <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                    <div className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-800">TikTok Accounts</h3>
-                        {userData.tiktokVerified && (
-                          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                            Verified ✓
-                          </span>
-                        )}
-                      </div>
-                      
-                      <div className="space-y-6">
-                        {userData.tiktokData && (
-                          <div className="flex items-start gap-6 p-4 bg-gray-50 rounded-lg">
-                            <div className="flex-shrink-0">
-                              {userData.tiktokData.profileImage ? (
-                                <Image
-                                  src={userData.tiktokData.profileImage}
-                                  alt={`${userData.tiktokData.uniqueId}'s profile`}
-                                  width={100}
-                                  height={100}
-                                  className="rounded-full"
-                                  onError={(e) => {
-                                    // Fallback to a default avatar if image fails to load
-                                    const target = e.target as HTMLImageElement;
-                                    target.style.display = 'none';
-                                    const fallback = target.nextElementSibling as HTMLElement;
-                                    if (fallback) fallback.style.display = 'flex';
-                                  }}
-                                />
-                              ) : null}
-                              {/* Fallback avatar when image fails to load or is missing */}
-                              <div 
-                                className={`w-[100px] h-[100px] rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium text-lg ${userData.tiktokData.profileImage ? 'hidden' : 'flex'}`}
-                                style={{ display: userData.tiktokData.profileImage ? 'none' : 'flex' }}
-                              >
-                                {userData.tiktokData.uniqueId.charAt(0).toUpperCase()}
-                              </div>
-                            </div>
-                            
-                            <div className="flex-1 space-y-2">
-                              <div>
-                                <h4 className="text-lg font-medium text-gray-800">
-                                  @{userData.tiktokData.uniqueId}
-                                </h4>
-                                <p className="text-gray-600">{userData.tiktokData.title || 'No title'}</p>
-                              </div>
-                              
-                              {userData.tiktokData.description && (
-                                <p className="text-gray-700 text-sm">
-                                  {userData.tiktokData.description}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         )}

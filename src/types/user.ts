@@ -10,6 +10,8 @@ export type TikTokData = {
   profileImage: string;
   title: string;
   uniqueId: string;
+  isVerified?: boolean;
+  verifiedAt?: number;
 };
 
 export type User = {
@@ -22,7 +24,7 @@ export type User = {
   groups?: string[];
   campaign_contributions?: CampaignContribution[];
   discord_id?: string;
-  tiktokData?: TikTokData;
+  tiktokData?: { [username: string]: TikTokData };
   tiktokVerified?: boolean;
   wallet?: number;
 };
