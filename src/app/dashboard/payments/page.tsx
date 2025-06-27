@@ -1128,15 +1128,20 @@ export default function PaymentsPage() {
                   
                   const userIds = Array.from(new Set(selectedCampaign.videos.map((v: Video) => v.author_id)));
                   try {
+                    if (!user) throw new Error('User not authenticated');
+                    // Get the current user's Firebase ID token
+                    const idToken = await user.getIdToken();
+                    
                     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/release-campaign-payments`, {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`,
                       },
                       body: JSON.stringify({
                         userIds,
                         campaignId: selectedCampaign.id,
-                        actorId: user?.uid,
+                        actorId: user.uid,
                       }),
                     });
                     
@@ -1637,10 +1642,14 @@ export default function PaymentsPage() {
 
               setIsSubmittingDeposit(true);
               try {
+                // Get the current user's Firebase ID token
+                const idToken = await user?.getIdToken();
+                
                 const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/record-deposit`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`,
                   },
                   body: JSON.stringify({
                     actorId: user?.uid,
