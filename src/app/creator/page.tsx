@@ -585,8 +585,6 @@ export default function CreatorDashboard() {
                   {paginatedCampaigns.map((campaign) => (
                     <div 
                       key={campaign.id}
-                      className="block hover:cursor-pointer"
-                      onClick={() => window.location.href = `/campaigns/${campaign.id}`}
                     >
                       <CampaignCardReadOnly campaign={campaign}>
                         <div className="mt-auto pt-4">
