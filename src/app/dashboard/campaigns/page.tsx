@@ -9,6 +9,287 @@ import CampaignModal from '../../../components/CampaignModal';
 import Image from 'next/image';
 import { Campaign } from '@/types/campaign';
 
+// Utility function to convert campaign data to CSV format
+const exportCampaignToCSV = (campaign: Campaign) => {
+  // Helper function to safely convert timestamps to ISO string
+  const safeDateToISO = (timestamp: any): string => {
+    if (!timestamp) return '';
+    
+    try {
+      let date: Date;
+      
+      // Handle Firestore timestamp objects
+      if (typeof timestamp === 'object' && timestamp._seconds) {
+        date = new Date(timestamp._seconds * 1000);
+      } else if (typeof timestamp === 'number') {
+        date = new Date(timestamp);
+      } else if (typeof timestamp === 'string') {
+        date = new Date(timestamp);
+      } else {
+        return '';
+      }
+      
+      // Check if the date is valid
+      if (isNaN(date.getTime())) {
+        return '';
+      }
+      
+      return date.toISOString();
+    } catch (error) {
+      console.warn('Invalid date value:', timestamp);
+      return '';
+    }
+  };
+
+  // Create CSV headers for campaign data
+  const campaignHeaders = [
+    'Campaign ID',
+    'Name',
+    'Description',
+    'Type',
+    'Budget',
+    'Budget Used',
+    'Rate Per Million',
+    'Max Creator Earnings Per Post',
+    'Views',
+    'Shares',
+    'Comments',
+    'Likes',
+    'Created At',
+    'Updated At',
+    'Last Updated',
+    'Is Complete',
+    'Max Submissions',
+    'Funds Released',
+    'Payments Released',
+    'Payments Released By',
+    'Payments Released At',
+    'Campaign Path',
+    'Owner ID',
+    'Image URL',
+    'Sound ID',
+    'Sound URL',
+    'Require Sound',
+    'Notes',
+    'Server IDs',
+    'Creators',
+    'Video Count',
+    'Pending Videos',
+    'Approved Videos',
+    'Denied Videos',
+    // Campaign Termination Details
+    'Termination Date',
+    'Termination Budget',
+    'Termination Max Submissions',
+    'Termination Manual',
+    'Termination Other',
+    'Termination Comments',
+    // Payment Release Receipt
+    'Unpaid Videos Count',
+    'Wallet Updates Count',
+    'Total Payout Amount'
+  ];
+
+  // Create CSV data row for campaign
+  const campaignData = [
+    campaign.id,
+    campaign.name,
+    campaign.description || '',
+    campaign.type || '',
+    campaign.budget,
+    campaign.budgetUsed,
+    campaign.ratePerMillion,
+    campaign.maxCreatorEarningsPerPost || 'No limit',
+    campaign.views,
+    campaign.shares,
+    campaign.comments,
+    campaign.likes,
+    safeDateToISO(campaign.createdAt),
+    safeDateToISO(campaign.updatedAt),
+    safeDateToISO(campaign.lastUpdated),
+    campaign.isComplete,
+    campaign.maxSubmissions || 0,
+    campaign.fundsReleased || false,
+    campaign.paymentsReleased || false,
+    campaign.paymentsReleasedBy || '',
+    safeDateToISO(campaign.paymentsReleasedAt),
+    campaign.campaign_path || '',
+    campaign.owner_id,
+    campaign.imageUrl || '',
+    campaign.soundId || '',
+    campaign.soundUrl || '',
+    campaign.requireSound || false,
+    campaign.notes || '',
+    (campaign.serverIds || []).join(';'),
+    (campaign.creators || []).join(';'),
+    campaign.videos?.length || 0,
+    campaign.videos?.filter(v => v.status === 'pending').length || 0,
+    campaign.videos?.filter(v => v.status === 'approved').length || 0,
+    campaign.videos?.filter(v => v.status === 'denied').length || 0,
+    // Campaign Termination Details
+    campaign.campaignTerminationDetails?.date || false,
+    campaign.campaignTerminationDetails?.budget || false,
+    campaign.campaignTerminationDetails?.maxSubmissions || false,
+    campaign.campaignTerminationDetails?.manualTermination || false,
+    campaign.campaignTerminationDetails?.other || false,
+    campaign.campaignTerminationDetails?.comments || '',
+    // Payment Release Receipt
+    campaign.paymentReleaseReceipt?.unpaidVideos?.length || 0,
+    campaign.paymentReleaseReceipt?.walletUpdates?.length || 0,
+    campaign.paymentReleaseReceipt?.walletUpdates?.reduce((sum, update) => sum + (update.payoutAmount || 0), 0) || 0
+  ];
+
+  // Create CSV headers for videos
+  const videoHeaders = [
+    'Video ID',
+    'Video URL',
+    'Video Status',
+    'Video Author ID',
+    'Video Created At',
+    'Video Updated At',
+    'Video Sound ID Match',
+    'Video Title',
+    'Video Reason For Denial',
+    'Video Has Been Paid',
+    'Video Payout Amount',
+    'Video Earnings',
+    'Video Views',
+    'Video Shares',
+    'Video Comments',
+    'Video Likes',
+    'Video Description',
+    'Video Music Title',
+    'Video Music Author',
+    'Video Music ID',
+    'Video Marked For Deletion',
+    'Video Author Nickname',
+    'Video Author Unique ID',
+    'Video Created At Date'
+  ];
+
+  // Create CSV data for videos
+  const videoData = (campaign.videos || []).map(video => [
+    video.id,
+    video.url,
+    video.status,
+    video.author_id,
+    safeDateToISO(video.created_at),
+    safeDateToISO(video.updated_at),
+    video.soundIdMatch || false,
+    video.title || '',
+    video.reasonForDenial || '',
+    video.hasBeenPaid || false,
+    video.payoutAmountForVideo || 0,
+    video.earnings || 0,
+    video.views || 0,
+    video.shares || 0,
+    video.comments || 0,
+    video.likes || 0,
+    video.description || '',
+    video.musicTitle || '',
+    video.musicAuthor || '',
+    video.musicId || '',
+    video.markedForDeletion || false,
+    video.author?.nickname || '',
+    video.author?.uniqueId || '',
+    // Handle the createdAt field that might exist in the actual data
+    (video as any).createdAt || ''
+  ]);
+
+  // Create CSV headers for wallet updates
+  const walletUpdateHeaders = [
+    'Wallet Update User ID',
+    'Wallet Update Previous Wallet',
+    'Wallet Update Payout Amount',
+    'Wallet Update New Wallet',
+    'Wallet Update User Email',
+    'Wallet Update User First Name',
+    'Wallet Update User Last Name',
+    'Wallet Update User Payment Email',
+    'Wallet Update User Wallet',
+    'Wallet Update User Roles',
+    'Wallet Update User Discord ID',
+    'Wallet Update User TikTok Verified',
+    'Wallet Update User Created At',
+    'Wallet Update User Updated At',
+    'Wallet Update User Last Payout Amount',
+    'Wallet Update User Last Payout Batch ID',
+    'Wallet Update User Last Payout At',
+    'Wallet Update User TikTok Data Count'
+  ];
+
+  // Create CSV data for wallet updates
+  const walletUpdateData = (campaign.paymentReleaseReceipt?.walletUpdates || []).map(update => {
+    // Cast to any to access the extended userData properties that exist in actual data
+    const userData = update.userData as any;
+    return [
+      update.userId,
+      update.previousWallet || 0,
+      update.payoutAmount || 0,
+      update.newWallet || 0,
+      userData?.email || '',
+      userData?.firstName || '',
+      userData?.lastName || '',
+      userData?.paymentEmail || '',
+      userData?.wallet || 0,
+      (userData?.roles || []).join(';'),
+      userData?.discord_id || '',
+      userData?.tiktokVerified || false,
+      safeDateToISO(userData?.createdAt),
+      safeDateToISO(userData?.updatedAt),
+      userData?.lastPayoutAmount || 0,
+      userData?.lastPayoutBatchId || '',
+      safeDateToISO(userData?.lastPayoutAt),
+      Object.keys(userData?.tiktokData || {}).length
+    ];
+  });
+
+  // Escape CSV values (handle commas, quotes, and newlines)
+  const escapeCSVValue = (value: any): string => {
+    if (value === null || value === undefined) return '';
+    const stringValue = String(value);
+    if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    }
+    return stringValue;
+  };
+
+  // Create CSV content with campaign data
+  let csvContent = [campaignHeaders.map(escapeCSVValue).join(',')];
+  csvContent.push(campaignData.map(escapeCSVValue).join(','));
+
+  // Add video data if there are videos
+  if (videoData.length > 0) {
+    csvContent.push(''); // Empty line separator
+    csvContent.push('VIDEOS DATA');
+    csvContent.push(videoHeaders.map(escapeCSVValue).join(','));
+    videoData.forEach(video => {
+      csvContent.push(video.map(escapeCSVValue).join(','));
+    });
+  }
+
+  // Add wallet update data if there are wallet updates
+  if (walletUpdateData.length > 0) {
+    csvContent.push(''); // Empty line separator
+    csvContent.push('WALLET UPDATES DATA');
+    csvContent.push(walletUpdateHeaders.map(escapeCSVValue).join(','));
+    walletUpdateData.forEach(update => {
+      csvContent.push(update.map(escapeCSVValue).join(','));
+    });
+  }
+
+  // Create and download the file
+  const blob = new Blob([csvContent.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', `campaign-${campaign.name.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${Date.now()}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 export default function CampaignsPage() {
   const { user } = useAuth();
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
@@ -85,6 +366,14 @@ export default function CampaignsPage() {
   const handleEditCampaign = (campaign: Campaign) => {
     setEditingCampaign(campaign);
     setShowCampaignModal(true);
+  };
+
+  const handleExportCampaign = (campaign: Campaign) => {
+    try {
+      exportCampaignToCSV(campaign);
+    } catch (error) {
+      console.error('Error exporting campaign:', error);
+    }
   };
 
   const handleSaveCampaign = async (campaign: Campaign) => {
@@ -171,6 +460,9 @@ export default function CampaignsPage() {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Settings
                 </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                  Data
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -254,6 +546,15 @@ export default function CampaignsPage() {
                       className="text-primary hover:text-primary/90 font-medium hover:cursor-pointer"
                     >
                       Edit
+                    </button>
+                  </td>
+                  
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                    <button
+                      onClick={() => handleExportCampaign(campaign)}
+                      className="text-primary hover:text-primary/90 font-medium hover:cursor-pointer"
+                    >
+                      Export
                     </button>
                   </td>
                 </tr>
