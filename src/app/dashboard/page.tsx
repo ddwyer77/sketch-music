@@ -92,6 +92,11 @@ export default function Dashboard() {
     }
   }, [user, router]);
   
+  // Count active campaigns
+  const activeCampaignCount = useMemo(() => {
+    return campaigns?.filter(campaign => !campaign.isComplete).length || 0;
+  }, [campaigns]);
+  
   // Function to update all campaign metrics
   const handleUpdateMetrics = useCallback(async () => {
     if (isUpdating || !campaigns?.length) return;
@@ -231,43 +236,67 @@ export default function Dashboard() {
   
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-8 flex-wrap">
-        <h1 className="text-3xl font-bold w-full md:w-auto mb-2 md:mb-0 text-gray-900">Dashboard</h1>
-        <div className="flex gap-3 flex-wrap w-full md:w-auto items-center">
-          {updateMessage && (
-            <div className={`py-2 px-3 rounded-md text-sm font-medium ${
-              updateMessage.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-            }`}>
-              {updateMessage}
-            </div>
+      {/* Header Section */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <button
+          onClick={() => openModal()}
+          className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium transition-colors hover:cursor-pointer"
+        >
+          Create Campaign
+        </button>
+      </div>
+
+      {/* Update Metrics Section */}
+      <div className="mb-8">
+        <button
+          onClick={handleUpdateMetrics}
+          disabled={isUpdating || loading}
+          className="w-full bg-secondary hover:bg-primary hover:text-white disabled:bg-gray-400 text-gray-900 hover:text-white px-8 py-6 rounded-xl font-semibold text-lg transition-all duration-200 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-[1.01] disabled:transform-none disabled:hover:scale-100 hover:cursor-pointer"
+        >
+          {isUpdating ? (
+            <>
+              <svg className="animate-spin h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Updating Metrics...</span>
+            </>
+          ) : (
+            <>
+              <svg className="h-6 w-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <div className="flex flex-col items-center">
+                <span>Update Metrics for {activeCampaignCount} Active Campaign{activeCampaignCount !== 1 ? 's' : ''}</span>
+                <span className="text-sm opacity-75 mt-1">and channel #active-campaigns</span>
+              </div>
+            </>
           )}
-          {lastUpdated && (
-            <div className="text-sm text-gray-600">
-              Last updated: {lastUpdated}
+        </button>
+
+        {/* Status Messages */}
+        {updateMessage && (
+          <div className={`mt-4 py-3 px-4 rounded-lg text-center font-medium ${
+            updateMessage.includes('Error') 
+              ? 'bg-red-50 text-red-700 border border-red-200' 
+              : 'bg-green-50 text-green-700 border border-green-200'
+          }`}>
+            {updateMessage}
+          </div>
+        )}
+
+        {/* Last Updated Info */}
+        {lastUpdated && (
+          <div className="mt-4 text-center">
+            <div className="inline-flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-lg border">
+              <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm text-gray-600 font-medium">Last updated: {lastUpdated}</span>
             </div>
-          )}
-          <button
-            onClick={handleUpdateMetrics}
-            disabled={isUpdating || loading}
-            className="bg-secondary hover:bg-primary hover:text-white text-gray-900 px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center hover:cursor-pointer w-full md:w-auto justify-center"
-          >
-            {isUpdating ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Updating...
-              </>
-            ) : 'Update Metrics'}
-          </button>
-          <button
-            onClick={() => openModal()}
-            className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium transition-colors hover:cursor-pointer w-full md:w-auto"
-          >
-            Create Campaign
-          </button>
-        </div>
+          </div>
+        )}
       </div>
       
       {loading ? (
