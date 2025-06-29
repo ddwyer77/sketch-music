@@ -13,7 +13,7 @@ import FAQTable from '@/components/FAQTable';
 import Link from 'next/link';
 import CampaignCardReadOnly from '@/components/CampaignCardReadOnly';
 
-type Tab = 'campaigns' | 'settings' | 'discord' | 'wallet' | 'receipts';
+type Tab = 'campaigns' | 'analytics' | 'settings' | 'discord' | 'wallet' | 'submissions';
 
 const ITEMS_PER_PAGE = 15;
 
@@ -54,6 +54,8 @@ export default function CreatorDashboard() {
   const [withdrawError, setWithdrawError] = useState<string | null>(null);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [withdrawSuccessModal, setWithdrawSuccessModal] = useState<{ show: boolean; amount: number }>({ show: false, amount: 0 });
+  const [selectedLeaderboardCampaign, setSelectedLeaderboardCampaign] = useState<string>('');
+  const [leaderboardDropdownOpen, setLeaderboardDropdownOpen] = useState(false);
 
   const discordCommands = [
     {
@@ -204,6 +206,21 @@ export default function CreatorDashboard() {
     
     fetchLastUpdated();
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (leaderboardDropdownOpen && !target.closest('.leaderboard-dropdown')) {
+        setLeaderboardDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [leaderboardDropdownOpen]);
 
   const handleGenerateToken = async () => {
     if (!user?.uid) return;
@@ -427,6 +444,19 @@ export default function CreatorDashboard() {
               Campaigns
             </button>
             <button
+              onClick={() => setActiveTab('analytics')}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 hover:cursor-pointer ${
+                activeTab === 'analytics'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+              </svg>
+              Analytics
+            </button>
+            <button
               onClick={() => setActiveTab('settings')}
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 hover:cursor-pointer ${
                 activeTab === 'settings'
@@ -466,17 +496,17 @@ export default function CreatorDashboard() {
               Wallet
             </button>
             <button
-              onClick={() => setActiveTab('receipts')}
+              onClick={() => setActiveTab('submissions')}
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 hover:cursor-pointer ${
-                activeTab === 'receipts'
+                activeTab === 'submissions'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
               </svg>
-              Receipts
+              Submissions
             </button>
           </nav>
         </div>
@@ -630,6 +660,331 @@ export default function CreatorDashboard() {
               </>
             )}
           </>
+        )}
+
+        {activeTab === 'analytics' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column - User Statistics */}
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                  </svg>
+                  My Campaign Statistics
+                </h2>
+                
+                {(() => {
+                  // Get campaigns where user has submitted videos
+                  const userCampaigns = campaigns.filter(campaign => 
+                    campaign.videos?.some(video => video.author_id === user?.uid)
+                  );
+
+                  if (userCampaigns.length === 0) {
+                    return (
+                      <div className="text-center py-12">
+                        <div className="flex justify-center mb-4">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-800 mb-2">No statistics yet</h3>
+                        <p className="text-gray-600">Submit videos to campaigns to see your performance analytics here.</p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-4">
+                      {userCampaigns.map(campaign => {
+                        const userVideos = campaign.videos?.filter(video => video.author_id === user?.uid) || [];
+                        const totalEarnings = userVideos.reduce((sum, video) => sum + (video.earnings || 0), 0);
+                        const approvedVideos = userVideos.filter(video => video.status === 'approved');
+                        const pendingVideos = userVideos.filter(video => video.status === 'pending');
+                        const deniedVideos = userVideos.filter(video => video.status === 'denied');
+
+                        return (
+                          <div key={campaign.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center justify-between mb-3">
+                              <h3 className="text-lg font-semibold text-gray-800">{campaign.name}</h3>
+                              <div className="text-right">
+                                <div className="text-2xl font-bold text-green-600">
+                                  ${totalEarnings.toFixed(2)}
+                                </div>
+                                <div className="text-sm text-gray-600">Total Earnings</div>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                              <div className="text-center">
+                                <div className="text-xl font-bold text-gray-800">{userVideos.length}</div>
+                                <div className="text-sm text-gray-600">Videos Submitted</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-xl font-bold text-green-600">{approvedVideos.length}</div>
+                                <div className="text-sm text-gray-600">Approved</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-xl font-bold text-yellow-600">{pendingVideos.length}</div>
+                                <div className="text-sm text-gray-600">Pending</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-xl font-bold text-red-600">{deniedVideos.length}</div>
+                                <div className="text-sm text-gray-600">Denied</div>
+                              </div>
+                            </div>
+
+                            {/* Individual Video Earnings */}
+                            <div className="border-t border-gray-200 pt-3">
+                              <h4 className="text-sm font-medium text-gray-800 mb-2">Individual Video Earnings</h4>
+                              <div className="space-y-2 max-h-32 overflow-y-auto">
+                                {userVideos.map(video => (
+                                  <div key={video.id} className="flex items-center justify-between text-sm">
+                                    <div className="flex-1 min-w-0">
+                                      <a 
+                                        href={video.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-gray-700 hover:text-primary hover:cursor-pointer truncate block"
+                                      >
+                                        {video.title || 'Untitled Video'}
+                                      </a>
+                                    </div>
+                                    <div className="flex items-center gap-3 ml-2">
+                                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        video.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                        video.status === 'denied' ? 'bg-red-100 text-red-800' :
+                                        'bg-yellow-100 text-yellow-800'
+                                      }`}>
+                                        {video.status}
+                                      </span>
+                                      <span className={`font-medium ${
+                                        video.status === 'denied' ? 'text-red-600' : 'text-green-600'
+                                      }`}>
+                                        ${video.status === 'denied' ? '0.00' : (video.earnings || 0).toFixed(2)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Right Column - Leaderboard */}
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3 6a3 3 0 013-3h10a1 1 0 01.8 1.6L14.25 8l2.55 3.4A1 1 0 0116 13H6a1 1 0 00-1 1v3a1 1 0 11-2 0V6z" clipRule="evenodd" />
+                    </svg>
+                    Campaign Leaderboard
+                  </h2>
+                  
+                  {/* Campaign Dropdown */}
+                  <div className="relative leaderboard-dropdown">
+                    <button
+                      onClick={() => setLeaderboardDropdownOpen(!leaderboardDropdownOpen)}
+                      className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 hover:cursor-pointer"
+                    >
+                      <span>
+                        {selectedLeaderboardCampaign 
+                          ? campaigns.find(c => c.id === selectedLeaderboardCampaign)?.name || 'Select Campaign'
+                          : 'Select Campaign'
+                        }
+                      </span>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    
+                    {leaderboardDropdownOpen && (
+                      <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                        <div className="py-1">
+                          {campaigns.map(campaign => (
+                            <button
+                              key={campaign.id}
+                              onClick={() => {
+                                setSelectedLeaderboardCampaign(campaign.id);
+                                setLeaderboardDropdownOpen(false);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:cursor-pointer"
+                            >
+                              {campaign.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Leaderboard Content */}
+                {(() => {
+                  if (!selectedLeaderboardCampaign) {
+                    return (
+                      <div className="text-center py-12">
+                        <div className="flex justify-center mb-4">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                          </svg>
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-800 mb-2">Select a Campaign</h3>
+                        <p className="text-gray-600">Choose a campaign from the dropdown to view its leaderboard.</p>
+                      </div>
+                    );
+                  }
+
+                  const selectedCampaign = campaigns.find(c => c.id === selectedLeaderboardCampaign);
+                  if (!selectedCampaign) return null;
+
+                  // Check if current user has videos in this campaign
+                  const userHasVideos = selectedCampaign.videos?.some(video => video.author_id === user?.uid);
+                  
+                  if (!userHasVideos) {
+                    return (
+                      <div className="text-center py-12">
+                        <div className="flex justify-center mb-4">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                          </svg>
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-800 mb-2">No Videos Submitted</h3>
+                        <p className="text-gray-600">You haven&apos;t submitted any videos to this campaign yet. Submit a video to see the leaderboard!</p>
+                      </div>
+                    );
+                  }
+
+                  // Calculate leaderboard data
+                  const userEarnings = new Map<string, { 
+                    totalEarnings: number; 
+                    videoCount: number; 
+                    firstName: string; 
+                    tiktokUniqueId: string;
+                  }>();
+
+                  selectedCampaign.videos?.forEach(video => {
+                    if (video.author_id && video.earnings && video.status === 'approved') {
+                      const current = userEarnings.get(video.author_id) || { 
+                        totalEarnings: 0, 
+                        videoCount: 0, 
+                        firstName: '', 
+                        tiktokUniqueId: video.author?.uniqueId || ''
+                      };
+                      
+                      current.totalEarnings += video.earnings;
+                      current.videoCount += 1;
+                      current.tiktokUniqueId = video.author?.uniqueId || current.tiktokUniqueId;
+                      
+                      // Get first name from userData if available
+                      if (userData && video.author_id === user?.uid) {
+                        current.firstName = userData.firstName || video.author?.nickname?.split(' ')[0] || 'Unknown';
+                      } else {
+                        current.firstName = video.author?.nickname?.split(' ')[0] || 'Unknown';
+                      }
+                      
+                      userEarnings.set(video.author_id, current);
+                    }
+                  });
+
+                  // Sort by total earnings (descending)
+                  const leaderboardData = Array.from(userEarnings.entries())
+                    .map(([userId, data]) => ({ userId, ...data }))
+                    .sort((a, b) => b.totalEarnings - a.totalEarnings);
+
+                  if (leaderboardData.length === 0) {
+                    return (
+                      <div className="text-center py-12">
+                        <div className="flex justify-center mb-4">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                          </svg>
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-800 mb-2">No Approved Videos</h3>
+                        <p className="text-gray-600">No approved videos with earnings in this campaign yet.</p>
+                      </div>
+                    );
+                  }
+
+                  const currentUserRank = leaderboardData.findIndex(entry => entry.userId === user?.uid) + 1;
+                  const isFirstPlace = currentUserRank === 1;
+
+                  return (
+                    <div className="space-y-4">
+                      {/* First Place Celebration */}
+                      {isFirstPlace && (
+                        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4 text-center">
+                          <div className="flex items-center justify-center gap-2 text-lg font-bold text-yellow-800">
+                            <span className="text-2xl">🎉</span>
+                            <span>Congratulations! You&apos;re in first place for this campaign!</span>
+                            <span className="text-2xl">🎉</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Leaderboard */}
+                      <div className="space-y-2">
+                        {leaderboardData.map((entry, index) => {
+                          const rank = index + 1;
+                          const isCurrentUser = entry.userId === user?.uid;
+                          
+                          return (
+                            <div 
+                              key={entry.userId}
+                              className={`flex items-center justify-between p-3 rounded-lg border ${
+                                isCurrentUser 
+                                  ? 'bg-blue-50 border-blue-200' 
+                                  : 'bg-gray-50 border-gray-200'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                {/* Rank Badge */}
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                                  rank === 1 ? 'bg-yellow-500 text-white' :
+                                  rank === 2 ? 'bg-gray-400 text-white' :
+                                  rank === 3 ? 'bg-orange-600 text-white' :
+                                  'bg-gray-200 text-gray-700'
+                                }`}>
+                                  {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}
+                                </div>
+                                
+                                {/* User Info */}
+                                <div>
+                                  <div className="font-medium text-gray-800">
+                                    {entry.firstName}
+                                    {isCurrentUser && <span className="text-blue-600 ml-1">(You)</span>}
+                                  </div>
+                                  <div className="text-sm text-gray-600">
+                                    @{entry.tiktokUniqueId}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="text-right">
+                                <div className="font-bold text-green-600">
+                                  ${entry.totalEarnings.toFixed(2)}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  {entry.videoCount} video{entry.videoCount !== 1 ? 's' : ''}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
         )}
 
         {activeTab === 'settings' && (
@@ -1044,125 +1399,8 @@ export default function CreatorDashboard() {
               </div>
             </div>
             
-            {/* Submissions Section */}
+            {/* Payment Receipts Section */}
             <div className="border-t border-gray-200 pt-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">My Submissions</h2>
-              
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-yellow-700">
-                      <strong className="font-medium text-yellow-800">Important Notice:</strong> All earnings shown are estimates and may be adjusted based on campaign criteria and final review. Final payment amounts are subject to verification and approval.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {campaigns.length === 0 ? (
-                <div className="bg-white rounded-lg shadow-md p-10 text-center">
-                  <h2 className="text-xl font-medium mb-4 text-gray-800">No submissions found</h2>
-                  <p className="text-gray-900 mb-6">You haven&apos;t submitted any videos to campaigns yet.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {campaigns.map((campaign) => {
-                    const userVideos = campaign.videos?.filter(video => video.author_id === user?.uid) || [];
-                    if (userVideos.length === 0) return null;
-
-                    return (
-                      <div key={`campaign-${campaign.id}`} className="bg-white rounded-lg shadow-md overflow-hidden">
-                        <div className="p-4 border-b border-gray-200">
-                          <h3 className="text-lg font-semibold text-gray-800">{campaign.name}</h3>
-                        </div>
-                        <div className="divide-y divide-gray-200">
-                          {userVideos.map((video) => (
-                            <div key={`video-${video.id}`} className="p-4">
-                              <div className="flex items-center justify-between">
-                                <div className="flex-1 min-w-0">
-                                  <a 
-                                    href={video.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-gray-800 hover:text-primary hover:cursor-pointer font-medium truncate block"
-                                  >
-                                    {video.title || 'Untitled Video'}
-                                  </a>
-                                </div>
-                                <div className="flex items-center gap-4 ml-4">
-                                  <div className="flex items-center gap-1">
-                                    {video.soundIdMatch ? (
-                                      <svg key="sound-match" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                      </svg>
-                                    ) : (
-                                      <svg key="sound-mismatch" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                      </svg>
-                                    )}
-                                    <span className="text-sm text-gray-600">Sound Match</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm text-gray-600">Submission Status:</span>
-                                    <div className={`px-2 py-1 rounded-full text-sm font-medium ${
-                                      video.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                      video.status === 'denied' ? 'bg-red-100 text-red-800' :
-                                      'bg-yellow-100 text-yellow-800'
-                                    }`}>
-                                      {video.status.charAt(0).toUpperCase() + video.status.slice(1)}
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm text-gray-600">Estimated Earnings:</span>
-                                    <span className={`text-sm font-medium ${
-                                      video.status === 'denied' ? 'text-red-600' : 
-                                      video.status === 'approved' ? 'text-green-600' : 
-                                      'text-gray-800'
-                                    }`}>
-                                      ${video.status === 'denied' ? '0.00' : (video.hasBeenPaid ? video.payoutAmountForVideo?.toFixed(2) : video.earnings?.toFixed(2) || '0.00')}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm text-gray-600">Payment Status:</span>
-                                    <span className={`px-2 py-1 rounded-full text-sm font-medium ${
-                                      video.hasBeenPaid ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                                    }`}>
-                                      {video.hasBeenPaid ? 'Paid' : 'Pending'}
-                                    </span>
-                                  </div>
-                                  {video.status === 'denied' && (
-                                    <button
-                                      key={`denial-${video.id}`}
-                                      onClick={() => {
-                                        setSelectedDenialReason(video.reasonForDenial || 'N/A - No reason provided.');
-                                        setDenialModalOpen(true);
-                                      }}
-                                      className="text-sm text-red-600 hover:text-red-800 hover:cursor-pointer"
-                                    >
-                                      Why was this denied?
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'receipts' && (
-          <div className="space-y-8">
-            <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-6">Payment Receipts</h2>
               
               {loadingTransactions ? (
@@ -1256,6 +1494,115 @@ export default function CreatorDashboard() {
                         </div>
                       </div>
                     ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'submissions' && (
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">My Submissions</h2>
+              
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-yellow-700">
+                      <strong className="font-medium text-yellow-800">Important Notice:</strong> All earnings shown are estimates and may be adjusted based on campaign criteria and final review. Final payment amounts are subject to verification and approval.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {campaigns.length === 0 ? (
+                <div className="bg-white rounded-lg shadow-md p-10 text-center">
+                  <h2 className="text-xl font-medium mb-4 text-gray-800">No submissions found</h2>
+                  <p className="text-gray-900 mb-6">You haven&apos;t submitted any videos to campaigns yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {campaigns.map((campaign) => {
+                    const userVideos = campaign.videos?.filter(video => video.author_id === user?.uid) || [];
+                    if (userVideos.length === 0) return null;
+
+                    return (
+                      <div key={`campaign-${campaign.id}`} className="bg-white rounded-lg shadow-md overflow-hidden">
+                        <div className="p-4 border-b border-gray-200">
+                          <h3 className="text-lg font-semibold text-gray-800">{campaign.name}</h3>
+                        </div>
+                        <div className="divide-y divide-gray-200">
+                          {userVideos.map((video) => (
+                            <div key={`video-${video.id}`} className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <a 
+                                    href={video.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-gray-800 hover:text-primary hover:cursor-pointer font-medium truncate block"
+                                  >
+                                    {video.title || 'Untitled Video'}
+                                  </a>
+                                </div>
+                                <div className="flex items-center gap-4 ml-4">
+                                  <div className="flex items-center gap-1">
+                                    {video.soundIdMatch ? (
+                                      <svg key="sound-match" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                      </svg>
+                                    ) : (
+                                      <svg key="sound-mismatch" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                      </svg>
+                                    )}
+                                    <span className="text-sm text-gray-600">Sound Match</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-600">Submission Status:</span>
+                                    <div className={`px-2 py-1 rounded-full text-sm font-medium ${
+                                      video.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                      video.status === 'denied' ? 'bg-red-100 text-red-800' :
+                                      'bg-yellow-100 text-yellow-800'
+                                    }`}>
+                                      {video.status.charAt(0).toUpperCase() + video.status.slice(1)}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-600">Estimated Earnings:</span>
+                                    <span className={`text-sm font-medium ${
+                                      video.status === 'denied' ? 'text-red-600' : 
+                                      video.status === 'approved' ? 'text-green-600' : 
+                                      'text-gray-800'
+                                    }`}>
+                                      ${video.status === 'denied' ? '0.00' : (video.hasBeenPaid ? video.payoutAmountForVideo?.toFixed(2) : video.earnings?.toFixed(2) || '0.00')}
+                                    </span>
+                                  </div>
+                                  {video.status === 'denied' && (
+                                    <button
+                                      key={`denial-${video.id}`}
+                                      onClick={() => {
+                                        setSelectedDenialReason(video.reasonForDenial || 'N/A - No reason provided.');
+                                        setDenialModalOpen(true);
+                                      }}
+                                      className="text-sm text-red-600 hover:text-red-800 hover:cursor-pointer"
+                                    >
+                                      Why was this denied?
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
