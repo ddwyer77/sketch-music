@@ -252,7 +252,7 @@ export default function Dashboard() {
         <button
           onClick={handleUpdateMetrics}
           disabled={isUpdating || loading}
-          className="w-full bg-secondary hover:bg-primary hover:text-white disabled:bg-gray-400 text-gray-900 hover:text-white px-8 py-6 rounded-xl font-semibold text-lg transition-all duration-200 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-[1.01] disabled:transform-none disabled:hover:scale-100 hover:cursor-pointer"
+          className="w-full bg-primary hover:bg-secondary hover:text-gray-900 disabled:bg-gray-400 text-white px-8 py-6 rounded-xl font-semibold text-lg transition-all duration-200 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-[1.01] disabled:transform-none disabled:hover:scale-100 hover:cursor-pointer"
         >
           {isUpdating ? (
             <>
