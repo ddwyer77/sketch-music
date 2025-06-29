@@ -105,7 +105,7 @@ type VideoModalProps = {
 };
 
 export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpdated }: VideoModalProps) {
-  const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
+  const [selectedVideoIndex, setSelectedVideoIndex] = useState(-1);
   const [embedUrl, setEmbedUrl] = useState<string>('');
   const [newVideoUrl, setNewVideoUrl] = useState('');
   const [isAddingVideo, setIsAddingVideo] = useState(false);
@@ -161,14 +161,27 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
 
   // Update embed URL when selected video changes
   useEffect(() => {
-    if (localVideos.length > 0) {
+    if (localVideos.length > 0 && selectedVideoIndex >= 0) {
       const url = localVideos[selectedVideoIndex].url;
+      console.log('DEBUG: Processing URL:', url);
+      console.log('DEBUG: URL includes /photo/:', url.includes('/photo/'));
+
+      // If it's a TikTok photo, do not set embedUrl
+      if (url.includes('/photo/')) {
+        console.log('DEBUG: Photo detected, setting embedUrl to empty');
+        setEmbedUrl('');
+        return;
+      }
+
+      console.log('DEBUG: Not a photo, processing as video');
       try {
         const match = url.match(/\/video\/(\d+)/);
         if (match && match[1]) {
           const videoId = match[1];
+          console.log('DEBUG: Video ID extracted:', videoId);
           setEmbedUrl(`https://www.tiktok.com/embed/v2/${videoId}`);
         } else {
+          console.log('DEBUG: No video ID found, using original URL');
           setEmbedUrl(url);
         }
       } catch (error) {
@@ -490,9 +503,15 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
           <div className="w-1/3 p-6 flex flex-col">
             <h3 className="text-lg font-medium mb-4 text-gray-900">Video Preview</h3>
             
-            {localVideos.length > 0 ? (
+            {localVideos.length > 0 && selectedVideoIndex >= 0 && selectedVideoIndex < localVideos.length ? (
               <div className="flex-1 bg-black rounded-lg overflow-hidden">
-                {embedUrl ? (
+                {localVideos[selectedVideoIndex]?.url.includes('/photo/') ? (
+                  <img
+                    src="/images/photo-type-preview.png"
+                    alt="This is a TikTok photo. Preview Unavailable."
+                    className="w-full h-full object-contain bg-white"
+                  />
+                ) : embedUrl ? (
                   <iframe
                     src={embedUrl}
                     className="w-full h-full"
@@ -501,16 +520,23 @@ export default function VideoModal({ campaignId, videoUrls, onClose, onVideosUpd
                     allowFullScreen
                   ></iframe>
                 ) : (
-                  <div className="text-white flex items-center justify-center h-full">Loading video...</div>
+                  <div className="text-white flex items-center justify-center h-full">
+                    <p className="text-gray-400">Loading preview...</p>
+                  </div>
                 )}
               </div>
             ) : (
-              <div className="flex-1 bg-gray-100 rounded-lg flex items-center justify-center">
-                <p className="text-gray-500">No video selected</p>
+              <div className="flex-1 bg-gradient-to-br from-primary/5 to-blue-100 rounded-lg flex flex-col items-center justify-center p-8 border-2 border-dashed border-primary/30 animate-fade-in">
+                <svg className="w-16 h-16 text-primary mb-6" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" />
+                </svg>
+                <h4 className="text-2xl font-bold text-primary mb-2 text-center drop-shadow">No selection made</h4>
+                <p className="text-gray-600 text-center max-w-xs mx-auto">Select a video from the list on the left to view the preview here.</p>
               </div>
             )}
             
-            {localVideos.length > 0 && (
+            {localVideos.length > 0 && selectedVideoIndex >= 0 && (
               <div className="mt-4">
                 <a 
                   href={localVideos[selectedVideoIndex].url}
