@@ -11,6 +11,10 @@ This is a Next.js 14+ project with TypeScript, Tailwind CSS, and Firebase integr
 - Use type assertions sparingly and prefer type guards
 - Export types from dedicated type files when reused across components
 - Use generic types when appropriate for reusable components
+- **NEVER use `any` type - always specify proper types or use `unknown` if type is truly unknown**
+- Use `Record<string, unknown>` instead of `any` for object types
+- Use `unknown[]` instead of `any[]` for arrays with unknown content
+- Always define return types for functions when not obvious
 
 ### React/Next.js
 - Use functional components with hooks
@@ -19,6 +23,9 @@ This is a Next.js 14+ project with TypeScript, Tailwind CSS, and Firebase integr
 - Implement proper error boundaries
 - Use React.memo() for performance optimization when needed
 - Always handle loading and error states
+- **Always escape apostrophes in JSX: use `&apos;` instead of `'`**
+- Use `&quot;` for double quotes in JSX when needed
+- Use `&amp;` for ampersands in JSX when needed
 
 ### Styling (Tailwind CSS)
 - Use Tailwind CSS classes exclusively for styling
@@ -42,6 +49,30 @@ This is a Next.js 14+ project with TypeScript, Tailwind CSS, and Firebase integr
 - Store types in `src/types/`
 - Use `src/contexts/` for React contexts
 - Keep utilities in `src/lib/` or `src/utils/`
+
+## Variable Declaration Rules
+- **Use `const` by default for all variable declarations**
+- Only use `let` when the variable will be reassigned
+- Use `const` for arrays and objects even if their contents will be modified
+- Use `const` for function expressions and arrow functions
+- Use `const` for imported modules and dependencies
+
+## Build Error Prevention
+- **TypeScript: Never use `any` type**
+  - Use `unknown` for truly unknown types
+  - Use `Record<string, unknown>` for objects
+  - Use `unknown[]` for arrays
+  - Define proper interfaces for all data structures
+- **React: Always escape special characters in JSX**
+  - Use `&apos;` for apostrophes (')
+  - Use `&quot;` for quotes (")
+  - Use `&amp;` for ampersands (&)
+  - Use `&lt;` for less than (<)
+  - Use `&gt;` for greater than (>)
+- **ESLint: Use const instead of let when possible**
+  - Always use `const` unless variable needs reassignment
+  - Use `const` for arrays and objects (contents can still be modified)
+  - Use `const` for function declarations and expressions
 
 ## Firebase Integration
 - Always handle Firebase authentication states properly

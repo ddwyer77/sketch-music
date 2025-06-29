@@ -12,14 +12,14 @@ import { Campaign } from '@/types/campaign';
 // Utility function to convert campaign data to CSV format
 const exportCampaignToCSV = (campaign: Campaign) => {
   // Helper function to safely convert timestamps to ISO string
-  const safeDateToISO = (timestamp: any): string => {
+  const safeDateToISO = (timestamp: number | string | { _seconds: number } | { toDate: () => Date } | undefined): string => {
     if (!timestamp) return '';
     
     try {
       let date: Date;
       
       // Handle Firestore timestamp objects
-      if (typeof timestamp === 'object' && timestamp._seconds) {
+      if (typeof timestamp === 'object' && '_seconds' in timestamp) {
         date = new Date(timestamp._seconds * 1000);
       } else if (typeof timestamp === 'number') {
         date = new Date(timestamp);
@@ -245,7 +245,7 @@ const exportCampaignToCSV = (campaign: Campaign) => {
   });
 
   // Escape CSV values (handle commas, quotes, and newlines)
-  const escapeCSVValue = (value: any): string => {
+  const escapeCSVValue = (value: string | number | boolean | null | undefined): string => {
     if (value === null || value === undefined) return '';
     const stringValue = String(value);
     if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
@@ -255,7 +255,7 @@ const exportCampaignToCSV = (campaign: Campaign) => {
   };
 
   // Create CSV content with campaign data
-  let csvContent = [campaignHeaders.map(escapeCSVValue).join(',')];
+  const csvContent = [campaignHeaders.map(escapeCSVValue).join(',')];
   csvContent.push(campaignData.map(escapeCSVValue).join(','));
 
   // Add video data if there are videos
