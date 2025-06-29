@@ -12,15 +12,16 @@ import { Campaign } from '@/types/campaign';
 // Utility function to convert campaign data to CSV format
 const exportCampaignToCSV = (campaign: Campaign) => {
   // Helper function to safely convert timestamps to ISO string
-  const safeDateToISO = (timestamp: number | string | { _seconds: number } | { toDate: () => Date } | undefined): string => {
+  const safeDateToISO = (timestamp: number | string | { _seconds: number } | { toDate: () => Date } | undefined | unknown): string => {
     if (!timestamp) return '';
     
     try {
       let date: Date;
       
       // Handle Firestore timestamp objects
-      if (typeof timestamp === 'object' && '_seconds' in timestamp) {
-        date = new Date(timestamp._seconds * 1000);
+      if (typeof timestamp === 'object' && timestamp !== null && '_seconds' in timestamp) {
+        const seconds = (timestamp as { _seconds: number })._seconds;
+        date = new Date(seconds * 1000);
       } else if (typeof timestamp === 'number') {
         date = new Date(timestamp);
       } else if (typeof timestamp === 'string') {
@@ -39,6 +40,35 @@ const exportCampaignToCSV = (campaign: Campaign) => {
       console.warn('Invalid date value:', timestamp);
       return '';
     }
+  };
+
+  // Helper function to safely get property from unknown object
+  const safeGetProperty = (obj: unknown, key: string): unknown => {
+    return obj && typeof obj === 'object' && key in obj ? (obj as Record<string, unknown>)[key] : undefined;
+  };
+
+  // Helper function to safely get string property
+  const safeGetString = (obj: unknown, key: string): string => {
+    const value = safeGetProperty(obj, key);
+    return typeof value === 'string' ? value : '';
+  };
+
+  // Helper function to safely get number property
+  const safeGetNumber = (obj: unknown, key: string): number => {
+    const value = safeGetProperty(obj, key);
+    return typeof value === 'number' ? value : 0;
+  };
+
+  // Helper function to safely get boolean property
+  const safeGetBoolean = (obj: unknown, key: string): boolean => {
+    const value = safeGetProperty(obj, key);
+    return typeof value === 'boolean' ? value : false;
+  };
+
+  // Helper function to safely get array property
+  const safeGetArray = (obj: unknown, key: string): unknown[] => {
+    const value = safeGetProperty(obj, key);
+    return Array.isArray(value) ? value : [];
   };
 
   // Create CSV headers for campaign data
@@ -192,8 +222,8 @@ const exportCampaignToCSV = (campaign: Campaign) => {
     video.markedForDeletion || false,
     video.author?.nickname || '',
     video.author?.uniqueId || '',
-    // Handle the createdAt field that might exist in the actual data
-    (video as any).createdAt || ''
+    // Handle the createdAt field that might exist in the actual data - safely access unknown property
+    safeGetString(video, 'createdAt')
   ]);
 
   // Create CSV headers for wallet updates
@@ -216,31 +246,30 @@ const exportCampaignToCSV = (campaign: Campaign) => {
     'Wallet Update User Last Payout Batch ID',
     'Wallet Update User Last Payout At',
     'Wallet Update User TikTok Data Count'
-  ];
+      ];
 
   // Create CSV data for wallet updates
   const walletUpdateData = (campaign.paymentReleaseReceipt?.walletUpdates || []).map(update => {
-    // Cast to any to access the extended userData properties that exist in actual data
-    const userData = update.userData as any;
+    const userData = update.userData;
     return [
       update.userId,
       update.previousWallet || 0,
       update.payoutAmount || 0,
       update.newWallet || 0,
-      userData?.email || '',
-      userData?.firstName || '',
-      userData?.lastName || '',
-      userData?.paymentEmail || '',
-      userData?.wallet || 0,
-      (userData?.roles || []).join(';'),
-      userData?.discord_id || '',
-      userData?.tiktokVerified || false,
-      safeDateToISO(userData?.createdAt),
-      safeDateToISO(userData?.updatedAt),
-      userData?.lastPayoutAmount || 0,
-      userData?.lastPayoutBatchId || '',
-      safeDateToISO(userData?.lastPayoutAt),
-      Object.keys(userData?.tiktokData || {}).length
+      safeGetString(userData, 'email'),
+      safeGetString(userData, 'firstName'),
+      safeGetString(userData, 'lastName'),
+      safeGetString(userData, 'paymentEmail'),
+      safeGetNumber(userData, 'wallet'),
+      safeGetArray(userData, 'roles').join(';'),
+      safeGetString(userData, 'discord_id'),
+      safeGetBoolean(userData, 'tiktokVerified'),
+      safeDateToISO(safeGetProperty(userData, 'createdAt')),
+      safeDateToISO(safeGetProperty(userData, 'updatedAt')),
+      safeGetNumber(userData, 'lastPayoutAmount'),
+      safeGetString(userData, 'lastPayoutBatchId'),
+      safeDateToISO(safeGetProperty(userData, 'lastPayoutAt')),
+      Object.keys(safeGetProperty(userData, 'tiktokData') || {}).length
     ];
   });
 
